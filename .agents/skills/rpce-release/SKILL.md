@@ -17,6 +17,16 @@ make dev-release-preflight
 make dev-release-artifact
 ```
 
+For a local-only release-mode installation signed by the user's own dedicated
+self-signed identity, use:
+
+```bash
+CONFIRM_LOCAL_PRODUCTION_INSTALL=1 make dev-install-local-production
+```
+
+This app is not notarized and must not be distributed or uploaded to GitHub
+Releases.
+
 Report the files written under `dist/`. Clearly state that the archive is
 ad-hoc signed, intended for packaging validation, and not distributable.
 

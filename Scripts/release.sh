@@ -55,6 +55,7 @@ run_preflight() {
     require_command plutil
     require_file "$ROOT_DIR/AppBundle/Info.plist.template"
     require_file "$ROOT_DIR/AppBundle/RepoPrompt.entitlements.template"
+    require_file "$ROOT_DIR/AppBundle/RepoPrompt.local-self-signed.entitlements.template"
     require_file "$ROOT_DIR/Vendor/Sparkle/LICENSE"
     require_file "$ROOT_DIR/Vendor/Sparkle/PROVENANCE.md"
     require_file "$ROOT_DIR/Vendor/Sparkle/SHA256SUMS"

@@ -86,6 +86,7 @@ Completed account setup on 2026-05-31:
 
 Remaining blockers:
 
+- Resolve the GitHub Actions admission failure before the first protected CI draft release: newly queued jobs currently fail before any steps run with GitHub's billing-or-spending-limit annotation.
 - Enable a GitHub configuration that exposes required-reviewer protection for the `release` environment, or document and enforce an equivalent maintainer approval gate before treating the publishing workflow as protected. The current private-repository settings do not expose a required-reviewer control.
 - Scrub the historical contributor cohort from existing git history before the repository is made public.
 - Finish the comprehensive notice inventory for SwiftPM dependencies.

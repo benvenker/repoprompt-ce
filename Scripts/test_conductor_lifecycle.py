@@ -117,6 +117,26 @@ class LifecycleQueueTests(LifecycleTestCase):
         self.assertEqual(lanes, ["build", "debugArtifact", "release"])
         self.assertEqual(timeout, conductor.RELEASE_TIMEOUT_SECONDS)
 
+    def test_release_local_install_delegates_installer_with_release_lanes_and_confirmation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            registry = conductor.OperationRegistry(Path(tmp))
+            argv, lanes, _cwd, env, timeout = registry.prepare(
+                {
+                    "operation": "release",
+                    "args": {"subcommand": "local-install"},
+                    "env": {
+                        "CONFIRM_LOCAL_PRODUCTION_INSTALL": "1",
+                        "LOCAL_SELF_SIGNED_CERTIFICATE_NAME": "divergent override",
+                    },
+                }
+            )
+
+        self.assertEqual(Path(argv[0]).name, "install_local_production.sh")
+        self.assertEqual(lanes, ["build", "debugArtifact", "release"])
+        self.assertEqual(env["CONFIRM_LOCAL_PRODUCTION_INSTALL"], "1")
+        self.assertNotIn("LOCAL_SELF_SIGNED_CERTIFICATE_NAME", env)
+        self.assertEqual(timeout, conductor.RELEASE_TIMEOUT_SECONDS)
+
     def test_app_stop_supersedes_queued_live_app_but_not_build_only_work(self) -> None:
         tmp, state = self.make_state()
         self.addCleanup(tmp.cleanup)

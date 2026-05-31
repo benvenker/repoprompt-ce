@@ -63,6 +63,35 @@ artifact.
 Contributors should not upload this artifact to GitHub Releases. It is useful
 for packaging review and local testing only.
 
+## Install a local self-signed production build
+
+Users who want a release-mode build without maintainer credentials can install
+a local-only production app with:
+
+```bash
+CONFIRM_LOCAL_PRODUCTION_INSTALL=1 make dev-install-local-production
+```
+
+The direct fallback command is:
+
+```bash
+CONFIRM_LOCAL_PRODUCTION_INSTALL=1 make install-local-production
+```
+
+The installer creates or reuses a dedicated user-local self-signed code-signing
+identity named `RepoPrompt CE Local Self-Signed Code Signing`, installs its
+trust policy for code signing in the user's default login keychain, builds the
+release configuration, deep-signs the complete bundle, verifies the signature,
+and installs `RepoPrompt CE.app` under `/Applications`. macOS may ask the user
+to confirm the local certificate trust change when the identity is first
+created.
+
+This path is intentionally separate from public distribution. The resulting app
+is compiled with a local-only runtime verification mode, is not notarized, must
+not be uploaded to GitHub Releases, and should not be copied to another Mac.
+Official releases continue to require the CE Developer ID identity,
+provisioning profile, hardened runtime entitlements, notarization, and stapling.
+
 ## Maintainer setup
 
 Create a protected GitHub Actions environment named `release`. Require

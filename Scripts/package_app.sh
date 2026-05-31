@@ -62,13 +62,19 @@ fi
 SIGN_IDENTITY="${SIGN_IDENTITY:-}"
 ALLOW_ADHOC_SIGNING="${ALLOW_ADHOC_SIGNING:-0}"
 RELEASE_ALLOW_ADHOC_SIGNING="${RELEASE_ALLOW_ADHOC_SIGNING:-0}"
+LOCAL_SELF_SIGNED_RELEASE="${LOCAL_SELF_SIGNED_RELEASE:-0}"
+LOCAL_SELF_SIGNED_CERTIFICATE_NAME="RepoPrompt CE Local Self-Signed Code Signing"
+LOCAL_SELF_SIGNED_REQUIREMENT="anchor trusted and identifier \"$BUNDLE_ID\" and certificate leaf[subject.CN] = \"$LOCAL_SELF_SIGNED_CERTIFICATE_NAME\""
 PREFER_STABLE_DEBUG_SIGNING="${PREFER_STABLE_DEBUG_SIGNING:-1}"
 DEBUG_SECURE_STORAGE_BACKEND="${DEBUG_SECURE_STORAGE_BACKEND:-}"
 REPOPROMPT_PROVISIONING_PROFILE="${REPOPROMPT_PROVISIONING_PROFILE:-}"
 APP_ENTITLEMENTS_TEMPLATE="${APP_ENTITLEMENTS_TEMPLATE:-$ROOT_DIR/AppBundle/RepoPrompt.entitlements.template}"
+LOCAL_SELF_SIGNED_ENTITLEMENTS_TEMPLATE="$ROOT_DIR/AppBundle/RepoPrompt.local-self-signed.entitlements.template"
 APP_ENTITLEMENTS=""
 USE_ADHOC_SIGNING=0
+USE_LOCAL_SELF_SIGNED_RELEASE=0
 DEBUG_STORAGE_BACKEND_MARKER="alternate-in-memory"
+SIGNING_MODE_MARKER="debug-apple-development"
 warn_adhoc_signing(){
     echo "WARNING: Using explicit ad-hoc signing for a debug package."
     echo "WARNING: RepoPrompt debug runtime will use ephemeral in-memory secure storage instead of macOS Keychain for API keys and secure permission documents."
@@ -79,6 +85,13 @@ warn_release_candidate_signing(){
     echo "WARNING: Using explicit ad-hoc signing for a release-candidate package."
     echo "WARNING: This artifact exercises release packaging only. It is not notarizable, distributable, or suitable for GitHub Releases."
 }
+if [[ "$LOCAL_SELF_SIGNED_RELEASE" == "1" || "$LOCAL_SELF_SIGNED_RELEASE" == "true" ]]; then
+    (( IS_RELEASE )) || fail "LOCAL_SELF_SIGNED_RELEASE is only supported for release packaging."
+    [[ -n "$SIGN_IDENTITY" ]] || fail "LOCAL_SELF_SIGNED_RELEASE requires SIGN_IDENTITY pointing at the user-local self-signed code-signing identity."
+    USE_LOCAL_SELF_SIGNED_RELEASE=1
+    echo "WARNING: Building a local-only self-signed production app."
+    echo "WARNING: This app is for installation on this Mac only. It is not notarized and must not be uploaded to GitHub Releases."
+fi
 if [[ -z "$SIGN_IDENTITY" ]] && (( ! IS_RELEASE )) && [[ "$PREFER_STABLE_DEBUG_SIGNING" == "1" || "$PREFER_STABLE_DEBUG_SIGNING" == "true" ]]; then
     AUTO_SIGN_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | awk -F'"' '/"Apple Development: / { print $2; exit }')"
     if [[ -n "$AUTO_SIGN_IDENTITY" ]]; then
@@ -113,8 +126,14 @@ else
     fi
 fi
 
-if (( IS_RELEASE )) && (( ! USE_ADHOC_SIGNING )); then
+if (( USE_LOCAL_SELF_SIGNED_RELEASE )); then
     DEBUG_STORAGE_BACKEND_MARKER="keychain"
+    SIGNING_MODE_MARKER="local-self-signed"
+elif (( IS_RELEASE )) && (( ! USE_ADHOC_SIGNING )); then
+    DEBUG_STORAGE_BACKEND_MARKER="keychain"
+    SIGNING_MODE_MARKER="developer-id"
+elif (( IS_RELEASE )); then
+    SIGNING_MODE_MARKER="release-candidate-adhoc"
 elif [[ -n "$DEBUG_SECURE_STORAGE_BACKEND" ]]; then
     case "$DEBUG_SECURE_STORAGE_BACKEND" in
         keychain|alternate-in-memory) DEBUG_STORAGE_BACKEND_MARKER="$DEBUG_SECURE_STORAGE_BACKEND" ;;
@@ -122,14 +141,22 @@ elif [[ -n "$DEBUG_SECURE_STORAGE_BACKEND" ]]; then
     esac
 elif (( SIGN_IDENTITY_WAS_EXPLICIT )) && (( ! USE_ADHOC_SIGNING )); then
     DEBUG_STORAGE_BACKEND_MARKER="keychain"
+elif (( USE_ADHOC_SIGNING )); then
+    SIGNING_MODE_MARKER="debug-adhoc"
 fi
 printf 'Debug secure storage backend marker: %s\n' "$DEBUG_STORAGE_BACKEND_MARKER"
+printf 'Signing mode marker: %s\n' "$SIGNING_MODE_MARKER"
+
+SWIFT_BUILD_ARGS=(-c "$CONF")
+if (( USE_LOCAL_SELF_SIGNED_RELEASE )); then
+    SWIFT_BUILD_ARGS+=(-Xswiftc -DREPOPROMPT_LOCAL_SELF_SIGNED_BUILD)
+fi
 
 phase "Building $APP_NAME ($CONF)"
-run swift build -c "$CONF" --product "$APP_NAME"
+run swift build "${SWIFT_BUILD_ARGS[@]}" --product "$APP_NAME"
 
 phase "Building repoprompt-mcp ($CONF)"
-run swift build -c "$CONF" --product repoprompt-mcp
+run swift build "${SWIFT_BUILD_ARGS[@]}" --product repoprompt-mcp
 
 phase "Resolving build artifact paths"
 echo_cmd swift build -c "$CONF" --show-bin-path
@@ -173,12 +200,23 @@ phase "Writing Info.plist"
 run python3 - <<PY
 from pathlib import Path
 s=Path('AppBundle/Info.plist.template').read_text()
-for k,v in {'__APP_NAME__':'$APP_NAME','__DISPLAY_NAME__':'$DISPLAY_NAME','__BUNDLE_ID__':'$BUNDLE_ID','__MARKETING_VERSION__':'$MARKETING_VERSION','__BUILD_NUMBER__':'$BUILD_NUMBER','__DEBUG_SECURE_STORAGE_BACKEND__':'$DEBUG_STORAGE_BACKEND_MARKER'}.items(): s=s.replace(k,v)
+for k,v in {'__APP_NAME__':'$APP_NAME','__DISPLAY_NAME__':'$DISPLAY_NAME','__BUNDLE_ID__':'$BUNDLE_ID','__MARKETING_VERSION__':'$MARKETING_VERSION','__BUILD_NUMBER__':'$BUILD_NUMBER','__DEBUG_SECURE_STORAGE_BACKEND__':'$DEBUG_STORAGE_BACKEND_MARKER','__SIGNING_MODE__':'$SIGNING_MODE_MARKER'}.items(): s=s.replace(k,v)
 Path('$APP_BUNDLE/Contents/Info.plist').write_text(s)
 PY
 run plutil -lint "$APP_BUNDLE/Contents/Info.plist"
 
-if (( IS_RELEASE )) && (( ! USE_ADHOC_SIGNING )); then
+if (( USE_LOCAL_SELF_SIGNED_RELEASE )); then
+    phase "Rendering local self-signed entitlements"
+    [[ -f "$LOCAL_SELF_SIGNED_ENTITLEMENTS_TEMPLATE" ]] || fail "Missing local self-signed entitlements template: $LOCAL_SELF_SIGNED_ENTITLEMENTS_TEMPLATE"
+    APP_ENTITLEMENTS="$(mktemp)"
+    run python3 - <<PY
+from pathlib import Path
+s=Path('$LOCAL_SELF_SIGNED_ENTITLEMENTS_TEMPLATE').read_text()
+s=s.replace('__BUNDLE_ID__', '$BUNDLE_ID')
+Path('$APP_ENTITLEMENTS').write_text(s)
+PY
+    run plutil -lint "$APP_ENTITLEMENTS"
+elif (( IS_RELEASE )) && (( ! USE_ADHOC_SIGNING )); then
     phase "Embedding release provisioning profile and entitlements"
     [[ -f "$REPOPROMPT_PROVISIONING_PROFILE" ]] || fail "Signed release packaging requires REPOPROMPT_PROVISIONING_PROFILE pointing to the RepoPrompt CE Developer ID provisioning profile."
     [[ -f "$APP_ENTITLEMENTS_TEMPLATE" ]] || fail "Missing release entitlements template: $APP_ENTITLEMENTS_TEMPLATE"
@@ -211,6 +249,8 @@ sign_path(){
     local args=(--force --sign "$SIGN_IDENTITY")
     if (( USE_ADHOC_SIGNING )); then
         args+=(--timestamp=none)
+    elif (( USE_LOCAL_SELF_SIGNED_RELEASE )); then
+        args+=(--timestamp=none --options runtime)
     elif (( IS_RELEASE )); then
         args+=(--timestamp --options runtime)
     else
@@ -220,7 +260,7 @@ sign_path(){
 }
 verify_signed_app_identity(){
     local details identifier team authorities
-    details="$(codesign -dv "$APP_BUNDLE" 2>&1 || true)"
+    details="$(codesign -dv --verbose=4 "$APP_BUNDLE" 2>&1 || true)"
     identifier="$(printf '%s\n' "$details" | awk -F= '/^Identifier=/{print $2; exit}')"
     team="$(printf '%s\n' "$details" | awk -F= '/^TeamIdentifier=/{print $2; exit}')"
     authorities="$(printf '%s\n' "$details" | awk -F= '/^Authority=/{print $2}' | paste -sd ', ' -)"
@@ -234,6 +274,9 @@ verify_signed_app_identity(){
     if (( USE_ADHOC_SIGNING )); then
         [[ -z "$team" || "$team" == "not set" ]] || echo "WARNING: Expected ad-hoc signing without a team identifier, but found team '$team'."
         echo "WARNING: Ad-hoc package created explicitly; do not use this artifact for release."
+    elif (( USE_LOCAL_SELF_SIGNED_RELEASE )); then
+        [[ -z "$team" || "$team" == "not set" ]] || fail "Local self-signed app unexpectedly has team identifier '$team'."
+        run codesign --verify --deep --strict --verbose=2 -R="$LOCAL_SELF_SIGNED_REQUIREMENT" "$APP_BUNDLE"
     elif (( IS_RELEASE )); then
         [[ "$team" == "$SIGNING_TEAM_ID" ]] || fail "Signed app team mismatch: expected $SIGNING_TEAM_ID, got ${team:-<missing>}"
     else

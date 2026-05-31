@@ -12,11 +12,16 @@ import Security
 class BundleVerifier {
     private static let expectedBundleIdentifier = SecurityObfuscation.decode(SecurityObfuscation.expectedBundleIdentifierEncoded)
     private static let expectedTeamIdentifier = SecurityObfuscation.decode(SecurityObfuscation.expectedTeamIdentifierEncoded)
+    #if REPOPROMPT_LOCAL_SELF_SIGNED_BUILD
+        private static let localSelfSignedCertificateName = "RepoPrompt CE Local Self-Signed Code Signing"
+        private static let localSelfSignedSigningMode = "local-self-signed"
+    #endif
 
     /// Error types that can occur during bundle verification
     enum VerificationError: Error, CustomStringConvertible {
         case bundleURLInvalid
         case codeSignatureCreationFailed
+        case signingModeInvalid
         case signatureValidationFailed(OSStatus)
 
         var description: String {
@@ -25,6 +30,8 @@ class BundleVerifier {
                 "Invalid bundle URL"
             case .codeSignatureCreationFailed:
                 "Failed to create code signature reference"
+            case .signingModeInvalid:
+                "Invalid signing mode"
             case let .signatureValidationFailed(status):
                 SecCopyErrorMessageString(status, nil) as String? ?? "Signature validation failed (\(status))"
             }
@@ -65,17 +72,22 @@ class BundleVerifier {
             throw VerificationError.signatureValidationFailed(validationResult)
         }
 
-        try verifySigningIdentity(for: code)
+        try verifySigningIdentity(for: code, bundle: bundle)
 
         return true
     }
 
     // MARK: - Identity Requirements
 
-    private static func verifySigningIdentity(for code: SecStaticCode) throws {
+    private static func verifySigningIdentity(for code: SecStaticCode, bundle: Bundle) throws {
         // In debug builds, verify team ID only (bundle ID differs between debug/release)
         // In release builds, verify both bundle ID and team ID
-        #if DEBUG
+        #if REPOPROMPT_LOCAL_SELF_SIGNED_BUILD
+            guard bundle.object(forInfoDictionaryKey: "RepoPromptSigningMode") as? String == localSelfSignedSigningMode else {
+                throw VerificationError.signingModeInvalid
+            }
+            let requirementString = "anchor trusted and identifier \"\(expectedBundleIdentifier)\" and certificate leaf[subject.CN] = \"\(localSelfSignedCertificateName)\""
+        #elseif DEBUG
             let requirementString = "anchor apple generic and certificate leaf[subject.OU] = \"\(expectedTeamIdentifier)\""
         #else
             let requirementString = "anchor apple generic and identifier \"\(expectedBundleIdentifier)\" and certificate leaf[subject.OU] = \"\(expectedTeamIdentifier)\""

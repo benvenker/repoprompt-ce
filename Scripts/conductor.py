@@ -128,7 +128,7 @@ Operation commands:
   ./conductor smoke [--launch] [--workspace <name>] [--window-id <id>] [--agent-run]
     (without --launch, requires the CE debug app to already be running and CLI installed)
   ./conductor diagnostics agent-mode-on [--log-file <path>]
-  ./conductor release preflight|artifact|package
+  ./conductor release preflight|artifact|package|local-install
 
 Foundation validation operation:
   ./conductor sleep <seconds> [--lane <lane>]... [--message <text>] [--exit-code <n>]
@@ -762,6 +762,10 @@ class OperationRegistry:
         "SIGNING_TEAM_ID",
         "ALLOW_ADHOC_SIGNING",
         "RELEASE_ALLOW_ADHOC_SIGNING",
+        "CONFIRM_LOCAL_PRODUCTION_INSTALL",
+        "LOCAL_CERTIFICATE_DAYS",
+        "LOCAL_PRODUCTION_INSTALL_DIR",
+        "LOCAL_SELF_SIGNED_RELEASE",
         "PREFER_STABLE_DEBUG_SIGNING",
         "DEBUG_SECURE_STORAGE_BACKEND",
         "REPOPROMPT_PROVISIONING_PROFILE",
@@ -917,6 +921,8 @@ class OperationRegistry:
             subcommand = args.get("subcommand")
             if subcommand == "package":
                 return [script("package_app.sh"), "release"], ["build", "debugArtifact", "release"], cwd, env, effective_timeout
+            if subcommand == "local-install":
+                return [script("install_local_production.sh")], ["build", "debugArtifact", "release"], cwd, env, effective_timeout
             if subcommand == "artifact":
                 return [script("release.sh"), "artifact"], ["build", "debugArtifact", "release"], cwd, env, effective_timeout
             if subcommand == "preflight":
@@ -972,7 +978,7 @@ class OperationRegistry:
             return SHORT_TIMEOUT_SECONDS
         if operation == "app" and args.get("subcommand") in {"status", "stop"}:
             return SHORT_TIMEOUT_SECONDS
-        if operation in {"package", "release"} and (args.get("config") == "release" or args.get("subcommand") in {"artifact", "package"}):
+        if operation in {"package", "release"} and (args.get("config") == "release" or args.get("subcommand") in {"artifact", "package", "local-install"}):
             return RELEASE_TIMEOUT_SECONDS
         if operation == "smoke" and args.get("agentRun"):
             return MEDIUM_TIMEOUT_SECONDS
@@ -2891,7 +2897,7 @@ def handle_real_operation(paths: Paths, operation: str, argv: List[str]) -> int:
         args.update({"subcommand": ns.subcommand, "logFile": ns.log_file, "windowId": ns.window_id})
     elif operation == "release":
         parser = argparse.ArgumentParser(prog="conductor release")
-        parser.add_argument("subcommand", choices=["preflight", "artifact", "package"])
+        parser.add_argument("subcommand", choices=["preflight", "artifact", "package", "local-install"])
         ns = parser.parse_args(rest)
         args["subcommand"] = ns.subcommand
     else:
