@@ -373,13 +373,13 @@ struct AgentWorkspaceRootsSectionView: View {
 
             if let gitContext = row.gitContext {
                 gitContextCapsule(gitContext, row: row)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .layoutPriority(1)
+                    .layoutPriority(3)
             }
 
             if let worktree = row.worktree {
                 worktreeCapsule(worktree)
                     .fixedSize(horizontal: true, vertical: false)
+                    .layoutPriority(0)
             }
 
             if let attention = mergeAttention(for: row) {

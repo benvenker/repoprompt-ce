@@ -20,6 +20,74 @@ struct AgentWorkspaceBranchSwitchActions {
     )
 }
 
+struct BranchSwitchBranchListPresentation: Equatable {
+    struct Section: Identifiable, Equatable {
+        enum Kind: String, Hashable {
+            case currentCheckout
+            case checkedOutElsewhere
+            case available
+        }
+
+        let kind: Kind
+        let branches: [VCSBranch]
+
+        var id: Kind {
+            kind
+        }
+
+        var title: String {
+            switch kind {
+            case .currentCheckout:
+                "Current checkout"
+            case .checkedOutElsewhere:
+                "Checked out elsewhere"
+            case .available:
+                "Available branches"
+            }
+        }
+    }
+
+    let sections: [Section]
+
+    var isEmpty: Bool {
+        sections.allSatisfy(\.branches.isEmpty)
+    }
+
+    var branches: [VCSBranch] {
+        sections.flatMap(\.branches)
+    }
+
+    var branchCount: Int {
+        sections.reduce(0) { $0 + $1.branches.count }
+    }
+
+    init(branches: [VCSBranch], sortOrder: VCSBranchSortOrder) {
+        sections = Self.makeSections(branches: branches, sortOrder: sortOrder)
+    }
+
+    private static func makeSections(branches: [VCSBranch], sortOrder: VCSBranchSortOrder) -> [Section] {
+        var current: [VCSBranch] = []
+        var checkedOutElsewhere: [VCSBranch] = []
+        var available: [VCSBranch] = []
+
+        for branch in branches {
+            if branch.isCurrent {
+                current.append(branch)
+            } else if branch.isCheckedOutInAnotherWorktree {
+                checkedOutElsewhere.append(branch)
+            } else {
+                available.append(branch)
+            }
+        }
+
+        return [
+            Section(kind: .currentCheckout, branches: current.sortedForDisplay(by: sortOrder)),
+            Section(kind: .checkedOutElsewhere, branches: checkedOutElsewhere.sortedForDisplay(by: sortOrder)),
+            Section(kind: .available, branches: available.sortedForDisplay(by: sortOrder))
+        ].filter { !$0.branches.isEmpty }
+    }
+}
+
 struct GitContextBranchSwitchCapsule: View {
     let row: AgentWorkspaceRootRow
     let context: GitWorktreeContextSummary
@@ -62,10 +130,28 @@ struct GitContextBranchSwitchCapsule: View {
         fontPreset.scaledClamped(310, min: 260, max: 390)
     }
 
-    private func branchListViewportHeight(for branches: [VCSBranch]) -> CGFloat {
-        let visibleRowCount = min(CGFloat(branches.count), 8)
-        let interRowSpacing = max(0, visibleRowCount - 1) * 2
-        let estimatedHeight = visibleRowCount * branchRowEstimatedHeight + interRowSpacing
+    private var branchSectionHeaderEstimatedHeight: CGFloat {
+        fontPreset.scaledClamped(18, min: 14, max: 22)
+    }
+
+    private var branchSectionSpacing: CGFloat {
+        6
+    }
+
+    private var branchSectionContentSpacing: CGFloat {
+        2
+    }
+
+    private func branchListViewportHeight(for presentation: BranchSwitchBranchListPresentation) -> CGFloat {
+        let visibleRowCount = min(CGFloat(presentation.branchCount), 8)
+        let visibleSectionCount = min(CGFloat(presentation.sections.count), max(1, visibleRowCount))
+        let sectionHeaderHeight = visibleSectionCount * branchSectionHeaderEstimatedHeight
+        let sectionSpacing = max(0, visibleSectionCount - 1) * branchSectionSpacing
+        let headerContentSpacing = visibleRowCount * branchSectionContentSpacing
+        let estimatedHeight = visibleRowCount * branchRowEstimatedHeight
+            + sectionHeaderHeight
+            + sectionSpacing
+            + headerContentSpacing
         return min(branchListMaxHeight, estimatedHeight)
     }
 
@@ -87,6 +173,8 @@ struct GitContextBranchSwitchCapsule: View {
             .foregroundColor(.secondary)
             .padding(.horizontal, fontPreset.scaledClamped(4, max: 6))
             .padding(.vertical, fontPreset.scaledClamped(1, max: 2))
+            // Stay content-sized for short branch names while the text still caps and truncates long names.
+            .fixedSize(horizontal: true, vertical: false)
             .background(Capsule().fill(Color.secondary.opacity(0.10)))
             .overlay(Capsule().strokeBorder(Color.secondary.opacity(0.35), lineWidth: 0.75))
         }
@@ -183,7 +271,7 @@ struct GitContextBranchSwitchCapsule: View {
     }
 
     private func branchList(_ options: GitBranchSwitchOptions) -> some View {
-        let branches = sortedBranches(options.branches)
+        let presentation = BranchSwitchBranchListPresentation(branches: options.branches, sortOrder: branchSortOrder)
         return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 Text("Local branches")
@@ -200,33 +288,38 @@ struct GitContextBranchSwitchCapsule: View {
                 .controlSize(.mini)
                 .frame(width: fontPreset.scaledClamped(110, min: 104, max: 132))
             }
-            if branches.isEmpty {
+            if presentation.isEmpty {
                 Text("No local branches found.")
                     .font(fontPreset.swiftUIFont(sizeAtNormal: 11))
                     .foregroundStyle(.secondary)
             } else {
                 ScrollView(.vertical) {
-                    LazyVStack(alignment: .leading, spacing: 2) {
-                        ForEach(branches) { branch in
-                            BranchSwitchBranchRow(
-                                branch: branch,
-                                isSwitching: isSwitching,
-                                fontPreset: fontPreset,
-                                selectBranch: { selected in
-                                    startUITask { await selectBranch(selected) }
+                    LazyVStack(alignment: .leading, spacing: branchSectionSpacing) {
+                        ForEach(presentation.sections) { section in
+                            VStack(alignment: .leading, spacing: branchSectionContentSpacing) {
+                                Text(section.title)
+                                    .font(fontPreset.swiftUIFont(sizeAtNormal: 9, weight: .semibold))
+                                    .foregroundStyle(.tertiary)
+                                    .textCase(.uppercase)
+                                    .padding(.horizontal, 6)
+                                ForEach(section.branches) { branch in
+                                    BranchSwitchBranchRow(
+                                        branch: branch,
+                                        isSwitching: isSwitching,
+                                        fontPreset: fontPreset,
+                                        selectBranch: { selected in
+                                            startUITask { await selectBranch(selected) }
+                                        }
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                 }
-                .frame(height: branchListViewportHeight(for: branches))
+                .frame(height: branchListViewportHeight(for: presentation))
                 .scrollIndicators(.automatic)
             }
         }
-    }
-
-    private func sortedBranches(_ branches: [VCSBranch]) -> [VCSBranch] {
-        branches.sortedForDisplay(by: branchSortOrder)
     }
 
     private struct BranchSwitchBranchRow: View {
