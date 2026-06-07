@@ -73,10 +73,15 @@ final class MentionCoordinatorTests: XCTestCase {
         coordinator.mentionStarted(at: NSRect(x: 100, y: 100, width: 1, height: 18))
         coordinator.mentionNavigate(.down)
         coordinator.mentionNavigate(.right)
-        try await Task.sleep(nanoseconds: 120_000_000)
+        try await waitUntil {
+            coordinator.testOverlayWindowCount == 2
+                && !coordinator.testSuggestions(atLevel: 1).isEmpty
+        }
         coordinator.mentionNavigate(.right)
-        try await Task.sleep(nanoseconds: 120_000_000)
-        XCTAssertEqual(coordinator.testOverlayWindowCount, 3)
+        try await waitUntil {
+            coordinator.testOverlayWindowCount == 3
+                && !coordinator.testSuggestions(atLevel: 2).isEmpty
+        }
 
         let ancestorSuggestions = coordinator.testSuggestions(atLevel: 1)
         let previousHighlight = try XCTUnwrap(coordinator.testHighlightedIndex(atLevel: 1))
@@ -91,8 +96,10 @@ final class MentionCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(coordinator.testOverlayWindowCount, 2)
         coordinator.mentionNavigate(.right)
-        try await Task.sleep(nanoseconds: 120_000_000)
-        XCTAssertEqual(coordinator.testOverlayWindowCount, 3)
+        try await waitUntil {
+            coordinator.testOverlayWindowCount == 3
+                && !coordinator.testSuggestions(atLevel: 2).isEmpty
+        }
 
         coordinator.mentionAccept()
         let expectedFileName = clickedFolder.displayName == "Sources"
@@ -140,6 +147,16 @@ final class MentionCoordinatorTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 150_000_000)
 
         XCTAssertTrue(coordinator.testSuggestions.isEmpty)
+    }
+
+    private func waitUntil(
+        _ condition: @escaping @MainActor () -> Bool
+    ) async throws {
+        for _ in 0 ..< 200 {
+            if condition() { return }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTFail("Timed out waiting for condition")
     }
 
     private func makeFixture(
