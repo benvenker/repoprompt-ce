@@ -2034,11 +2034,17 @@ final class AgentModeViewModel: ObservableObject {
         guard let promptManager else { return }
         installPromptManagerCascadeResolvers(promptManager)
 
-        // Observe tab changes
-        promptManager.$activeComposeTabID
-            .removeDuplicates()
-            .sink { [weak self] tabID in
-                self?.onTabChanged(tabID)
+        // Observe post-storage tab changes. This notification does not replay the current value;
+        // setAgentModeActive(true) remains the explicit activation bootstrap.
+        NotificationCenter.default.publisher(for: .activeComposeTabChanged)
+            .sink { [weak self] notification in
+                guard let self,
+                      let notificationWindowID = notification.userInfo?["windowID"] as? Int,
+                      notificationWindowID == windowID
+                else {
+                    return
+                }
+                onTabChanged(notification.userInfo?["tabID"] as? UUID)
             }
             .store(in: &cancellables)
 
