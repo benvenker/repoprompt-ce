@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptShared
 import SwiftUI
 
 func normalizedToolCardName(_ name: String?) -> String? {
@@ -632,7 +633,7 @@ private enum ToolCardSubtitleBuilder {
         if detach == true {
             return "detach"
         }
-        let resolvedTimeout = timeout ?? AgentRunMCPToolService.defaultWaitTimeoutSeconds
+        let resolvedTimeout = timeout ?? MCPTimeoutPolicy.agentLifecycleDefaultWaitSeconds
         return resolvedTimeout <= 0 ? "poll" : "wait ≤\(formatSeconds(resolvedTimeout))"
     }
 
