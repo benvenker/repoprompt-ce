@@ -40,7 +40,6 @@ struct ContextBuildCommand {
                 try await HeadlessMCPServer(host: host).runSocketConnection(fd: fd)
             } catch {
                 fputs("rpce-headless socket connection: \(error.localizedDescription)\n", stderr)
-                closeFD(fd)
             }
         }
         defer {

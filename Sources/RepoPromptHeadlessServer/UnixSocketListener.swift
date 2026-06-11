@@ -26,7 +26,7 @@ final class HeadlessUnixSocketListener {
         listenFD = fd
 
         try setCloseOnExec(fd)
-        _ = unlink(path)
+        try prepareSocketPath()
 
         var address = try makeUnixSocketAddress(path: path)
 
@@ -78,6 +78,32 @@ final class HeadlessUnixSocketListener {
 
     deinit {
         stop()
+    }
+
+    private func prepareSocketPath() throws {
+        let parent = (path as NSString).deletingLastPathComponent
+        if !parent.isEmpty, parent != path {
+            try FileManager.default.createDirectory(
+                atPath: parent,
+                withIntermediateDirectories: true
+            )
+        }
+
+        var info = stat()
+        let result = path.withCString { lstat($0, &info) }
+        if result == 0 {
+            guard (info.st_mode & S_IFMT) == S_IFSOCK else {
+                throw HeadlessToolFailure(message: "refusing to replace non-socket path: \(path)")
+            }
+            guard unlink(path) == 0 else {
+                throw POSIXFailure(operation: "unlink", code: errno)
+            }
+        } else {
+            let code = errno
+            guard code == ENOENT else {
+                throw POSIXFailure(operation: "lstat", code: code)
+            }
+        }
     }
 }
 

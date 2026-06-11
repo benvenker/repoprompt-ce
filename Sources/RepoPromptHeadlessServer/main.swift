@@ -13,7 +13,6 @@ do {
                     try await HeadlessMCPServer(host: host).runSocketConnection(fd: fd)
                 } catch {
                     fputs("rpce-headless socket connection: \(error.localizedDescription)\n", stderr)
-                    closeFD(fd)
                 }
             }
             while !Task.isCancelled {
@@ -76,7 +75,7 @@ enum HeadlessCLI {
         }
 
         if subcommand == "context-build" {
-            return .contextBuild(try parseContextBuild(Array(args.dropFirst())))
+            return try .contextBuild(parseContextBuild(Array(args.dropFirst())))
         }
 
         var roots: [String] = []
@@ -88,7 +87,7 @@ enum HeadlessCLI {
             case "--root":
                 let valueIndex = index + 1
                 guard valueIndex < args.count else { throw usage("--root requires a path") }
-                roots.append(try resolveRoot(args[valueIndex]))
+                try roots.append(resolveRoot(args[valueIndex]))
                 index += 2
             case "--socket":
                 let valueIndex = index + 1
@@ -121,7 +120,7 @@ enum HeadlessCLI {
             case "--root":
                 let valueIndex = index + 1
                 guard valueIndex < args.count else { throw usage("--root requires a path") }
-                roots.append(try resolveRoot(args[valueIndex]))
+                try roots.append(resolveRoot(args[valueIndex]))
                 index += 2
             case "--instructions":
                 let valueIndex = index + 1
@@ -186,11 +185,10 @@ enum HeadlessCLI {
 
     private static func resolveRoot(_ path: String) throws -> String {
         let expanded = (path as NSString).expandingTildeInPath
-        let absolute: String
-        if expanded.hasPrefix("/") {
-            absolute = expanded
+        let absolute: String = if expanded.hasPrefix("/") {
+            expanded
         } else {
-            absolute = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
                 .appendingPathComponent(expanded).path
         }
         let standardized = (absolute as NSString).standardizingPath

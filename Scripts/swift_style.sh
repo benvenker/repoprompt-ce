@@ -27,6 +27,8 @@ fi
 STYLE_PATHS=(
     "Package.swift"
     "Sources/RepoPrompt"
+    "Sources/RepoPromptContextCore"
+    "Sources/RepoPromptHeadlessServer"
     "Sources/RepoPromptMCP"
     "Sources/RepoPromptShared"
     "Tests/RepoPromptTests"
@@ -37,6 +39,7 @@ STYLE_PATHS=(
 
 EXCLUDED_SWIFT_PREFIXES=(
     "Sources/RepoPrompt/ThirdParty/SwiftPCRE2/"
+    "Sources/RepoPromptContextCore/ThirdParty/SwiftPCRE2/"
     "Packages/RepoPromptAgentProviders/.build/"
 )
 

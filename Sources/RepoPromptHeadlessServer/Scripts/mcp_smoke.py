@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 # Minimal MCP stdio harness: initialize -> tools/list -> per-tool calls.
-import json, subprocess, sys, itertools
-binary, root = sys.argv[1], sys.argv[2]
-phase = sys.argv[4] if len(sys.argv) > 4 else (sys.argv[3].split("=",1)[1] if len(sys.argv)>3 and sys.argv[3].startswith("--phase=") else (sys.argv[4] if "--phase" in sys.argv else "all"))
+import argparse, itertools, json, subprocess, sys
+
+parser = argparse.ArgumentParser(description="Smoke-test rpce-headless over MCP stdio.")
+parser.add_argument("binary")
+parser.add_argument("root")
+parser.add_argument("--phase", choices=["init", "all"], default="all")
+args = parser.parse_args()
+binary, root, phase = args.binary, args.root, args.phase
 p = subprocess.Popen([binary, "serve", "--root", root], stdin=subprocess.PIPE,
                      stdout=subprocess.PIPE, stderr=sys.stderr, text=True)
 ids = itertools.count(1)

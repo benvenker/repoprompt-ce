@@ -1,0 +1,26 @@
+[Unit]
+Description=RepoPrompt CE headless MCP socket server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rpce
+Group=rpce
+EnvironmentFile=/etc/rpce-headless/rpce-headless.env
+WorkingDirectory=/srv/repoprompt-ce
+RuntimeDirectory=rpce-headless
+RuntimeDirectoryMode=0700
+StateDirectory=rpce-headless
+CacheDirectory=rpce-headless
+ExecStart=/usr/local/bin/rpce-headless serve --root /srv/repoprompt-ce --socket /run/rpce-headless/rpce.sock
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/srv/repoprompt-ce /run/rpce-headless /var/lib/rpce-headless /var/cache/rpce-headless
+
+[Install]
+WantedBy=multi-user.target

@@ -2652,7 +2652,7 @@ def operation_app_stop(repo_root: Path, args: Dict[str, Any]) -> int:
 
 
 def operation_swift_build_all(repo_root: Path) -> int:
-    for product in ["RepoPrompt", "repoprompt-mcp"]:
+    for product in ["RepoPrompt", "repoprompt-mcp", "rpce-headless"]:
         code, _stdout, _stderr = run_operation_command(f"swift build --product {product}", ["swift", "build", "--product", product], repo_root)
         if code != 0:
             return code
@@ -2897,7 +2897,7 @@ def handle_real_operation(paths: Paths, operation: str, argv: List[str]) -> int:
         parse_no_args(f"conductor {operation}", rest)
     elif operation == "swift-build":
         parser = argparse.ArgumentParser(prog="conductor swift-build")
-        parser.add_argument("--product", required=True, choices=["RepoPrompt", "repoprompt-mcp", "all"])
+        parser.add_argument("--product", required=True, choices=["RepoPrompt", "repoprompt-mcp", "rpce-headless", "all"])
         ns = parser.parse_args(rest)
         args["product"] = ns.product
     elif operation == "package":

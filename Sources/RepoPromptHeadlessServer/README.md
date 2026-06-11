@@ -33,6 +33,35 @@ docker run --rm -v "$PWD":/src -w /src swift:6.2.4-noble \
 
 Expected success output includes `INIT OK` and `ALL OK`.
 
+## Ubuntu VPS Install Sketch
+
+The current deployment shape assumes either a Docker build on the VPS or a
+release binary copied from a matching Ubuntu 24.04 build host. The VPS does
+not need the macOS app.
+
+```bash
+git clone <repo-url> /srv/repoprompt-ce
+cd /srv/repoprompt-ce
+docker run --rm -v "$PWD":/src -w /src swift:6.2.4-noble \
+  swift build -c release --product rpce-headless --scratch-path .build-linux
+install -m 0755 .build-linux/release/rpce-headless /usr/local/bin/rpce-headless
+```
+
+Create a service user and install the example env/unit files:
+
+```bash
+useradd --system --home /srv/repoprompt-ce --shell /usr/sbin/nologin rpce
+install -d -m 0750 -o rpce -g rpce /etc/rpce-headless
+install -m 0640 -o root -g rpce Sources/RepoPromptHeadlessServer/Examples/rpce-headless.env /etc/rpce-headless/rpce-headless.env
+install -m 0644 Sources/RepoPromptHeadlessServer/Examples/rpce-headless.service /etc/systemd/system/rpce-headless.service
+systemctl daemon-reload
+systemctl enable --now rpce-headless
+```
+
+Edit `/etc/rpce-headless/rpce-headless.env` before enabling oracle-backed
+tools. The example service exposes a local Unix socket at
+`/run/rpce-headless/rpce.sock`.
+
 ## Run
 
 ```bash
@@ -40,6 +69,8 @@ Expected success output includes `INIT OK` and `ALL OK`.
 ```
 
 Stdout is reserved for newline-delimited JSON-RPC. Diagnostics go to stderr.
+This stdio mode is intended for MCP clients that launch the process directly;
+it exposes all tools, including `oracle_send`.
 
 Socket serving for discovery agents:
 
@@ -59,6 +90,10 @@ All socket connections are discovery-restricted to:
 - `read_file`
 
 Stdio serving remains unrestricted and includes `oracle_send`.
+
+The socket mode is intended for a local daemon plus discovery agents on the
+same host. It does not expose `oracle_send`; use stdio mode or
+`context-build --response-type question|plan` for oracle-backed answers.
 
 A diagnostic catalog summary is also available:
 
@@ -109,6 +144,25 @@ Expected success output: `CONTEXT_BUILD OK`.
 
 Pi note: Pi has no built-in MCP hookup in this target. Use the `pi-mcp-adapter` extension with the generated MCP config shape (`command: rpce-headless`, `args: ["connect", "--socket", "<path>"]`). The example `"pi"` agent entry is an operational starting point and remains UNVERIFIED.
 
+## Oracle / OpenRouter
+
+`oracle_send` uses an OpenAI-compatible chat completions endpoint. By default
+it targets OpenRouter:
+
+```bash
+export RPCE_ORACLE_API_KEY=sk-or-...
+export RPCE_ORACLE_BASE_URL=https://openrouter.ai/api/v1
+export RPCE_ORACLE_MODEL=openrouter/auto
+```
+
+`OPENROUTER_API_KEY` is accepted as a fallback for local shells. For a custom
+OpenAI-compatible endpoint, set `RPCE_ORACLE_BASE_URL`, `RPCE_ORACLE_API_KEY`,
+and `RPCE_ORACLE_MODEL` to that provider's values.
+
+For a new `oracle_send` chat, workspace context is included by default.
+Continuations with `chat_id` default to no new context unless
+`include_context` is set.
+
 ## Tools
 
 - `read_file`
@@ -122,4 +176,4 @@ Pi note: Pi has no built-in MCP hookup in this target. Use the `pi-mcp-adapter` 
 
 ## v1 semantics and deferred work
 
-The server is intentionally single-workspace: run multiple processes for multiple workspaces. `manage_selection` supports `get`, `add`, `remove`, `set`, and `clear`; slices, `preview`, `promote`, and `demote` return explicit unsupported tool errors. Prompt presets/export, mutation tools, git tools, app window/tab routing, native Linux validation, and real-agent template verification are deferred.
+The server is intentionally single-workspace: run multiple processes for multiple workspaces. `manage_selection` supports `get`, `add`, `remove`, `set`, and `clear`; slices, `preview`, `promote`, and `demote` return explicit unsupported tool errors. Prompt presets/export, mutation tools, git tools, app window/tab routing, native host service hardening, real-agent template verification, and Swift 6 language-mode warning cleanup in `RepoPromptContextCore` are deferred.
