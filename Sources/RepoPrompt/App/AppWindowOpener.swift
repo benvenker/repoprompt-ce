@@ -9,6 +9,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 /// Enables programmatic opening of new windows from non-SwiftUI contexts.
 ///

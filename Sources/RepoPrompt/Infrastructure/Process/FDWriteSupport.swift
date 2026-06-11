@@ -1,6 +1,7 @@
 import Darwin
 import Darwin.POSIX.fcntl
 import Foundation
+import RepoPromptContextCore
 
 enum FDWriteError: Error, Equatable {
     case brokenPipe(errno: Int32)

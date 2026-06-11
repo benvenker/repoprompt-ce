@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 @MainActor
 enum AgentModeMCPPolicyInstaller {

@@ -9,6 +9,7 @@ import Foundation
 import JSONSchema
 import MCP
 import Ontology
+import RepoPromptContextCore
 
 public struct Tool: Sendable {
     let name: String

@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct AgentStatusPillsRow: View {
     let agentModeVM: AgentModeViewModel

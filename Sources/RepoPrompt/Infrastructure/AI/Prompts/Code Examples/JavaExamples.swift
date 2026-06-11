@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /**
  * JavaExamples implements CodeExamples for Java-specific snippets.

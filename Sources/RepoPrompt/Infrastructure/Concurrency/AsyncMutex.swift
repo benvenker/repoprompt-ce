@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 actor AsyncMutex {
     private var isLocked = false

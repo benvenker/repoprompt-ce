@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftOpenAI
+import RepoPromptContextCore
 
 final class DeepSeekProvider: OpenAIProvider {
     init(apiKey: String) {

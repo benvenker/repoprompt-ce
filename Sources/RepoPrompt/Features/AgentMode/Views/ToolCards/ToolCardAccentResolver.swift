@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 enum ToolCardAccentResolver {
     static func family(for toolName: String?) -> ClusterToolCategory.ToolFamily {

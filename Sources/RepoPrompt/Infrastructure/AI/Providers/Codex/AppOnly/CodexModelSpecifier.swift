@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct CodexModelSpecifier: Equatable {
     typealias ReasoningEffort = CodexReasoningEffort

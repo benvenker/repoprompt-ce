@@ -1,5 +1,6 @@
 import Foundation
 import MCP
+import RepoPromptContextCore
 
 /// Pure helpers (no AppKit/SwiftUI) that were previously duplicated.
 enum DiffEncodingUtils {

@@ -1,0 +1,23 @@
+{
+  "claude": {
+    "argv": [
+      "claude",
+      "-p",
+      "{PROMPT}",
+      "--mcp-config",
+      "{MCP_CONFIG}",
+      "--strict-mcp-config",
+      "--permission-mode",
+      "bypassPermissions"
+    ],
+    "promptVia": "argv"
+  },
+  "fake": {
+    "argv": ["python3", "{FAKE_AGENT_SCRIPT}", "{MCP_CONFIG_PATH_RAW}"],
+    "promptVia": "env"
+  },
+  "pi": {
+    "argv": ["pi", "--mcp-config", "{MCP_CONFIG}", "{PROMPT_FILE}"],
+    "promptVia": "file"
+  }
+}

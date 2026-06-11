@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /**
  * TypeScriptExamples implements CodeExamples for TypeScript-specific snippets.

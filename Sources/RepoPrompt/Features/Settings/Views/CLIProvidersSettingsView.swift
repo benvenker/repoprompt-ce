@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import RepoPromptContextCore
 
 struct CLIProvidersSettingsView: View {
     @ObservedObject var viewModel: APISettingsViewModel

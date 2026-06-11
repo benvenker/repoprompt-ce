@@ -1,5 +1,6 @@
 // Utility array helpers used across the app
 import Foundation
+import RepoPromptContextCore
 
 extension Array {
     /// Splits array into consecutive windows of at most `size`.

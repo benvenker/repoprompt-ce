@@ -1,5 +1,6 @@
 import Sparkle
 import SwiftUI
+import RepoPromptContextCore
 
 struct HelpMenu: View {
     private var sparkleManager: SparkleUpdaterManager {

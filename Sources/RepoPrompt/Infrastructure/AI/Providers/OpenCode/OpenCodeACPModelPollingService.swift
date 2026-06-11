@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 protocol OpenCodeACPModelDiscoveryClient: Sendable {
     func discoverModels(workspacePath: String?) async throws -> ACPDiscoveredSessionModels?

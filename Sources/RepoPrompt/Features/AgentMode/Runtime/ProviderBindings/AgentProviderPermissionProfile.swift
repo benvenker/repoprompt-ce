@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Source of effective provider permissions for Agent Mode runs.
 ///

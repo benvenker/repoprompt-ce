@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import RepoPromptContextCore
 
 class InputMonitor {
     // MARK: - Types

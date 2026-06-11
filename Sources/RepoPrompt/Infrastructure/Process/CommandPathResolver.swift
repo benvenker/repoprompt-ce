@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import RepoPromptContextCore
 
 #if DEBUG
     private var commandPathResolverDebugLoggingEnabled = false

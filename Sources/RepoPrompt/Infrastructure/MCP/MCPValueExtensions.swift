@@ -7,6 +7,7 @@
 
 import Foundation
 import MCP
+import RepoPromptContextCore
 
 public extension Value {
     // Note: stringValue, boolValue, intValue, doubleValue, arrayValue, objectValue

@@ -1,6 +1,7 @@
 import Combine
 import CoreServices
 @testable import RepoPrompt
+@testable import RepoPromptContextCore
 import XCTest
 
 final class FileSystemAcceptedIngressBarrierTests: XCTestCase {

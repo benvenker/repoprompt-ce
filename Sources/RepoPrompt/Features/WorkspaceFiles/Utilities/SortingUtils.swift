@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum SortMethod: String, CaseIterable {
     case nameAscending

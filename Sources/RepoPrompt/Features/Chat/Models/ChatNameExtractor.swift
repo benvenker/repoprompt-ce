@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Extracts the optional chat-name marker from assistant responses.
 enum ChatNameExtractor {

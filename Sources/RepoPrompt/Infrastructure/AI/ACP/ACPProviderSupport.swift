@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import RepoPromptContextCore
 
 enum ACPRuntimeEventParsing {
     static func extractContentText(from value: Any?) -> String? {

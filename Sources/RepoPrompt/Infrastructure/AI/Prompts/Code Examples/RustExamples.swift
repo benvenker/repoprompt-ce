@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /**
  * RustExamples implements CodeExamples for Rust-specific snippets.

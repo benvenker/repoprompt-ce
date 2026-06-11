@@ -13,6 +13,7 @@ import Logging
 import MCP
 import Ontology
 import RepoPromptShared
+import RepoPromptContextCore
 
 private final class MCPRunToolCleanupClaim: @unchecked Sendable {
     private let lock = NSLock()

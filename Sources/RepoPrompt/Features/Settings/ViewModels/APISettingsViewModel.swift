@@ -1,5 +1,6 @@
 import Combine
 import SwiftUI
+import RepoPromptContextCore
 
 #if DEBUG
     private var apiSettingsViewModelDebugLoggingEnabled = false

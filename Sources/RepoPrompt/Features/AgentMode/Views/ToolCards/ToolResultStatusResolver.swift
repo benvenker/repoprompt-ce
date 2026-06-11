@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum ToolResultStatusResolver {
     static func resolve(toolIsError: Bool?, raw: String?, fallback: ToolCardStatus) -> ToolCardStatus {

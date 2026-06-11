@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import MCP
 @testable import RepoPrompt
+@testable import RepoPromptContextCore
 import XCTest
 
 final class TabContextRoutingTests: XCTestCase {

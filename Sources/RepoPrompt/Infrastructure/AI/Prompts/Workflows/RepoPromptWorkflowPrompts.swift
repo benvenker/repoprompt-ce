@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Provider-neutral RepoPrompt workflow prompt renderers.
 /// These prompts are installed as managed skills/commands and exposed through Agent Mode,

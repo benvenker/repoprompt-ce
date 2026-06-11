@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import RepoPromptContextCore
 
 enum ProcessTerminationError: Error, LocalizedError {
     case waitFailed(String)

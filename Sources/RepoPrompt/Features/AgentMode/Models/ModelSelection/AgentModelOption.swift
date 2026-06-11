@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct AgentModelOption: Identifiable, Hashable {
     let rawValue: String

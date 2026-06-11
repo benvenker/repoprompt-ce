@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import RepoPromptContextCore
 
 enum WindowCloseDecision: Equatable {
     case allow

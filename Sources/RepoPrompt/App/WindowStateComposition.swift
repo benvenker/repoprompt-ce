@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 @MainActor
 struct WindowStateComposition {
@@ -104,7 +105,9 @@ enum WindowStateCompositionFactory {
                     fuzzySpaceMatching: fuzzySpaceMatching,
                     rootScope: rootScope,
                     store: store,
-                    workspaceManager: workspaceManager
+                    searchReadiness: { [weak workspaceManager] in
+                        await MainActor.run { workspaceManager?.workspaceSearchReadinessState }
+                    }
                 )
             },
             ensureGitDataRootLoaded: { [fileManager = workspaceFilesViewModel] workspace, workspaceManager in

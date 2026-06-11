@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum GitRepoRootAuthorization {
     static func canonicalPath(_ path: String) -> String {

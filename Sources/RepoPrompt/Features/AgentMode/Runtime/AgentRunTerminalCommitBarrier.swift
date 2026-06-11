@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 extension AgentSessionRunState {
     var isTerminalForCommit: Bool {

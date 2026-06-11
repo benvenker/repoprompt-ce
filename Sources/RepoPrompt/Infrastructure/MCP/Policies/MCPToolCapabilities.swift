@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Capability-level grouping for MCP tool policy decisions.
 /// Policies should express intent in terms of capabilities and derive tool names from this map.

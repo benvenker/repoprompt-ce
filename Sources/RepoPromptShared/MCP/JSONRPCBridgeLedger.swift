@@ -1,4 +1,9 @@
+#if canImport(CryptoKit)
 import CryptoKit
+#else
+import Crypto
+#endif
+import CoreFoundation
 import Foundation
 
 public enum JSONRPCBridgeDirection: String, Codable, Sendable {

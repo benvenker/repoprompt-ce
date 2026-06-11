@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 final class AgentCodexModelRegistry {
     static let shared = AgentCodexModelRegistry()

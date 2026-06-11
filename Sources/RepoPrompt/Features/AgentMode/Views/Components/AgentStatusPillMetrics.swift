@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 // MARK: - Shared Pill Metrics
 

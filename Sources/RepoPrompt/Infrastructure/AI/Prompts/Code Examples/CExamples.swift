@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /**
  * CExamples implements CodeExamples for C-specific snippets.

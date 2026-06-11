@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum CLIPathHints {
     // Compatibility facade: callers that expect provider-owned hints keep receiving

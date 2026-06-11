@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 extension HeadlessMode {
     var mcpModeName: String {

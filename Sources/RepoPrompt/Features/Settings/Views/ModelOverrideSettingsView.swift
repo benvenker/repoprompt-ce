@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct ModelOverridesSettingsView: View {
     @ObservedObject var overrides = ModelOverridesSettings.shared

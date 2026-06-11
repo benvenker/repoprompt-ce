@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /// Represents a single version entry from the appcast
 struct AppcastVersion {

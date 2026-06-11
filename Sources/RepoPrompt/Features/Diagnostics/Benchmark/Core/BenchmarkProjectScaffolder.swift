@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Project layout capturing canonical task targets and decoy pools for a seed.
 struct BenchmarkProjectLayout {

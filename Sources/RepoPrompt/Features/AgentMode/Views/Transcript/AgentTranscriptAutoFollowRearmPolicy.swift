@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import RepoPromptContextCore
 
 enum AgentTranscriptAutoFollowRearmPolicy {
     static func shouldDetachFromLiveBottom(

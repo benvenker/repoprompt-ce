@@ -1,5 +1,6 @@
 import Foundation
 import SwiftOpenAI
+import RepoPromptContextCore
 
 protocol ResponsesJobProvider {
     func createBackgroundResponse(

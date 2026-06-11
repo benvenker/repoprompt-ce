@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct AgentRuntimeSectionCard<Content: View, Trailing: View>: View {
     let title: String

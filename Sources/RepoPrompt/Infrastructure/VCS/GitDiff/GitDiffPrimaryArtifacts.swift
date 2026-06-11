@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct GitDiffPrimaryArtifacts: Equatable {
     let map: String

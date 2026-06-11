@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import RepoPromptContextCore
 
 /// Thin UI layer that renders the floating suggestion popup.
 /// Owns *only* view-code; no model / search / navigation logic.

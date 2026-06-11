@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Describes how the RepoPrompt app process appears to have been launched.
 ///

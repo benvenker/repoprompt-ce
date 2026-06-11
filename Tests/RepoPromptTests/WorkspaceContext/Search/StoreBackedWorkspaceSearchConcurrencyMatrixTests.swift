@@ -1,5 +1,6 @@
 import Foundation
 @testable import RepoPrompt
+@testable import RepoPromptContextCore
 import XCTest
 
 #if DEBUG
@@ -256,7 +257,7 @@ import XCTest
                 countOnly: countOnly,
                 rootScope: .visibleWorkspace,
                 store: fixture.store,
-                workspaceManager: nil
+                searchReadiness: nil
             )
         }
 

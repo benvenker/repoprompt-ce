@@ -1,4 +1,5 @@
 import AppKit
+import RepoPromptContextCore
 
 extension NSRange {
     func clamped(to length: Int) -> NSRange {

@@ -1,4 +1,5 @@
 import KeyboardShortcuts
+import RepoPromptContextCore
 
 extension KeyboardShortcuts.Name {
     /// Increase font scale: default Cmd+= (commonly used for "Cmd+").

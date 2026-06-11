@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum ClaudeAbortArtifactFilter {
     static func shouldSuppressUserFacingError(_ message: String) -> Bool {

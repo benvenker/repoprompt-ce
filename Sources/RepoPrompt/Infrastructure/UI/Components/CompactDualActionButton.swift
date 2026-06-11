@@ -7,6 +7,7 @@
 
 import AppKit
 import SwiftUI
+import RepoPromptContextCore
 
 struct CompactDualActionButton: View {
     // Main button properties

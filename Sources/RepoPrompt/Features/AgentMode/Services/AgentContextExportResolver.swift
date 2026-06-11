@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct AgentContextExportSource: Equatable {
     let tabID: UUID?

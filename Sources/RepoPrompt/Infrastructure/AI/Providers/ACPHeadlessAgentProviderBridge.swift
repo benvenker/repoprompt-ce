@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Shared one-shot ACP stream bridge for headless discovery/delegate providers.
 ///

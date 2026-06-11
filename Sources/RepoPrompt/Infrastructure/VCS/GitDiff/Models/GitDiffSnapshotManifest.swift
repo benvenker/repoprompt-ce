@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 public struct DiffHunkIndex: Codable, Sendable, Equatable {
     public let header: String

@@ -1,4 +1,5 @@
 import AppKit
+import RepoPromptContextCore
 
 final class MentionDrawingLayoutManager: NSLayoutManager {
     override func glyphRange(for textContainer: NSTextContainer) -> NSRange {

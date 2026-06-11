@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /**
  * CppExamples implements CodeExamples for C++-specific snippets.

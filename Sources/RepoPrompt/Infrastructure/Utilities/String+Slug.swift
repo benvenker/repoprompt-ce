@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 extension String {
     /// Creates a URL-friendly slug from the string

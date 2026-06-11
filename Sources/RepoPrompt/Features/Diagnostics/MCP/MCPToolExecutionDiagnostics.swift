@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct MCPToolExecutionTraceEvent: Equatable, CustomStringConvertible {
     enum Phase: String {

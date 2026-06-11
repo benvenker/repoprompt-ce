@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 /// Popover for picking every sub-agent / role model choice in Agent Mode:
 ///

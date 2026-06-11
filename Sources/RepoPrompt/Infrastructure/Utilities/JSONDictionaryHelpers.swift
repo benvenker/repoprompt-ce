@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum JSONDictionaryHelpers {
     static func prettyJSONString(from object: Any, sortedKeys: Bool = true) -> String? {

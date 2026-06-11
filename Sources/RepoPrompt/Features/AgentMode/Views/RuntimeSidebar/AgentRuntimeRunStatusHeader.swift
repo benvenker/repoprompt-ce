@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct AgentRuntimeRunStatusHeader: View {
     let runState: AgentSessionRunState

@@ -1,6 +1,7 @@
 // File: RepoPrompt/Utils/DiffEditCreator.swift
 
 import Foundation
+import RepoPromptContextCore
 
 struct DiffEdit {
     enum EditType {

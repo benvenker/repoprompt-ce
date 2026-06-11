@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct WorkspaceFileEditHost: FileEditHost {
     let mutationService: WorkspaceFileMutationService

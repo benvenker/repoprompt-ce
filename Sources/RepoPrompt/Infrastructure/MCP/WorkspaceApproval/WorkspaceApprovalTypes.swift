@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 // MARK: - Workspace Approval Operation Types
 

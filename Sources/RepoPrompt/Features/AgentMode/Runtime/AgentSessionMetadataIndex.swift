@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct AgentSessionMetadataIndex: Codable, Equatable {
     static let currentSchemaVersion = 2

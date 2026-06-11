@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct CustomProviderConfiguration: Codable {
     let url: String

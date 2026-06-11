@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 // Import AIModel for type-safe model references
 

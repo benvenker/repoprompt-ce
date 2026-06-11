@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import RepoPromptContextCore
 
 @MainActor
 final class AgentRuntimeSidebarViewModel: ObservableObject {

@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 enum AppSidebarSizing {
     static let minWidth: CGFloat = 325

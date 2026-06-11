@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Built-in copy preset definitions with stable UUIDs
 enum BuiltInCopyPresets {

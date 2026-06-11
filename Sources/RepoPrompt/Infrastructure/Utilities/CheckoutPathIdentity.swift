@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Canonical identity for comparing workspace roots, Git worktree paths, and checkout bindings.
 ///

@@ -2,6 +2,7 @@
 import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
+import RepoPromptContextCore
 
 enum ImagePasteboardTypes {
     static let legacyApplePNG = NSPasteboard.PasteboardType("Apple PNG pasteboard type")

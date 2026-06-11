@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct WorkflowPromptArgument: Equatable {
     let name: String

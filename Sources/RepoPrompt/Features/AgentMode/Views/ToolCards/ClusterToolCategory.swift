@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Groups tool names into display categories for compact cluster summaries.
 /// Called from the service layer when building `AgentTranscriptClusterSummary` so

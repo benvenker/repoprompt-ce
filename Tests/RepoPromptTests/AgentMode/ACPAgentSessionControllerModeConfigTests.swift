@@ -1,5 +1,6 @@
 import Foundation
 @_spi(TestSupport) @testable import RepoPrompt
+@testable import RepoPromptContextCore
 import XCTest
 
 final class ACPAgentSessionControllerModeConfigTests: XCTestCase {

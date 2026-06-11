@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 /// A simple sheet that asks the user for a preset name, then creates it via
 /// `WorkspaceManagerViewModel`.  UI intentionally matches the rename-preset sheet.

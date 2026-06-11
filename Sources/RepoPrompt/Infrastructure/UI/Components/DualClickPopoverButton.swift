@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import RepoPromptContextCore
 
 struct DualActionButton<Content: View>: View {
     @Binding var showPopover: Bool

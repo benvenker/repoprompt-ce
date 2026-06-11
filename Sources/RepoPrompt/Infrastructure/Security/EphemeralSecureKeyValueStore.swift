@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Process-local secure storage used whenever runtime signing cannot select a persistent domain.
 final class EphemeralSecureKeyValueStore: SecureKeyValueStorageBackend, @unchecked Sendable {

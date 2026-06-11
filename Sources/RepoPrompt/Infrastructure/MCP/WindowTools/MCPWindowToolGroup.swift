@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Ordered public tool-family groups for a window-scoped MCP catalog.
 enum MCPWindowToolGroup: CaseIterable, Hashable {

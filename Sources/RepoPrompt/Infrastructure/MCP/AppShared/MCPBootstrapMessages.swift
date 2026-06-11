@@ -11,6 +11,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 // MARK: - Protocol Version
 

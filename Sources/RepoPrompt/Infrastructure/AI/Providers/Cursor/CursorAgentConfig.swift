@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct CursorAgentConfig {
     static let promptOnlySessionModeID = "ask"

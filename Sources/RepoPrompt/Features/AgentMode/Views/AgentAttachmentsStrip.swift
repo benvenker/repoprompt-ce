@@ -1,6 +1,7 @@
 import AppKit
 import ImageIO
 import SwiftUI
+import RepoPromptContextCore
 
 struct AgentAttachmentStripSnapshot: Equatable {
     let scopeTabID: UUID?

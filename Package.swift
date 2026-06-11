@@ -6,7 +6,9 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [
         .executable(name: "RepoPrompt", targets: ["RepoPrompt"]),
-        .executable(name: "repoprompt-mcp", targets: ["RepoPromptMCP"])
+        .executable(name: "repoprompt-mcp", targets: ["RepoPromptMCP"]),
+        .executable(name: "rpce-headless", targets: ["RepoPromptHeadlessServer"]),
+        .library(name: "RepoPromptContextCore", targets: ["RepoPromptContextCore"])
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-log.git", exact: "1.6.3"),
@@ -16,6 +18,8 @@ let package = Package(
         .package(url: "https://github.com/SwiftyJSON/SwiftyJSON", exact: "5.0.2"),
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", exact: "2.8.0"),
         .package(url: "https://github.com/apple/swift-system.git", exact: "1.6.4"),
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "4.0.0"),
+        .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.21.0"),
         .package(url: "https://github.com/provencher/swift-sdk.git", revision: "85dec2fc7a27252bc33dc7728be6af6b3bd398c0"),
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter.git", exact: "0.8.0"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-c", revision: "3efee11f784605d44623d7dadd6cd12a0f73ea92"),
@@ -44,6 +48,7 @@ let package = Package(
             name: "RepoPrompt",
             dependencies: [
                 "RepoPromptShared",
+                "RepoPromptContextCore",
                 "RepoPromptC", "CSwiftPCRE2", "TreeSitterScannerSupport",
                 "Sparkle",
                 .product(name: "Logging", package: "swift-log"),
@@ -91,7 +96,54 @@ let package = Package(
             path: "Sources/RepoPromptMCP",
             swiftSettings: [.define("DEBUG", .when(configuration: .debug))]
         ),
-        .target(name: "RepoPromptShared", path: "Sources/RepoPromptShared"),
+        .executableTarget(
+            name: "RepoPromptHeadlessServer",
+            dependencies: [
+                "RepoPromptContextCore",
+                "RepoPromptShared",
+                .product(name: "Logging", package: "swift-log"),
+                .product(name: "MCP", package: "swift-sdk"),
+                .product(name: "AsyncHTTPClient", package: "async-http-client"),
+                .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
+                .product(name: "SystemPackage", package: "swift-system")
+            ],
+            path: "Sources/RepoPromptHeadlessServer",
+            exclude: ["README.md", "Scripts", "Examples"],
+            swiftSettings: [.define("DEBUG", .when(configuration: .debug))]
+        ),
+        .target(
+            name: "RepoPromptContextCore",
+            dependencies: [
+                "RepoPromptC", "CSwiftPCRE2", "TreeSitterScannerSupport",
+                .product(name: "Logging", package: "swift-log"),
+                .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
+                .product(name: "TreeSitterC", package: "tree-sitter-c"),
+                .product(name: "TreeSitterDart", package: "tree-sitter-dart"),
+                .product(name: "TreeSitterGo", package: "tree-sitter-go"),
+                .product(name: "TreeSitterJava", package: "tree-sitter-java"),
+                .product(name: "TreeSitterJavaScript", package: "tree-sitter-javascript"),
+                .product(name: "TreeSitterPython", package: "tree-sitter-python"),
+                .product(name: "TreeSitterRust", package: "tree-sitter-rust"),
+                .product(name: "TreeSitterTypeScript", package: "tree-sitter-typescript"),
+                .product(name: "TreeSitterRuby", package: "tree-sitter-ruby"),
+                .product(name: "TreeSitterSwift", package: "tree-sitter-swift"),
+                .product(name: "TreeSitterCSharp", package: "tree-sitter-c-sharp"),
+                .product(name: "TreeSitterCPP", package: "tree-sitter-cpp"),
+                .product(name: "TreeSitterPHP", package: "tree-sitter-php"),
+                .product(name: "UniversalCharsetDetection", package: "UniversalCharsetDetection"),
+                .product(name: "Cuchardet", package: "UniversalCharsetDetection"),
+                .product(name: "Crypto", package: "swift-crypto", condition: .when(platforms: [.linux]))
+            ],
+            path: "Sources/RepoPromptContextCore",
+            swiftSettings: [.define("DEBUG", .when(configuration: .debug))]
+        ),
+        .target(
+            name: "RepoPromptShared",
+            dependencies: [
+                .product(name: "Crypto", package: "swift-crypto", condition: .when(platforms: [.linux]))
+            ],
+            path: "Sources/RepoPromptShared"
+        ),
         .target(name: "CSwiftPCRE2", path: "Sources/CSwiftPCRE2", exclude: ["deps/sljit/sljit_src/sljitNativeARM_64.c", "deps/sljit/sljit_src/sljitSerialize.c", "deps/sljit/sljit_src/sljitUtils.c", "deps/sljit/sljit_src/sljitNativeX86_common.c", "deps/sljit/sljit_src/sljitNativeX86_64.c", "deps/sljit/sljit_src/sljitNativeX86_32.c", "deps/sljit/sljit_src/allocator_src/sljitWXExecAllocatorPosix.c", "deps/sljit/sljit_src/allocator_src/sljitProtExecAllocatorPosix.c", "deps/sljit/sljit_src/allocator_src/sljitExecAllocatorPosix.c", "deps/sljit/sljit_src/allocator_src/sljitExecAllocatorCore.c", "deps/sljit/sljit_src/allocator_src/sljitExecAllocatorApple.c"], publicHeadersPath: "include", cSettings: [.headerSearchPath("include"), .headerSearchPath("src"), .define("PCRE2_CODE_UNIT_WIDTH", to: "8"), .define("HAVE_CONFIG_H")]),
         .target(name: "RepoPromptC", path: "Sources/RepoPromptC", publicHeadersPath: "include", cSettings: [.headerSearchPath("include")]),
         // Exact-snapshot scanner ABI fallback for upstream JavaScript/Python products.
@@ -100,7 +152,7 @@ let package = Package(
         .binaryTarget(name: "Sparkle", path: "Vendor/Sparkle/Sparkle.xcframework"),
         .testTarget(
             name: "RepoPromptTests",
-            dependencies: ["RepoPrompt", "RepoPromptMCP", "RepoPromptShared"],
+            dependencies: ["RepoPrompt", "RepoPromptContextCore", "RepoPromptMCP", "RepoPromptShared"],
             path: "Tests/RepoPromptTests",
             resources: [
                 .copy("CodeMap/Fixtures"),

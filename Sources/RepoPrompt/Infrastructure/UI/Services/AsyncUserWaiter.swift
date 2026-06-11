@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// A generic helper for "wait for user input with optional timeout" patterns.
 /// Used by both question and instruction flows.

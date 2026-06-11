@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 // SEARCH-HELPER: model_id, compound identifier, agent+model, one-shot start, stable ID
 // Related:

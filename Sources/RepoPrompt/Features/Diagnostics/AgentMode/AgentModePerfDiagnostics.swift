@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 #if DEBUG
     import os

@@ -23,6 +23,7 @@ import Foundation
  * - includeEscapingRules: if true, mention how to escape quotes and backslashes
  */
 import Foundation
+import RepoPromptContextCore
 
 /**
  * The PromptConfig describes which actions and features are allowed, plus relevant parameters.

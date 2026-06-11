@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import RepoPromptContextCore
 
 /// Caches pre-highlighted code blocks as attributed strings.
 /// - Uses NSCache for automatic eviction.

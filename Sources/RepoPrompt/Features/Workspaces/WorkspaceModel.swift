@@ -1,5 +1,6 @@
 import Foundation
 import OSLog
+import RepoPromptContextCore
 
 struct WorkspaceRootSetKey: Hashable {
     let normalizedPaths: [String]
@@ -142,25 +143,6 @@ struct WorkspacePreset: Codable, Identifiable, Equatable {
         case expandedFolders
         case selectedPromptIDs
         case lastUpdated
-    }
-}
-
-struct StoredSelection: Codable, Equatable {
-    let selectedPaths: [String]
-    let autoCodemapPaths: [String]
-    let slices: [String: [LineRange]]
-    let codemapAutoEnabled: Bool
-
-    init(
-        selectedPaths: [String] = [],
-        autoCodemapPaths: [String] = [],
-        slices: [String: [LineRange]] = [:],
-        codemapAutoEnabled: Bool = true
-    ) {
-        self.selectedPaths = selectedPaths
-        self.autoCodemapPaths = autoCodemapPaths
-        self.slices = slices
-        self.codemapAutoEnabled = codemapAutoEnabled
     }
 }
 

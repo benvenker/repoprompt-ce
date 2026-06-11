@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 public enum GitDiffTarget: Codable, Sendable, Equatable, Hashable {
     case uncommitted(base: String)

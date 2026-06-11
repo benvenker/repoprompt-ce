@@ -76,6 +76,7 @@ Update the `User` struct in `Models/User.swift` to add a new property and update
 	<content>
 ```
 import Foundation
+import RepoPromptContextCore
 
 struct User {
 	let id: UUID

@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import KeyboardShortcuts
+import RepoPromptContextCore
 
 @MainActor
 final class GlobalKeyboardShortcutsCoordinator {

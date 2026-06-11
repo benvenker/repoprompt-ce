@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 extension GitInclusion {
     static func fromMCPScope(_ raw: String?) -> GitInclusion? {

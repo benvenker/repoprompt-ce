@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 private struct BenchmarkNoiseConfig {
     let lineCount: Int

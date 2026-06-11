@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import RepoPromptContextCore
 
 /// Retained ownership of one well-known UNIX-domain socket pathname.
 /// The same-directory lock descriptor remains held for the listener lifetime.

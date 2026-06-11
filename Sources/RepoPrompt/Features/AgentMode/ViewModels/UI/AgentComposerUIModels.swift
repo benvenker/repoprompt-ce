@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct AgentDraftRestorationProps: Equatable {
     let id: UUID

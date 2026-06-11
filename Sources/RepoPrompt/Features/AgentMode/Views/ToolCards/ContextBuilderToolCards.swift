@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct ContextBuilderCallCard: View {
     let item: AgentChatItem

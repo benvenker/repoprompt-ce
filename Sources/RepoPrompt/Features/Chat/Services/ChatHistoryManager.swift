@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import RepoPromptContextCore
 
 /// Error definitions analogous to ChatSessionError:
 enum ChatDataError: Error {

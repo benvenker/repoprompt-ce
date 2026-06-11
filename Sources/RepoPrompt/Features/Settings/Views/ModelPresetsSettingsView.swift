@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct ModelPresetsSettingsView: View {
     @ObservedObject var promptViewModel: PromptViewModel

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Marker protocol for services that are tied to a specific `WindowState`.
 /// The router uses `windowID` to decide whether the service should receive

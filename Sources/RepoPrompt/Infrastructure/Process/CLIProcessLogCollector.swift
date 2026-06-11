@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum CLIProcessLogCollectorError: Error {
     case noEntries

@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 /// Ultra-lightweight, non-expandable summary card for a group of compressed tool/thinking items.
 /// Shows tool count with categorized tool type chips in a single compact row.

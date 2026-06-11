@@ -12,6 +12,7 @@ import Logging
 import OSLog
 import RepoPromptShared
 import SwiftUI
+import RepoPromptContextCore
 
 #if DEBUG
     private var serverControllerDebugLoggingEnabled = false

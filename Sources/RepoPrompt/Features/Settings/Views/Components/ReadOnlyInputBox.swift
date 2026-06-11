@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct ReadOnlyInputBox: View {
     let text: String

@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 /// Unified settings surface that hosts both Copy and Chat preset management under
 /// a single "Workflow Presets" tab. A scope picker toggles between Copy and Chat

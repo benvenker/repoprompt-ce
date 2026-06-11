@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct SettingsChatPresetPickerPopover<Preview: View>: View {
     let allPresets: [ChatPreset]

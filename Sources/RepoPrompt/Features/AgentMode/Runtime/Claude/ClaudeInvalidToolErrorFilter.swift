@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 // SEARCH-HELPER: Claude, ToolUseError, NoSuchTool, InvalidTool, TranscriptFilter
 /// Detects Claude Code `tool_use_error` results that report an unknown tool name.

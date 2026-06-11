@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 public enum CodexReasoningEffort: String, CaseIterable, Codable, Sendable {
     case none

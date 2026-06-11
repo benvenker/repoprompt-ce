@@ -25,7 +25,8 @@ print_matches() {
 required_dirs=(
   "Sources/RepoPrompt/Features"
   "Sources/RepoPrompt/Infrastructure"
-  "Sources/RepoPrompt/Infrastructure/SyntaxParsing"
+  "Sources/RepoPrompt/Infrastructure/SyntaxParsingApp"
+  "Sources/RepoPromptContextCore"
   "Sources/RepoPromptShared/MCP"
   "Tests/RepoPromptTests"
 )

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum CursorAgentToolPreferences {
     enum PermissionLevel: String, CaseIterable {

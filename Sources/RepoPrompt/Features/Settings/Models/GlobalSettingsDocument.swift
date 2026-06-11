@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Versioned JSON document stored at
 /// `~/Library/Application Support/RepoPrompt CE/Settings/globalSettings.json`.

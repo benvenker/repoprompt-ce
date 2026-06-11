@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /**
  * TSXExamples implements CodeExamples for TSX (TypeScript + JSX) specific snippets.

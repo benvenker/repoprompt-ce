@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Persisted file-selection surface for workspace compose-tab state.
 enum FilesTab: String, Codable {

@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 /// Settings-native management surface for Agent Mode workflow prompts.
 ///

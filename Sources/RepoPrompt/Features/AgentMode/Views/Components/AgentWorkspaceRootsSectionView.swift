@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 /// Always-visible workspace roots section for Agent Mode sidebar.
 /// One cohesive rounded card with material background containing:

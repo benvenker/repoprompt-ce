@@ -1,5 +1,6 @@
 import Foundation
 import OSLog
+import RepoPromptContextCore
 
 private func acpLeaseLog(_ message: @autoclosure () -> String) {
     guard AgentRuntimeProviderService.enableDebugLogging else { return }

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 // MARK: - Agent Chat Item Types
 

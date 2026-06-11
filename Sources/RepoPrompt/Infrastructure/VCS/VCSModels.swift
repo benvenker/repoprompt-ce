@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 // MARK: - VCS Backend Kind
 

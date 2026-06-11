@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 /// Optimized workspace row that minimizes re-renders
 struct OptimizedWorkspaceRow: View {

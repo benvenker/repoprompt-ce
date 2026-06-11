@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Headless seam for the Claude-compatible plugin path.
 ///

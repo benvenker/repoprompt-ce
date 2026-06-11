@@ -1,5 +1,6 @@
 import Foundation
 import MCP
+import RepoPromptContextCore
 
 // Generic MCP tool-call argument normalization.
 // Handles JSON-string payloads, tool-name wrappers, hidden routing fields, and

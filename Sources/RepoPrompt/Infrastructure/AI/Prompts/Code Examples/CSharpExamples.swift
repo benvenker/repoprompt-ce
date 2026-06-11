@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /**
  * CSharpExamples implements CodeExamples for C#-specific snippets.

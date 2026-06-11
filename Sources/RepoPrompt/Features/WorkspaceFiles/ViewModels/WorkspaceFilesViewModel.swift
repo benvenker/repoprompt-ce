@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import Foundation
 import SwiftUI
+import RepoPromptContextCore
 #if DEBUG || EDIT_FLOW_PERF
     import os
 #endif
@@ -9565,7 +9566,9 @@ class WorkspaceFilesViewModel: ObservableObject {
             allowLiteralUnescapeFallback: allowLiteralUnescapeFallback,
             rootScope: rootScope,
             store: workspaceFileContextStore,
-            workspaceManager: workspaceManager
+            searchReadiness: { [weak workspaceManager] in
+                await MainActor.run { workspaceManager?.workspaceSearchReadinessState }
+            }
         )
     }
 }
@@ -11150,30 +11153,6 @@ extension WorkspaceFilesViewModel {
             } catch {
                 continue
             }
-        }
-    }
-}
-
-enum FileManagerError: Error, LocalizedError {
-    case failedToLoadFolder(Error)
-    case failedToLoadFile(Error)
-    case fileSystemServiceNotFound
-    case failedToLoadContent
-    // New: richer, contextual variant used by MCP tools and FS ops
-    case fileSystemServiceNotFoundWithContext(String)
-
-    var errorDescription: String? {
-        switch self {
-        case let .failedToLoadFolder(err):
-            "Failed to load folder: \(err.localizedDescription)"
-        case let .failedToLoadFile(err):
-            "Failed to load file: \(err.localizedDescription)"
-        case .fileSystemServiceNotFound:
-            "No matching workspace folder for the requested path."
-        case .failedToLoadContent:
-            "Failed to load content."
-        case let .fileSystemServiceNotFoundWithContext(context):
-            context
         }
     }
 }

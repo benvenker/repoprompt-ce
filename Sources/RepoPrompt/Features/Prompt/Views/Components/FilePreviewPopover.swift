@@ -1,5 +1,6 @@
 import SwiftTreeSitter
 import SwiftUI
+import RepoPromptContextCore
 
 struct FilePreviewPopover: View {
     let file: FileViewModel

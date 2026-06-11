@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct SettingsButton<Content: View>: View {
     @Binding var showPopover: Bool

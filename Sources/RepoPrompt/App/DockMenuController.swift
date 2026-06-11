@@ -1,4 +1,5 @@
 import AppKit
+import RepoPromptContextCore
 
 @MainActor
 final class DockMenuController: NSObject {

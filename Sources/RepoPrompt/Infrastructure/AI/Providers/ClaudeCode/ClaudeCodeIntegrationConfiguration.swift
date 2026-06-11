@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import RepoPromptContextCore
 
 /// Claude-specific integration configuration helpers.
 ///

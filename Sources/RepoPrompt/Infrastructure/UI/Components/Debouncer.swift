@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /// Coalesces delayed work items so only the latest runs, unless explicitly canceled.
 final class WorkItemGate {

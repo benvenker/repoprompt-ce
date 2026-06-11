@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Advertisement-only tool filtering for MCP-started agent runs based on task label role.
 ///

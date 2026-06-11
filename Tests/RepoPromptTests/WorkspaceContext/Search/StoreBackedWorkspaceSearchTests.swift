@@ -1,4 +1,5 @@
 @testable import RepoPrompt
+@testable import RepoPromptContextCore
 import XCTest
 
 final class StoreBackedWorkspaceSearchTests: XCTestCase {
@@ -432,7 +433,7 @@ final class StoreBackedWorkspaceSearchTests: XCTestCase {
                 maxMatches: 25,
                 rootScope: .visibleWorkspace,
                 store: store,
-                workspaceManager: nil
+                searchReadiness: nil
             )
             let expected = (0 ..< 25).map {
                 root.appendingPathComponent(String(format: "File-%03d.swift", $0)).path
@@ -715,7 +716,7 @@ final class StoreBackedWorkspaceSearchTests: XCTestCase {
                     mode: .content,
                     rootScope: scope,
                     store: store,
-                    workspaceManager: nil
+                    searchReadiness: nil
                 )
                 XCTFail("Expected unavailable session worktree error")
             } catch let error as StoreBackedWorkspaceSearchError {
@@ -756,7 +757,7 @@ final class StoreBackedWorkspaceSearchTests: XCTestCase {
                     mode: .content,
                     rootScope: scope,
                     store: store,
-                    workspaceManager: nil
+                    searchReadiness: nil
                 )
             }
             await assertAsyncTrue(waitForAdmissionWaiterCount(1, store: store))
@@ -805,7 +806,7 @@ final class StoreBackedWorkspaceSearchTests: XCTestCase {
             paths: paths,
             rootScope: .visibleWorkspace,
             store: store,
-            workspaceManager: nil
+            searchReadiness: nil
         )
     }
 
@@ -821,7 +822,7 @@ final class StoreBackedWorkspaceSearchTests: XCTestCase {
             maxPaths: 100,
             rootScope: .visibleWorkspace,
             store: store,
-            workspaceManager: nil
+            searchReadiness: nil
         )
     }
 
@@ -843,7 +844,7 @@ final class StoreBackedWorkspaceSearchTests: XCTestCase {
             countOnly: countOnly,
             rootScope: .visibleWorkspace,
             store: store,
-            workspaceManager: nil
+            searchReadiness: nil
         )
     }
 

@@ -5,6 +5,7 @@
 
 import AppKit
 import SwiftUI
+import RepoPromptContextCore
 
 /// A single bell-shaped toolbar item that aggregates dismissible docs/tutorial notifications.
 @MainActor

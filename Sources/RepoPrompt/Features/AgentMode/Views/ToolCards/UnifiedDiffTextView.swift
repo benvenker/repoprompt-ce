@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import RepoPromptContextCore
 
 private final class EdgeForwardingScrollView: NSScrollView {
     private let edgeTolerance: CGFloat = 0.5

@@ -1,4 +1,5 @@
 @testable import RepoPrompt
+@testable import RepoPromptContextCore
 import XCTest
 
 /// Unit tests for the Item 8 worktree merge attention surfaces shared by the

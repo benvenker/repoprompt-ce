@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import RepoPromptContextCore
 
 /// Separate diagnostic logger for deadlock debugging (independent of config.enableDebugLogging)
 enum ProcessDiagnostics {

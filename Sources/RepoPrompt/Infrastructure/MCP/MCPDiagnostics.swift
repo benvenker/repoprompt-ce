@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum MCPTransportTerminalCause: String, Equatable {
     case receiveBufferOverflow = "receive_buffer_overflow"

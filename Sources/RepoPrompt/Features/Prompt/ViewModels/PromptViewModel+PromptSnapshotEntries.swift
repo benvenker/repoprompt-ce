@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 extension PromptViewModel {
     @MainActor

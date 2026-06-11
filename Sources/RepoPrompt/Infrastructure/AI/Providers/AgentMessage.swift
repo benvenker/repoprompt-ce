@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /// A minimal message for headless agent providers.
 /// Contains just the system prompt channel and user message channel.

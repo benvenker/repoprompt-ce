@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import RepoPromptContextCore
 
 struct AgentTranscriptScrollRuntimeState {
     let armingState: AgentModeViewModel.AgentTranscriptAutoFollowArmingState

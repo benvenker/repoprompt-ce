@@ -8,6 +8,7 @@
 import AppKit
 import Markdown
 import SwiftUI
+import RepoPromptContextCore
 
 // MARK: - Enhanced Text Rendering
 

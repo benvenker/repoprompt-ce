@@ -10,6 +10,7 @@
 
 import AppKit
 import Foundation
+import RepoPromptContextCore
 
 /// Centralised, lightweight regex-based syntax highlighter.
 /// The rules are **language-agnostic** and cover the 80 % case for most

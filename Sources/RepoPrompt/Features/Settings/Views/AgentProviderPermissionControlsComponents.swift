@@ -11,6 +11,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 struct AgentProviderPermissionLevelSection: View {
     let binding: AgentPermissionChromeBinding

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct ClaudeModelSpecifier: Equatable {
     let baseModel: String?

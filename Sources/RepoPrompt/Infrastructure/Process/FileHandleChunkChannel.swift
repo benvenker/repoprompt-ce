@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 // SEARCH-HELPER: FileHandleChunkChannel, AsyncStream, chunk ordering, readabilityHandler, backpressure
 /// Provides an ordered, single-consumer async stream of `Data` chunks from a `FileHandle`.

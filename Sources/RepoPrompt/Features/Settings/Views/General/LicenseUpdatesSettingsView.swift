@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct LicenseUpdatesSettingsView: View {
     @ObservedObject var windowState: WindowState

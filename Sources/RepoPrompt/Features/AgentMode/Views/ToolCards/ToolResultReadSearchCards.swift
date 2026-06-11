@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import RepoPromptContextCore
 
 struct ReadFileResultCard: View {
     let item: AgentChatItem

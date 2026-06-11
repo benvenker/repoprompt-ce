@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// A log entry for agent interactions (tool calls, messages, thinking, etc.)
 public struct AgentLogEntry: Identifiable, Sendable, Hashable {

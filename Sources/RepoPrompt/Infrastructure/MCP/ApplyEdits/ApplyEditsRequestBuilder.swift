@@ -1,6 +1,7 @@
 import Foundation
 import Logging
 import MCP
+import RepoPromptContextCore
 
 struct ApplyEditsRequestBuilder {
     func build(from args: [String: Value]) throws -> ApplyEditsRequest {

@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import RepoPromptContextCore
 
 /// CGColor helper matching `NSColor.hoverOutlineColor` but returned
 /// directly as a Core Graphics colour so callers can assign it straight

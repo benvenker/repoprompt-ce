@@ -9,6 +9,7 @@ import Ontology
 import OSLog
 import RepoPromptShared
 import SwiftUI
+import RepoPromptContextCore
 
 #if DEBUG
     import CryptoKit

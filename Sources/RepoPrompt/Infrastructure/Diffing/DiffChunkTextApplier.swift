@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum DiffChunkTextApplier {
     static func apply(chunks: [DiffChunk], to originalText: String) throws -> String {

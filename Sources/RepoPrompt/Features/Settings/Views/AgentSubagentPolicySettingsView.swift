@@ -19,6 +19,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 /// Sub-agent sandbox override policy pane. Applies when another agent launches a
 /// sub-agent through MCP.

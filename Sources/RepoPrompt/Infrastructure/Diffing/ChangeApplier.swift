@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 actor ChangeApplier {
     private var manager: ChangeManager

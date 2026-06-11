@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct WorkspaceLandingView: View {
     enum LayoutStyle {

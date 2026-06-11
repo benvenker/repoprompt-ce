@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 // MARK: - Auto Edit Pill
 

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 // SEARCH-HELPER: Sub-agent Permissions, Safe Managed, AgentSubagentPermissionPolicy,
 // tri-state policy, provider permission levels

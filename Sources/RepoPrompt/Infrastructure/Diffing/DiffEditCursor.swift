@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Lightweight utility that remembers, _per distinct processed search block_,
 /// the next line from which a subsequent match should start.

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import RepoPromptContextCore
 
 /// Manager for chat presets - handles both built-in and user-defined chat presets
 @MainActor

@@ -1,5 +1,6 @@
 import Foundation
 import OSLog
+import RepoPromptContextCore
 
 /// Global gate to serialize headless agent connections and prevent racing.
 /// This ensures that only one headless agent (discovery, delegate-edit, or future types)

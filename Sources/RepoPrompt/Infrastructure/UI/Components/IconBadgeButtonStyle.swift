@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 /// A minimal button style intended for toolbar icon buttons that display an
 /// overlay badge.

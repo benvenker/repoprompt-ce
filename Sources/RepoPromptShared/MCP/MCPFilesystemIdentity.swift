@@ -1,5 +1,10 @@
-import Darwin
 import Foundation
+
+#if canImport(Darwin)
+    import Darwin
+#elseif canImport(Glibc)
+    import Glibc
+#endif
 
 /// Shared filesystem and stable-name authority for RepoPrompt MCP products.
 ///

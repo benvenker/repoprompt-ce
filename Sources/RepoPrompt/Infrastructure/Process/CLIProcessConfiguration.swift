@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct CLIProcessConfiguration {
     var command: String

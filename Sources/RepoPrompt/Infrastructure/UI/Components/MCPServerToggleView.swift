@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import SwiftUI
+import RepoPromptContextCore
 
 private struct MCPToolbarVisualState: Equatable {
     enum Kind: Equatable {

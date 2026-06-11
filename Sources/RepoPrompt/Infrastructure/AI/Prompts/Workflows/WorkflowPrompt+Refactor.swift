@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 extension RepoPromptWorkflowPrompts {
 	// MARK: - Refactor

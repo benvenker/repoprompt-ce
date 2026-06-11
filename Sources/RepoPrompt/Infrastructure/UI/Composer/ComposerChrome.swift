@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 // MARK: - Composer Chrome
 

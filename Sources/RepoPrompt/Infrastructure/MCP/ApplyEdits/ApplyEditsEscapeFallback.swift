@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct ApplyEditsEscapeFallback {
     private let decoder: EscapeDecoder

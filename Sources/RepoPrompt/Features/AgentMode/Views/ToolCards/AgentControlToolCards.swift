@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct AgentRunCardPresentation: Equatable {
     let sessionID: UUID?

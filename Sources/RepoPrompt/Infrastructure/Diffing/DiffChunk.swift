@@ -64,6 +64,7 @@ struct DiffChunk: Equatable {
 }
 
 import Foundation
+import RepoPromptContextCore
 
 struct DiffLine: Equatable {
     enum LineType: Equatable {

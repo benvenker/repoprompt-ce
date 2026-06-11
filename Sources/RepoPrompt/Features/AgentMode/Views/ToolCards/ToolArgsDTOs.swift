@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum ToolArgsDTOs {
     struct ReadFileArgs: Decodable {

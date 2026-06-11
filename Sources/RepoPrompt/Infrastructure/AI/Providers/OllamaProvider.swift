@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 final class OllamaProvider: OpenAIProvider {
     init(baseURL: URL) {

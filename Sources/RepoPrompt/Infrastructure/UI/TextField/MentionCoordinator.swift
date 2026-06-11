@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import RepoPromptContextCore
 
 @MainActor
 final class MentionCoordinator: MentionTextViewDelegate {

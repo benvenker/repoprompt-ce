@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 @inline(__always)
 func appendTail(_ buffer: inout Data, chunk: Data, limit: Int) {

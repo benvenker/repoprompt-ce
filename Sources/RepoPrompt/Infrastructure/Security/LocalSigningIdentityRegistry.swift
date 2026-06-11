@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import RepoPromptContextCore
 
 struct LocalSigningIdentityRecord: Codable, Equatable {
     static let currentSchemaVersion = 1

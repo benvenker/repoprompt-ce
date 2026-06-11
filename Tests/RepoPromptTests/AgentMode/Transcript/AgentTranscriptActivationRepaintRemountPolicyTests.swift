@@ -1,4 +1,5 @@
 @testable import RepoPrompt
+@testable import RepoPromptContextCore
 import XCTest
 
 final class AgentTranscriptActivationRepaintRemountPolicyTests: XCTestCase {

@@ -1,6 +1,7 @@
 import Foundation
 import MCP
 import RepoPromptShared
+import RepoPromptContextCore
 
 struct WorktreeMergeReviewScope: Hashable {
     let windowID: Int

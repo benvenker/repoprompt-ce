@@ -2,6 +2,7 @@ import Foundation
 import JSONSchema
 import MCP
 @testable import RepoPrompt
+@testable import RepoPromptContextCore
 import RepoPromptShared
 import XCTest
 

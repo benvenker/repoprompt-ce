@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Lock-backed lifecycle state for one-shot ACP headless providers.
 ///

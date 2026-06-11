@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct AgentSessionSidebarSnapshot: Equatable {
     var searchText: String

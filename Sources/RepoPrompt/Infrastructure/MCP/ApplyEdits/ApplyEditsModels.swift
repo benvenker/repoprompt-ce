@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum ApplyEditsMode: Equatable {
     case rewrite(newText: String, onMissing: OnMissing)

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 public enum GitDiffCompareSpec: Sendable, Equatable, Codable {
     case uncommitted(base: String)

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Stable internal namespace for window-scoped MCP tool names.
 enum MCPWindowToolName {

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftOpenAI
+import RepoPromptContextCore
 
 /// A single conversation entry
 struct ConversationEntry {

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 struct ChatSettingsView: View {
     @ObservedObject var promptViewModel: PromptViewModel

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 actor AgentRunSessionStore {
     static let shared = AgentRunSessionStore()

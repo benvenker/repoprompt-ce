@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct AgentWorkspaceLookupContextSource: Equatable {
     let activeAgentSessionID: UUID?

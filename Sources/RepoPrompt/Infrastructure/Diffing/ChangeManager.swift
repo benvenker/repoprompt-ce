@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 class ChangeManager {
     private var fileContent: [String]

@@ -1,5 +1,6 @@
 import Combine
 import SwiftUI
+import RepoPromptContextCore
 
 struct AgentExportCard: View {
     @ObservedObject var promptManager: PromptViewModel

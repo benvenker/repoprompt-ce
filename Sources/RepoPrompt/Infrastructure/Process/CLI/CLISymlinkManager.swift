@@ -2,6 +2,7 @@ import Darwin
 import Foundation
 import OSLog
 import RepoPromptShared
+import RepoPromptContextCore
 
 /// Maintains the flavor-specific CE user-space link. The link is repaired only
 /// when its existing destination is on the explicit CE managed allowlist.

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum CLIOutputFormat: String {
     case text

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Structured helper for async setup/teardown pairs.
 /// Mirrors the semantics of `TaskSemaphore.withPermit`, but allows callers

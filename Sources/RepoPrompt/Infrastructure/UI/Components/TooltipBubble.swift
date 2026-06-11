@@ -10,6 +10,7 @@
 import AppKit // ← access FontScalePreset.current
 import Foundation
 import SwiftUI
+import RepoPromptContextCore
 
 // ──────────────────────────────────
 // MARK: - Bubble

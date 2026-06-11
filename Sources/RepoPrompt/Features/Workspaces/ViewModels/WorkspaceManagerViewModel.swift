@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import os
 import SwiftUI
+import RepoPromptContextCore
 
 /// Free helper function not tied to any actor
 private func defaultWorkspaceRoot() -> URL {

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Shared context describing how a CLI-based provider is being launched.
 /// Provider-specific integration configuration uses this to choose native tool

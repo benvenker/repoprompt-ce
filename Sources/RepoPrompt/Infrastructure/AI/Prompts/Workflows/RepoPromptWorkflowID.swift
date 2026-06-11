@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum RepoPromptWorkflowID: String, CaseIterable {
     case build

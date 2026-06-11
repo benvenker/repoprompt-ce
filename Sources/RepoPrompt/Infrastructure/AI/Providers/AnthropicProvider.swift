@@ -1,5 +1,6 @@
 import Foundation
 import SwiftAnthropic
+import RepoPromptContextCore
 
 class AnthropicProvider: AIProvider {
     private let service: AnthropicService

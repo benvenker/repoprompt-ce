@@ -1,4 +1,5 @@
 import MCP
+import RepoPromptContextCore
 
 /// Connection-specific MCP tool metadata adjustments for Codex compatibility.
 ///

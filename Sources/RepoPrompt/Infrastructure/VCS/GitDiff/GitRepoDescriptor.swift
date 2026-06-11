@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import RepoPromptContextCore
 
 /// Describes a git repository root for multi-root workspace operations.
 /// Used to identify, namespace, and display repo roots consistently.

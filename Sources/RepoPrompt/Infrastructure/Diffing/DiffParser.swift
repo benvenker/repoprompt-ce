@@ -2,6 +2,7 @@
 
 import Foundation
 import SwiftUI
+import RepoPromptContextCore
 
 /// Central on/off switch for every debug print in the diff-parser stack.
 enum DebugFlags { static var parser = false }

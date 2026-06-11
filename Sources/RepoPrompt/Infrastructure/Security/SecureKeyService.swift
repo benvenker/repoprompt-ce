@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 protocol SecurePlainStringStoring {
     var persistsValuesAcrossLaunches: Bool { get }

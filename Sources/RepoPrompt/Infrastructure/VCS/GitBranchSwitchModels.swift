@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 // MARK: - Git Branch Switch Models
 

@@ -3,6 +3,7 @@ import JSONSchema
 import MCP
 import Ontology
 import RepoPromptShared
+import RepoPromptContextCore
 
 @MainActor
 final class MCPApplyEditsToolProvider: MCPWindowToolProviding {

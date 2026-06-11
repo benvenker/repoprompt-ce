@@ -1,6 +1,7 @@
 import Darwin
 import Foundation
 import RepoPromptShared
+import RepoPromptContextCore
 
 /// Shared ownership classifier for CE-managed CLI links and wrapper scripts.
 /// Missing and dangling symlinks are inspected with lstat/readlink rather than

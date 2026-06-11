@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct BenchmarkTaskSummary: Codable, Identifiable {
     let id: String

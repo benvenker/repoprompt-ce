@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 actor GitDiffSnapshotPublisher {
     static let shared = GitDiffSnapshotPublisher()

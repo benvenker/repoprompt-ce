@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct ChatPresetsSettingsView: View {
     @ObservedObject var promptViewModel: PromptViewModel

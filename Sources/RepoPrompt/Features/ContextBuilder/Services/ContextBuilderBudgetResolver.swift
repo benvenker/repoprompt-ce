@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Centralizes context builder budget selection so UI and MCP paths resolve
 /// clarify/omitted runs and follow-up-generation runs consistently.

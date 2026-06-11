@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 extension RepoPromptWorkflowPrompts {
 	static let rpReminder = rpReminder(variant: .mcp)

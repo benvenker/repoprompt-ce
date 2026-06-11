@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 final class GeminiProvider: OpenAIProvider {
     init(apiKey: String) {

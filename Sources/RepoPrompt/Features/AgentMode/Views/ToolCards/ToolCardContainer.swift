@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 /// Shared time formatter for tool cards — avoids repeated DateFormatter allocations.
 private let toolCardTimeFormatter: DateFormatter = {

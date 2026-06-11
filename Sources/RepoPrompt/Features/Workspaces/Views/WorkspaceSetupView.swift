@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 struct WorkspaceSetupView: View {
     @EnvironmentObject var workspaceManager: WorkspaceManagerViewModel

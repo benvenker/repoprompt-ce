@@ -2,6 +2,7 @@ import Foundation
 import MCP
 import Ontology
 @testable import RepoPrompt
+@testable import RepoPromptContextCore
 import RepoPromptShared
 import XCTest
 

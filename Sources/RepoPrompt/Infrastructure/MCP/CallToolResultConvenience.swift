@@ -1,4 +1,5 @@
 import MCP
+import RepoPromptContextCore
 
 /// Convenience helpers for building success or error replies from any tool.
 extension CallTool.Result {

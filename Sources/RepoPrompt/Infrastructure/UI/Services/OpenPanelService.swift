@@ -1,5 +1,6 @@
 import AppKit
 import UniformTypeIdentifiers
+import RepoPromptContextCore
 
 @MainActor
 final class OpenPanelService {

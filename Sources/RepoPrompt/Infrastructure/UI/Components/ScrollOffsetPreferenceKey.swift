@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 struct ScrollOffsetPreferenceKey: PreferenceKey {
     static var defaultValue: CGPoint = .zero

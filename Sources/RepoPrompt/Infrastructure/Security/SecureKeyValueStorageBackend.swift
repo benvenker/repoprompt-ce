@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 protocol SecureKeyValueStorageBackend: AnyObject, Sendable {
     var persistsValuesAcrossLaunches: Bool { get }

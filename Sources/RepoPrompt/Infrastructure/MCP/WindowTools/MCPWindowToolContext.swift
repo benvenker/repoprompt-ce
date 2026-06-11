@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Narrow per-call context handed to extracted window-tool providers.
 struct MCPWindowToolContext {

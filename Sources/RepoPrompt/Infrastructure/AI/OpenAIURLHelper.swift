@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 // SEARCH-HELPER: OpenAI Base URL, Custom Base URL, URL Normalization
 enum OpenAIURLHelper {

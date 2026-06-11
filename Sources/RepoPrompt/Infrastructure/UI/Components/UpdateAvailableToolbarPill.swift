@@ -1,5 +1,6 @@
 import Combine
 import SwiftUI
+import RepoPromptContextCore
 
 private enum UpdateAvailableToolbarSnapshot: Equatable {
     case hidden

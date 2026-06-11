@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import RepoPromptContextCore
 
 /// Type of entity referenced by a mention: either a file or a folder.
 public enum MentionKind: String, Codable {

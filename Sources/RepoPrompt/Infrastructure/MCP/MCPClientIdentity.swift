@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum MCPClientIdentity {
     private static let separatorCharacters = CharacterSet(charactersIn: " -_./")

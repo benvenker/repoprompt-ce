@@ -8,6 +8,7 @@
 import AppKit
 import Markdown
 import SwiftUI
+import RepoPromptContextCore
 
 // MARK: - Token Usage Indicator
 

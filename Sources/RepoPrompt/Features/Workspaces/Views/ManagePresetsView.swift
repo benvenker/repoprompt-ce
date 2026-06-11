@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 struct HoverButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {

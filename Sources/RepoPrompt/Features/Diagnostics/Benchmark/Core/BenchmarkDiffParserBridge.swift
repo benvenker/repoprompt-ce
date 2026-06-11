@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 final class BenchmarkWorkspaceFilesViewModel: WorkspaceFilesViewModel {
     private let baseline: BenchmarkMockFileSystemSnapshot

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 struct SystemSettingsView: View {
     // MARK: - Appearance Options

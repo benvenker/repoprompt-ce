@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 struct PromptOrderSettingsView: View {
     // MARK: - Dependencies

@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import RepoPromptContextCore
 
 enum AgentConversationReplayMode: String, Equatable {
     case equivalent

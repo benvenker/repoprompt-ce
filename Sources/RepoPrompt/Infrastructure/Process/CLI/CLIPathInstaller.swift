@@ -10,6 +10,7 @@
 import Foundation
 import OSLog
 import RepoPromptShared
+import RepoPromptContextCore
 
 enum CLIPathInstaller {
     private static let logger = Logger(subsystem: "CLI.PathInstaller", category: "install")

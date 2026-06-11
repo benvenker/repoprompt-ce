@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Types of decoys we can produce.
 /// - identicalCoreVariantHalo: core lines are identical to target; surrounding lines differ

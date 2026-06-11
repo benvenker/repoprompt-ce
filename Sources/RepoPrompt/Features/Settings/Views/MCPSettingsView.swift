@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import RepoPromptContextCore
 
 struct MCPSettingsView: View {
     @ObservedObject var vm: MCPServerViewModel

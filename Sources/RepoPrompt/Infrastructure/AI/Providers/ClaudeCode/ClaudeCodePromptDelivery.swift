@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Core facade for Claude-compatible prompt packaging. The pure packaging rules
 /// live in the provider package; settings/defaults stay in core.

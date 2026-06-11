@@ -5,6 +5,7 @@
 //  Created by Eric Provencher on 2025-03-08.
 //
 import Foundation
+import RepoPromptContextCore
 
 /// Notification for missing bookmarks
 extension Notification.Name {

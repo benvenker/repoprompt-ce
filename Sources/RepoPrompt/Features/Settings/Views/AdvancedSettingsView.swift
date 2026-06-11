@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 /// Slimmed Advanced Settings page. Controls are grouped into two sections
 /// ("File System" and "AI Behavior") for progressive-disclosure-friendly

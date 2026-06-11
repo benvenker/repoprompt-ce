@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 /// A full-screen takeover overlay for workspace operation approval requests.
 /// Presents a modern, polished UI that blocks interaction until the user responds.

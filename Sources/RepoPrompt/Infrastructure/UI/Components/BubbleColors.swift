@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import RepoPromptContextCore
 
 // MARK: - Adaptive Color Functions for Chat Bubbles
 

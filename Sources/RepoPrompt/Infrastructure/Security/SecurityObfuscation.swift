@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 enum SecurityObfuscation {
     static let key: UInt8 = 0x5A

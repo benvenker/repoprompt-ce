@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Progress updates emitted while running the benchmark engine.
 /// Designed to mirror the Context Builder's progress UI with coarse-grained stages.

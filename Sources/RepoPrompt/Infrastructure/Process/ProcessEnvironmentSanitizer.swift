@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Shared process-environment sanitization for child process launches.
 ///

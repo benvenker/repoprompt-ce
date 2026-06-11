@@ -1,5 +1,6 @@
 import Foundation
 import MCP
+import RepoPromptContextCore
 #if canImport(Darwin)
     import Darwin
 #endif

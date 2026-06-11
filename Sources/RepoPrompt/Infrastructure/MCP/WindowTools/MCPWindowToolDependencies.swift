@@ -1,5 +1,6 @@
 import Foundation
 import MCP
+import RepoPromptContextCore
 
 /// Constructor-time dependency bundle for extracted window-tool providers.
 ///

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Variant for tool invocation examples in prompts.
 enum WorkflowPromptVariant {

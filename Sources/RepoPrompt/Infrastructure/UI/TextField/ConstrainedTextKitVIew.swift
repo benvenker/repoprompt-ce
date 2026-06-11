@@ -7,6 +7,7 @@
 
 import AppKit
 import SwiftUI
+import RepoPromptContextCore
 
 /// Suppresses vertical scrolling while still allowing horizontal scrolling.
 private final class NoVerticalScrollView: NSScrollView {

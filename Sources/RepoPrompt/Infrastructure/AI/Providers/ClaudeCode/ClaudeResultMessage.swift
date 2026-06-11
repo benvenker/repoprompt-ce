@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct ClaudeResultMessage: Codable {
     let type: String

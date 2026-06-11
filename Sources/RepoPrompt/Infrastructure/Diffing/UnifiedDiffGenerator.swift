@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /// Generates standard unified diff format from file changes
 enum UnifiedDiffGenerator {

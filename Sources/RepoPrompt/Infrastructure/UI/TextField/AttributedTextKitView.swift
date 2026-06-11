@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import SwiftUI
+import RepoPromptContextCore
 
 /// A drop-in replacement for `TextKitView` that supports "@" mentions.
 struct AttributedTextKitView: NSViewRepresentable {

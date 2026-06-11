@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 actor BenchmarkRunStore {
     static let shared = BenchmarkRunStore()

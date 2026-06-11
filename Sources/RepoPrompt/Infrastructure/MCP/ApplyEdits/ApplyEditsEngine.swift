@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct ApplyEditsEngine {
     let diffEngine: DiffChunkGenerator

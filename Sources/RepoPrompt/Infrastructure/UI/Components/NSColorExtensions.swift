@@ -1,4 +1,5 @@
 import AppKit
+import RepoPromptContextCore
 
 /// Centralised colour for the thin outline that appears when hovering rows in
 /// both the native file tree and the search results tree.

@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct CopyPresetsSettingsView: View {
     @ObservedObject var promptViewModel: PromptViewModel

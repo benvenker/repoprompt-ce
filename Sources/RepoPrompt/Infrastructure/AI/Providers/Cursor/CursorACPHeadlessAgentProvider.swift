@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Headless/discovery adapter for Cursor's ACP runtime.
 ///

@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import RepoPromptContextCore
 
 struct ContinuousMouseTrackingView: NSViewRepresentable {
     let onMouseMove: (NSPoint) -> Void

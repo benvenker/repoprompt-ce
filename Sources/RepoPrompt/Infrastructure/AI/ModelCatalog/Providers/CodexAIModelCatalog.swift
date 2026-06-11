@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct CodexDynamicReasoningRecord: Codable, Hashable {
     let reasoningEffort: String

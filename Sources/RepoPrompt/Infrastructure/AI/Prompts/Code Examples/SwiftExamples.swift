@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /**
  * SwiftExamples implements CodeExamples for Swift-specific snippets.

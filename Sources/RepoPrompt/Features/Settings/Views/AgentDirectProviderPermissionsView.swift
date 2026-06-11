@@ -20,6 +20,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 /// Direct/top-level CLI provider permissions pane. This does **not** control MCP tool
 /// ACLs (see MCP Tools) or RepoPrompt workspace operation approvals (see Workspace

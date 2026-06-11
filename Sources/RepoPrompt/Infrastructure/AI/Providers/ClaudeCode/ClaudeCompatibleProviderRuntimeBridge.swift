@@ -1,5 +1,6 @@
 import Foundation
 import RepoPromptClaudeCompatibleProvider
+import RepoPromptContextCore
 
 typealias ClaudeCompatiblePluginID = RepoPromptClaudeCompatibleProvider.ClaudeCompatibleProviderPluginID
 typealias ClaudeCompatiblePluginBackendID = RepoPromptClaudeCompatibleProvider.ClaudeCompatibleBackendID

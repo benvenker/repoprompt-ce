@@ -9,6 +9,7 @@ import Combine
 import Foundation
 import KeyboardShortcuts
 import SwiftUI
+import RepoPromptContextCore
 
 struct WindowSessionSnapshot: Codable {
     var version: Int

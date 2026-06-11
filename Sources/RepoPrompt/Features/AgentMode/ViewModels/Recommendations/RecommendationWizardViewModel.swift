@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import RepoPromptContextCore
 
 // MARK: - Wizard Step
 

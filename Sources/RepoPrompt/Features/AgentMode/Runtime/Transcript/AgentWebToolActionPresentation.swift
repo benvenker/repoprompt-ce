@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct AgentWebToolActionInput {
     let rawToolName: String?

@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct CustomProviderSettingsView: View {
     @ObservedObject var viewModel: APISettingsViewModel

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Runtime-only snapshot of the tab/session binding captured when a run attempt begins.
 ///

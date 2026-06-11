@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct CheckboxView: View {
     let isChecked: CheckboxState

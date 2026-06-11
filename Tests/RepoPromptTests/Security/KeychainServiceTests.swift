@@ -1,5 +1,6 @@
 import Foundation
 @testable import RepoPrompt
+@testable import RepoPromptContextCore
 import Security
 import XCTest
 

@@ -7,6 +7,7 @@
 
 import AppKit
 import SwiftUI
+import RepoPromptContextCore
 
 /// Body‑point‑sizes the app supports.
 /// Extend or localise the enum later without touching the rest of the code‑base.

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 public enum AgentImageSource: Codable, Sendable, Equatable {
     case localFile(path: String)

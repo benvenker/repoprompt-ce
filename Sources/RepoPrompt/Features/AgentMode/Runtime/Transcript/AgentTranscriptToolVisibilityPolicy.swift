@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum AgentTranscriptToolVisibilityPolicy {
     private static let placeholderToolNames: Set<String> = ["tool", "other"]

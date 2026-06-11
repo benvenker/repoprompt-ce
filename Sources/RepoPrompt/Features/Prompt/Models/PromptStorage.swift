@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /// <summary>
 /// Represents the external structure used for importing and exporting prompts,

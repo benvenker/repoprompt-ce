@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 enum AgentModelSelectionWarningVisuals {
     static let iconSystemName = "bolt.fill"

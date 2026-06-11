@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 protocol FileSystemItemViewModel: Identifiable, Equatable {
     var id: UUID { get }

@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import SwiftUI
+import RepoPromptContextCore
 
 @MainActor
 final class SettingsWindowModel: ObservableObject {

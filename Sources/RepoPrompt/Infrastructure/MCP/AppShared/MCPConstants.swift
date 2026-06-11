@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Centralised constants used by the MCP layer.
 /// TCP/Bonjour transport has been removed – only the UNIX bootstrap socket is used.

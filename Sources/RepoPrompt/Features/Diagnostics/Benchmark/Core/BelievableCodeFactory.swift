@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Generates deterministic, believable code for TS/Go/Swift using Mulberry32 RNG.
 /// Used by the benchmark generator to replace filler lines and to add decoys.

@@ -7,6 +7,7 @@
 import Foundation
 import SwiftAnthropic
 import SwiftOpenAI
+import RepoPromptContextCore
 
 extension Error {
     /// Converts this Error to a user-friendly message, accounting for known custom error types.

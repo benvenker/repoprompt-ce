@@ -1,5 +1,6 @@
 import Foundation
 import MCP
+import RepoPromptContextCore
 
 extension MCPServerViewModel {
     /// Result of building a stored selection

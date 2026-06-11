@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 extension CLIProcessConfiguration {
     mutating func ensureAdditionalPaths(_ paths: [String]) {

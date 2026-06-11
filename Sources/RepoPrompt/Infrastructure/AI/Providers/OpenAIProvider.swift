@@ -1,5 +1,6 @@
 import Foundation
 import SwiftOpenAI
+import RepoPromptContextCore
 
 class OpenAIProvider: AIProvider {
     // Instance-level cache

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 extension Array {
     /// Append an element while maintaining a maximum count.

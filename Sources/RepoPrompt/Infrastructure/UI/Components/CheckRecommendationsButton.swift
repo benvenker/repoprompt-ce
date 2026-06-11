@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 /// A button that triggers the recommendation wizard to open for a specific window.
 /// Used in settings views to help users discover and apply recommendations.

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import RepoPromptContextCore
 
 /// Centralised manager for app-wide font scaling.
 /// - Owns the current FontScalePreset

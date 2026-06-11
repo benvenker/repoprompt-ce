@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct AgentSessionDeepLinkRoute: Equatable {
     let windowID: Int?

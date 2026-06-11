@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 /// A compact, live-updating connections counter button that opens the full status view
 struct MCPConnectionsCounter: View {

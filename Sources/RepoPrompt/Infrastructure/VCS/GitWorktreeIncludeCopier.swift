@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum GitWorktreeIncludeCopier {
     private static let includeFileName = ".worktreeinclude"

@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import RepoPromptContextCore
 
 /// User-facing display mode for file @ mention pickers.
 enum FileMentionPickerStyle: String, CaseIterable, Codable, Identifiable {

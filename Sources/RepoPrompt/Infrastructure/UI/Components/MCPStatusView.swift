@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 /// A comprehensive MCP server status dashboard view.
 /// Shows connections, tool activity, and auto-approve management.

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Chat modes available for Oracle/chat presets.
 enum ChatPresetMode: String, CaseIterable {

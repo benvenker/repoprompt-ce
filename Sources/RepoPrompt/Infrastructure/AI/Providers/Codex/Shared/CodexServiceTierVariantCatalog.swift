@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum CodexServiceTierVariantCatalog {
     static let fastServiceTier = "fast"

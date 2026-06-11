@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 actor KeyManager {
     private let secureService: SecureKeysService

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /// Base provider configuration
 struct ProviderConfiguration: Codable {

@@ -10,6 +10,7 @@
 import Dispatch
 import Foundation
 import Logging
+import RepoPromptContextCore
 
 #if canImport(Darwin)
     import Darwin

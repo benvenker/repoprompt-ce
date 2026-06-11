@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 /// Full-window entry view. Routes between full-screen onboarding and workspace chooser.
 struct WorkspaceEntryRootView: View {

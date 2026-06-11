@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Optional config struct for controlling various thresholds.
 enum IndentationConfig {

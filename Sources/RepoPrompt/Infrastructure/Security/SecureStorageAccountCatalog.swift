@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Closed inventory of every account identifier persisted through secure storage.
 ///

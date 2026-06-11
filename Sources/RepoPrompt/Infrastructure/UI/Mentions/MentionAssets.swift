@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import RepoPromptContextCore
 
 /// Heavy, immutable resources that are needed by several mention-related
 /// classes (regex compilation, SF-symbols).  They are created exactly once and

@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct ChatMessagesView: View {
     @ObservedObject var viewModel: OracleViewModel

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum BenchmarkVerifierReasons {
     static let outputPenalty = "Output Penalty"

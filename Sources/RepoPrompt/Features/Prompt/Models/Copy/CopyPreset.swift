@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 // MARK: - Enums
 
@@ -26,13 +27,6 @@ extension CopyPresetKind: Codable {
         var container = encoder.singleValueContainer()
         try container.encode(rawValue)
     }
-}
-
-/// How to include git diff in the copy
-enum GitInclusion: String, Codable, CaseIterable {
-    case none
-    case selected
-    case complete
 }
 
 // MARK: - Copy Preset Model
@@ -158,30 +152,5 @@ extension CopyPreset: Codable {
         try container.encodeIfPresent(gitInclusion, forKey: .gitInclusion)
         try container.encodeIfPresent(storedPromptIds, forKey: .storedPromptIds)
         try container.encodeIfPresent(notes, forKey: .notes)
-    }
-}
-
-// MARK: - Resolved Configuration
-
-/// A resolved, runtime config after merging preset + workspace overrides + capability checks.
-/// Used by both copy and chat prompt builders.
-struct PromptContextResolved {
-    var includeFiles: Bool
-    var includeUserPrompt: Bool
-    var includeMetaPrompts: Bool
-    var includeFileTree: Bool
-
-    var fileTreeMode: FileTreeOption
-    var codeMapUsage: CodeMapUsage
-    var gitInclusion: GitInclusion
-
-    var storedPromptIds: [UUID]? // IDs of stored prompts to include
-
-    var rendersFileTree: Bool {
-        includeFileTree && fileTreeMode != .none
-    }
-
-    var effectiveFileTreeMode: FileTreeOption {
-        rendersFileTree ? fileTreeMode : .none
     }
 }

@@ -1,5 +1,6 @@
 import Foundation
 import MCP
+import RepoPromptContextCore
 
 extension Value {
     /// Decode this Value into a Decodable type by going through JSON.

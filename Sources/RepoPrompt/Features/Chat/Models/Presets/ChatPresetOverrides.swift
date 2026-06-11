@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Stores user overrides for built-in chat presets
 /// Only non-nil fields represent changes from the base preset

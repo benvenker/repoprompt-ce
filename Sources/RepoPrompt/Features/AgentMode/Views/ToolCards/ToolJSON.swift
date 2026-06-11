@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum ToolJSON {
     private static let strictEnvelopeKeys = [

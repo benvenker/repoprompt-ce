@@ -1,5 +1,6 @@
 import Foundation
 import OSLog
+import RepoPromptContextCore
 
 /// Global actor to coordinate "runID became routed" events between:
 /// - Producers: `MCPServerViewModel.registerRunIDMapping` (success) and `cleanupRunIDMapping` (failure)

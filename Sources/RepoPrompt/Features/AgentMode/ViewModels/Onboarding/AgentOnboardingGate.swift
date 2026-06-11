@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 // MARK: - Agent Onboarding Gate
 

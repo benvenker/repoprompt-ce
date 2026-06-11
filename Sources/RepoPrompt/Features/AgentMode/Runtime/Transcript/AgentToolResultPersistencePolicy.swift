@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct AgentSanitizedToolResult: Equatable {
     let text: String

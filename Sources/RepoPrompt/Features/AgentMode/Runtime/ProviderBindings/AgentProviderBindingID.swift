@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum AgentProviderBindingID: String, CaseIterable, Hashable {
     case codex

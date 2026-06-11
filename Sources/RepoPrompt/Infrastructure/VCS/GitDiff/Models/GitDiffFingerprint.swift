@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 public struct GitDiffFingerprint: Codable, Sendable {
     public let headSHA: String

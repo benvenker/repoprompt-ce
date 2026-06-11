@@ -1,6 +1,7 @@
 import CryptoKit
 import Darwin
 import Foundation
+import RepoPromptContextCore
 
 /// Cursor-specific MCP integration helpers.
 ///

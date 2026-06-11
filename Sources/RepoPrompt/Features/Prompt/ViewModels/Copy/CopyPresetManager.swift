@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import RepoPromptContextCore
 
 /// Manager for copy presets - handles both built-in and user-defined presets
 @MainActor

@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct AgentWorkspaceBranchSwitchActions {
     let loadOptions: (AgentWorkspaceRootRow) async throws -> GitBranchSwitchOptions

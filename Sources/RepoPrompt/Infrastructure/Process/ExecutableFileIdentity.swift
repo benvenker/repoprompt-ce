@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import RepoPromptContextCore
 
 struct ExecutableFileIdentity: Equatable {
     let canonicalPath: String

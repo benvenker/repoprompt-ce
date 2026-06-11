@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum MCPBuildFlavor: String, Codable, Hashable {
     case debug

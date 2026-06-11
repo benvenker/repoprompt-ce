@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Accumulates Context Builder assistant output without repeatedly copying the full response.
 /// Full output is materialized only when a terminal consumer requests it, while the compact

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 extension AgentModeViewModel {
     func makeComposerProps(tabID explicitTabID: UUID? = nil) -> AgentComposerProps {

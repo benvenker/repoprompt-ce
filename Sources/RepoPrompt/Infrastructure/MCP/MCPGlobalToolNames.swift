@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Stable internal namespace for app-wide MCP tool names.
 enum MCPGlobalToolName {

@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 /// A reusable question card component for agent interactions.
 /// Handles option selection, custom text input, and response submission.

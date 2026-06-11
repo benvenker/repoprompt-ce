@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// OpenCode-specific integration configuration helpers.
 ///

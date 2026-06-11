@@ -1,5 +1,6 @@
 import Foundation
 import RepoPromptShared
+import RepoPromptContextCore
 
 /// Codex-specific integration configuration helpers.
 ///

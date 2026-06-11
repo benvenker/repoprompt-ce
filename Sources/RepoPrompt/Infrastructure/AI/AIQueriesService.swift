@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Per-stream identifier for cancellation.
 public typealias ChatStreamID = UUID

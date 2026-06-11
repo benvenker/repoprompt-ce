@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import Foundation
 import SwiftUI
+import RepoPromptContextCore
 
 enum WindowKind: String, Codable {
     case standard

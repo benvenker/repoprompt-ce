@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Deterministic PRNG implementation based on Mulberry32.
 struct Mulberry32 {

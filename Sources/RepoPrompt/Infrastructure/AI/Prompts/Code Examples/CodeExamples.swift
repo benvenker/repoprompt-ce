@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /**
  * CodeExamples protocol is a generic interface for providing code snippets

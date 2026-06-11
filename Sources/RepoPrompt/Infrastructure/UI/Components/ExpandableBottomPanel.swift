@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 /// Preference key for measuring header height
 private struct HeaderHeightPreferenceKey: PreferenceKey {

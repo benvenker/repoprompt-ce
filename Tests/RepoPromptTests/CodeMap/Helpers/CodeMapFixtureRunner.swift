@@ -1,5 +1,6 @@
 import Foundation
 @testable import RepoPrompt
+@testable import RepoPromptContextCore
 
 struct CodeMapFixture {
     let relativePath: String

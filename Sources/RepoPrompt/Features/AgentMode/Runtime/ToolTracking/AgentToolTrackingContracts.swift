@@ -1,5 +1,6 @@
 import Foundation
 import MCP
+import RepoPromptContextCore
 
 // SEARCH-HELPER: AgentToolTracking, ToolStreamEvent, ToolTrackingHooks, ToolTrackingSupport
 

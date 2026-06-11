@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 @MainActor
 extension AgentModeViewModel {

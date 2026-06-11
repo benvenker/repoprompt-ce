@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /**
  * GoExamples implements CodeExamples for Go-specific snippets.

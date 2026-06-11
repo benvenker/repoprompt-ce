@@ -7,6 +7,7 @@
 
 import AppKit
 import SwiftUI
+import RepoPromptContextCore
 
 extension View {
     func cornerRadius(_ radius: CGFloat, corners: RectCorner) -> some View {

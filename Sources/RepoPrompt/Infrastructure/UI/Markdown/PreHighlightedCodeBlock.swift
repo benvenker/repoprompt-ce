@@ -7,6 +7,7 @@
 
 import AppKit
 import SwiftUI
+import RepoPromptContextCore
 
 /// Displays a **pre-compiled** attributed string representing a code block,
 /// adds background/border to match other code blocks and overlays a copy

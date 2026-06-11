@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 protocol FileEditHost {
     func fileExists(path: String) async -> Bool

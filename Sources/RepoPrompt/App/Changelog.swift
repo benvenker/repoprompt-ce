@@ -3,6 +3,7 @@
 import Foundation
 import MarkdownUI
 import SwiftUI
+import RepoPromptContextCore
 
 struct Version: Identifiable {
     let id: String

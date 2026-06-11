@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 // SEARCH-HELPER: Codex, stderr, diagnostic, noise, filter, suppress, headless
 /// Filters internal Codex CLI stderr diagnostic noise so it is not surfaced

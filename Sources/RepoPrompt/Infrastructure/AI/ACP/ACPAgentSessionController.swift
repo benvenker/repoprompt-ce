@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import RepoPromptContextCore
 
 actor ACPAgentSessionController {
     struct RequestTimeouts {

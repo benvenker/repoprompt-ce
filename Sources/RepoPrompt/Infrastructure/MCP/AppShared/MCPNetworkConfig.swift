@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Transport preference for MCP connections
 enum MCPTransportPreference: String, Codable {

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /**
  * PythonExamples implements CodeExamples for Python-specific snippets.

@@ -1,6 +1,7 @@
 import Foundation
 import XCTest
 @_spi(TestSupport) @testable import RepoPrompt
+@testable import RepoPromptContextCore
 
 final class PresetJSONOnlyPersistenceTests: XCTestCase {
     func testDefaultPresetPathsUseCESupportRoot() {

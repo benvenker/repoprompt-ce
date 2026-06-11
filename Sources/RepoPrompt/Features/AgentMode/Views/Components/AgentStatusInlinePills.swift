@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct AgentStagedSlashCommandPill: View {
     let staged: AgentStagedSlashCommandProps

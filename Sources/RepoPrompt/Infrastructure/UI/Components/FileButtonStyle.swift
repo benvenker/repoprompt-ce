@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 struct FileButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {

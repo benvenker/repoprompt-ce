@@ -1,6 +1,7 @@
 import Foundation
 import JSONSchema
 import MCP
+import RepoPromptContextCore
 
 @MainActor
 final class MCPWorktreeToolProvider: MCPWindowToolProviding {

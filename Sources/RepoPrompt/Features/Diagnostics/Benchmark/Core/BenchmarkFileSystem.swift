@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Lightweight, in-memory representation of benchmark files.
 /// Paths are stored as normalized POSIX-relative strings (no leading slash).

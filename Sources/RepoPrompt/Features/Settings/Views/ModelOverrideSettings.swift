@@ -7,6 +7,7 @@
 
 import Combine
 import Foundation
+import RepoPromptContextCore
 
 /// This singleton stores per-model override values (diff editing and streaming)
 /// in the JSON-backed global settings store.

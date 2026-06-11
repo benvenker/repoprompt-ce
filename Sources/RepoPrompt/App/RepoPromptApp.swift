@@ -4,6 +4,7 @@ import Foundation
 import Logging
 import Sparkle
 import SwiftUI
+import RepoPromptContextCore
 
 struct RepoPromptFileLogHandler: LogHandler {
     private let stream: FileHandle

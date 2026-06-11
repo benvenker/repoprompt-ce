@@ -1,5 +1,6 @@
 import Foundation
 import RepoPromptShared
+import RepoPromptContextCore
 
 /// Controls how Context Builder handles the user's original prompt
 enum PromptEnhancementMode: String, Codable, CaseIterable {

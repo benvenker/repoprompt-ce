@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import RepoPromptContextCore
 
 actor GitDiffEngine {
     struct DiffTextResult {

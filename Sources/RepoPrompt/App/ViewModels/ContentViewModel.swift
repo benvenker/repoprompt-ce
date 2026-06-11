@@ -1,5 +1,6 @@
 import Combine
 import SwiftUI
+import RepoPromptContextCore
 
 // MARK: - App Root Route
 

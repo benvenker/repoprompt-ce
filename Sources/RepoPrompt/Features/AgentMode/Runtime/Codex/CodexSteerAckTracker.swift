@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Tracks MCP-initiated Codex steer dispatch attempts and delivers send acknowledgements
 /// back to the awaiting `mcpDispatchInstruction` caller.

@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import RepoPromptContextCore
 
 enum AgentTranscriptUserScrollIntentResolver {
     /// Resolves manual scroll direction from viewport movement plus an already-sanitized

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Model-catalog seam for the Claude-compatible plugin path.
 ///

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// Minimal storage for one message's raw text, plus metadata.
 struct StoredMessage: Codable {

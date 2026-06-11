@@ -8,6 +8,7 @@
 
 import Cocoa
 import SwiftUI
+import RepoPromptContextCore
 
 // MARK: - SwiftUI View for Titlebar Button
 

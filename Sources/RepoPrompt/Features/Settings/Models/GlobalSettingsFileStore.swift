@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 protocol GlobalSettingsFileStoring {
     var fileURL: URL { get }

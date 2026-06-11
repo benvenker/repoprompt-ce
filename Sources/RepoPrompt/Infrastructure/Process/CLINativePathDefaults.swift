@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum CLINativePathDefaults {
     static let homebrewBins: [String] = [

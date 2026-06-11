@@ -1,5 +1,6 @@
 import Foundation
 import MCP
+import RepoPromptContextCore
 
 extension MCPBootstrapLeaseSpec {
     static func headless(

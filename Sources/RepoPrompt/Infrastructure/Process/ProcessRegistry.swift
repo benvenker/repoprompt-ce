@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import RepoPromptContextCore
 
 actor ProcessRegistry {
     private var children: [pid_t: SpawnedProcess] = [:]

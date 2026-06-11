@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import RepoPromptContextCore
 
 /**
  A SwiftUI wrapper around an NSTextView for plain text usage.

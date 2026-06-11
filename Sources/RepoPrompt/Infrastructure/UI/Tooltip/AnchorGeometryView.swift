@@ -6,6 +6,7 @@
 
 import AppKit
 import SwiftUI
+import RepoPromptContextCore
 
 struct AnchorGeometryView: NSViewRepresentable {
     typealias UpdateCallback = (_ frameInWindow: NSRect, _ window: NSWindow?) -> Void

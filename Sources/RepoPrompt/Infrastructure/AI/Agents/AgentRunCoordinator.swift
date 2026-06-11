@@ -1,5 +1,6 @@
 import Foundation
 import OSLog
+import RepoPromptContextCore
 
 /// Identifies the type of headless agent run.
 enum AgentRunType {

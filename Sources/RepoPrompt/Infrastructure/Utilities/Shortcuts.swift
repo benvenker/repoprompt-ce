@@ -6,6 +6,7 @@
 //
 
 import KeyboardShortcuts
+import RepoPromptContextCore
 
 /// Define your shortcut
 extension KeyboardShortcuts.Name {

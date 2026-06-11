@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum BenchmarkDiffApplicationError: Error {
     case unexpectedFile(path: String)

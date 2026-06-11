@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum DiffGenerationError: Error {
     case emptyContent

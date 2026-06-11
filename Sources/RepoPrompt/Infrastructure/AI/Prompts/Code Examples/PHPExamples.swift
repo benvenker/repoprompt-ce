@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /**
  * PHPExamples implements CodeExamples for PHP-specific snippets.

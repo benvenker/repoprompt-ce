@@ -1,6 +1,7 @@
 import Darwin
 import Foundation
 @testable import RepoPrompt
+@testable import RepoPromptContextCore
 import XCTest
 
 final class UnixSocketMCPReceiveOverflowTests: XCTestCase {

@@ -2,6 +2,7 @@
 import Combine
 import Foundation
 import SwiftUI
+import RepoPromptContextCore
 
 @MainActor
 class ExpansionManager: ObservableObject {

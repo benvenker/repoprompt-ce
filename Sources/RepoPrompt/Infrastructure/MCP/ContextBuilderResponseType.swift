@@ -1,5 +1,6 @@
 import Foundation
 import MCP
+import RepoPromptContextCore
 
 enum ContextBuilderResponseType: String {
     case plan

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import RepoPromptContextCore
 
 struct BashResultCard: View {
     let item: AgentChatItem

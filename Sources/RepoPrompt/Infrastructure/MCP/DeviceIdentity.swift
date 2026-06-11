@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// A unique, persistent identifier for the current *machine* (not per-user).
 /// The ID is written once to:

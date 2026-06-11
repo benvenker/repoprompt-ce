@@ -1,5 +1,6 @@
 import Foundation
 import MCP // for Value
+import RepoPromptContextCore
 
 struct ChatSendReply: Codable {
     let chatId: UUID

@@ -1,5 +1,6 @@
 import Foundation
 import MCP
+import RepoPromptContextCore
 
 struct AgentRunMCPSnapshot: Equatable {
     enum Status: String, Equatable {

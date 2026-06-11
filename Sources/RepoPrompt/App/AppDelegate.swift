@@ -3,6 +3,7 @@ import Combine
 import Darwin
 import Sparkle
 import SwiftUI
+import RepoPromptContextCore
 
 #if DEBUG
     private var appDelegateDebugLoggingEnabled = false

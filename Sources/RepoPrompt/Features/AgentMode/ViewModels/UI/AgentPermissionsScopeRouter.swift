@@ -27,6 +27,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 @MainActor
 final class AgentPermissionsScopeRouter: ObservableObject {

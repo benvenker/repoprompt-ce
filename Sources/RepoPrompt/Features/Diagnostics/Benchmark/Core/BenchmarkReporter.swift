@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct BenchmarkReporter {
     private let verifier: BenchmarkVerifying

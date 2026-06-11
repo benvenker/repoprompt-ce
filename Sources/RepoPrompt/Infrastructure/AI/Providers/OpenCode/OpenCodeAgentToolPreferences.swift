@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum OpenCodeAgentToolPreferences {
     enum PermissionLevel: String, CaseIterable {

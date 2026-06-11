@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 final class ZAIProvider: OpenAIProvider {
     init(apiKey: String) {

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum ApplyEditsStatus: String, Equatable {
     case success

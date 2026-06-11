@@ -1,6 +1,7 @@
 import CryptoKit
 import Foundation
 import Security
+import RepoPromptContextCore
 
 struct RuntimeValidatedLocalSigningIdentity: Equatable {
     let fingerprint: String

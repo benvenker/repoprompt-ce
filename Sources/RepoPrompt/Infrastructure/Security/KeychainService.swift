@@ -7,6 +7,7 @@
 
 import Foundation
 import Security
+import RepoPromptContextCore
 
 /// Controls whether a Keychain operation may display macOS authentication/approval UI.
 enum KeychainAccessMode: Equatable {

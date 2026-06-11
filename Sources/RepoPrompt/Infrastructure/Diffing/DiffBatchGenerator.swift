@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 /// One-line verdict for every edit attempt (multi-edit only)
 public struct EditOutcome: Codable, Equatable {

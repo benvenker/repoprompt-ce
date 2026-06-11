@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 actor DisposableProviderPool {
     private let keyManager: KeyManager

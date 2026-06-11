@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum AgentToolCardRenderStatus: String, Codable, Equatable {
     case neutral

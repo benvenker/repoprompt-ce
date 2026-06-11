@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 /**
  * JavaScriptExamples implements CodeExamples for JavaScript-specific snippets.

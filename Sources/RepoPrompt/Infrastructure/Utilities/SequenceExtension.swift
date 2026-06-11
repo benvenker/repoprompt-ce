@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 
 extension Sequence {
     func asyncCompactMap<T>(_ transform: (Element) async throws -> T?) async rethrows -> [T] {

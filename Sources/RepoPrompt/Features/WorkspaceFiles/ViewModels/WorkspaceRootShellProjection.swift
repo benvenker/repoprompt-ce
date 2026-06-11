@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 struct WorkspaceRootShellProjection: Identifiable, Equatable {
     let id: UUID

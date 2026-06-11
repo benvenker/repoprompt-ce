@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 /// This view holds exactly one @StateObject WindowState, meaning
 /// each new Window/Scene gets its own WindowState.

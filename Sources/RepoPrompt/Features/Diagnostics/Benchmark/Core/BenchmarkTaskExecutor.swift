@@ -1,6 +1,7 @@
 import Foundation
 import SwiftAnthropic
 import SwiftOpenAI
+import RepoPromptContextCore
 
 /// Note: PromptFactory and PromptConfig are used to create custom benchmark prompts
 enum BenchmarkTaskExecutorError: Error {

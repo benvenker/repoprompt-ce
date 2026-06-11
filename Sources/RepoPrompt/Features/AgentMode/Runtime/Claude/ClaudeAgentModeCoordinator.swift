@@ -1,6 +1,7 @@
 import Foundation
 import MCP
 import OSLog
+import RepoPromptContextCore
 
 @MainActor
 final class ClaudeAgentModeCoordinator {

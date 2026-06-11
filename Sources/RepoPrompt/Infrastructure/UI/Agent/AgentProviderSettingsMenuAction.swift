@@ -1,4 +1,5 @@
 import SwiftUI
+import RepoPromptContextCore
 
 enum AgentProviderSettingsMenuAction {
     static let title = "Connect more CLI providers…"

@@ -1,5 +1,6 @@
 import Foundation
 import UniformTypeIdentifiers
+import RepoPromptContextCore
 
 enum ACPPromptContentBuilder {
     enum Error: LocalizedError, Equatable {

@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 enum ContextUsageSnapshotSource: String, Codable, Equatable {
     case claudeUsageEvent

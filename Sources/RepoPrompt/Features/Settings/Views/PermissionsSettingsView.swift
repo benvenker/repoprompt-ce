@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import RepoPromptContextCore
 
 struct PermissionsSettingsView: View {
     @ObservedObject private var approvalManager = WorkspaceApprovalManager.shared

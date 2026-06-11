@@ -1,4 +1,5 @@
 import Foundation
+import RepoPromptContextCore
 
 extension Notification.Name {
     static let showAPISettingsTab = Notification.Name("showAPISettingsTab")
