@@ -82,6 +82,7 @@ IMPLEMENTED_OPERATIONS = {
     "smoke",
     "diagnostics",
     "release",
+    "headless-linux",
 }
 
 HELP = f"""\
@@ -114,7 +115,7 @@ Operation commands:
   ./conductor format-tools-status    # inspect SwiftFormat/SwiftLint availability
   ./conductor check-format-tools     # fail if style tools are missing
   ./conductor install-format-tools   # explicit Homebrew install of missing style tools
-  ./conductor swift-build --product RepoPrompt|repoprompt-mcp|all
+  ./conductor swift-build --product RepoPrompt|repoprompt-mcp|rpce-headless|all
   ./conductor build
   ./conductor package debug|release
   ./conductor test [--filter <filter>]
@@ -129,6 +130,7 @@ Operation commands:
     (without --launch/--packaged-app, requires the CE debug app to already be running and CLI installed)
   ./conductor diagnostics agent-mode-on [--log-file <path>]
   ./conductor release preflight|artifact|package|local-install
+  ./conductor headless-linux artifact
 
 Foundation validation operation:
   ./conductor sleep <seconds> [--lane <lane>]... [--message <text>] [--exit-code <n>]
@@ -936,6 +938,9 @@ class OperationRegistry:
                 if release_script.exists():
                     return [str(release_script), "preflight"], ["release"], cwd, env, effective_timeout
                 return self._internal_argv("release_preflight_missing", {}), ["release"], cwd, env, effective_timeout
+        if operation == "headless-linux":
+            if args.get("subcommand") == "artifact":
+                return [script("package_headless_linux.sh")], ["build"], cwd, env, RELEASE_TIMEOUT_SECONDS
 
         raise ConductorError(f"invalid arguments for operation '{operation}'")
 
@@ -2969,6 +2974,11 @@ def handle_real_operation(paths: Paths, operation: str, argv: List[str]) -> int:
     elif operation == "release":
         parser = argparse.ArgumentParser(prog="conductor release")
         parser.add_argument("subcommand", choices=["preflight", "artifact", "package", "local-install"])
+        ns = parser.parse_args(rest)
+        args["subcommand"] = ns.subcommand
+    elif operation == "headless-linux":
+        parser = argparse.ArgumentParser(prog="conductor headless-linux")
+        parser.add_argument("subcommand", choices=["artifact"])
         ns = parser.parse_args(rest)
         args["subcommand"] = ns.subcommand
     else:

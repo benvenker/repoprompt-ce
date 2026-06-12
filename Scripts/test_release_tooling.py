@@ -23,6 +23,28 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 
 
 class ReleaseToolingTests(unittest.TestCase):
+    def test_headless_linux_packager_builds_static_artifact_without_macos_release_tools(self) -> None:
+        source = (SCRIPT_DIR / "package_headless_linux.sh").read_text(encoding="utf-8")
+
+        self.assertIn("--product \"$PRODUCT\"", source)
+        self.assertIn('--static-swift-stdlib', source)
+        self.assertIn('-c release', source)
+        self.assertIn('mcp_smoke.py', source)
+        self.assertIn('rpce-headless.env', source)
+        self.assertIn('rpce-headless.service', source)
+        self.assertIn('"$ROOT_DIR/LICENSE"', source)
+        self.assertIn('"$ROOT_DIR/THIRD_PARTY_NOTICES.md"', source)
+        self.assertIn('"$ROOT_DIR/ThirdPartyLicenses"', source)
+        self.assertIn('.tar.gz', source)
+        self.assertIn('sha256sum', source)
+        self.assertIn('manifest.json', source)
+        self.assertIn('"staticSwiftStdlib": True', source)
+        self.assertNotIn('codesign', source)
+        self.assertNotIn('notarytool', source)
+        self.assertNotIn('Sparkle', source)
+        self.assertNotIn('generate_appcast', source)
+        self.assertNotIn('.app', source)
+
     def test_runtime_signing_policy_matches_release_metadata_and_entitlement_templates(self) -> None:
         root = SCRIPT_DIR.parent
         metadata = {}

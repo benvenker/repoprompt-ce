@@ -116,6 +116,24 @@ python3 Sources/RepoPromptHeadlessServer/Scripts/mcp_smoke.py .build/debug/rpce-
 
 Expected success output includes `INIT OK` and `ALL OK`.
 
+## Linux Artifact
+
+On Ubuntu 24.04 with Swift 6.2.4 and Python 3 available:
+
+```bash
+make headless-linux-artifact
+# or through the coordinated daemon:
+make dev-headless-linux-artifact
+```
+
+The artifact path builds a release `rpce-headless` binary with a static Swift
+stdlib, runs the MCP smoke harness, and writes a tarball, checksum, and manifest
+under `dist/`. It is intentionally separate from the macOS app release,
+notarization, Sparkle, and appcast tooling.
+
+The official `swift:6.2.4-noble` image does not include `make`; install it in
+the container or invoke `./Scripts/package_headless_linux.sh` directly.
+
 ## Headless context builder
 
 `context-build` starts an in-process restricted Unix socket server, renders a Discover prompt, launches an operator-configured discovery agent, then harvests the resulting selection and prompt:

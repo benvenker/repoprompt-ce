@@ -215,6 +215,23 @@ class LifecycleQueueTests(LifecycleTestCase):
         self.assertEqual(lanes, ["build", "debugArtifact", "release"])
         self.assertEqual(timeout, conductor.RELEASE_TIMEOUT_SECONDS)
 
+    def test_headless_linux_artifact_delegates_packaging_script_with_build_lane(self) -> None:
+        tmp, state = self.make_state()
+        self.addCleanup(tmp.cleanup)
+        with mock.patch.object(conductor, "enqueue_and_maybe_wait", return_value=0) as enqueue:
+            code = conductor.handle_real_operation(state.paths, "headless-linux", ["artifact"])
+
+        registry = conductor.OperationRegistry(state.paths.repo_root)
+        argv, lanes, _cwd, _env, timeout = registry.prepare(
+            {"operation": "headless-linux", "args": {"subcommand": "artifact"}}
+        )
+
+        self.assertEqual(code, 0)
+        self.assertEqual(enqueue.call_args.args[2], {"subcommand": "artifact"})
+        self.assertEqual(Path(argv[0]).name, "package_headless_linux.sh")
+        self.assertEqual(lanes, ["build"])
+        self.assertEqual(timeout, conductor.RELEASE_TIMEOUT_SECONDS)
+
     def test_swift_build_accepts_headless_product(self) -> None:
         tmp, state = self.make_state()
         self.addCleanup(tmp.cleanup)
