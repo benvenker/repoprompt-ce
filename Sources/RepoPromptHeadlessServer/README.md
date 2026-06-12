@@ -43,9 +43,13 @@ not need the macOS app.
 git clone <repo-url> /srv/repoprompt-ce
 cd /srv/repoprompt-ce
 docker run --rm -v "$PWD":/src -w /src swift:6.2.4-noble \
-  swift build -c release --product rpce-headless --scratch-path .build-linux
+  swift build -c release --static-swift-stdlib --product rpce-headless --scratch-path .build-linux
 install -m 0755 .build-linux/release/rpce-headless /usr/local/bin/rpce-headless
 ```
+
+`--static-swift-stdlib` avoids requiring a Swift runtime install on the host
+where the binary is copied. Omit it only when the target host already provides
+the matching Swift runtime libraries.
 
 Create a service user and install the example env/unit files:
 

@@ -256,13 +256,7 @@ extension FileSystemService {
     }
 
     private func moveURLToTrash(_ url: URL) throws -> URL? {
-        #if DEBUG
-            return try fm.moveItemToTrash(at: url)
-        #else
-            var resultingItemURL: NSURL?
-            try fm.trashItem(at: url, resultingItemURL: &resultingItemURL)
-            return resultingItemURL as URL?
-        #endif
+        try fm.moveItemToTrash(at: url)
     }
 
     /// Re-written non-blocking version
