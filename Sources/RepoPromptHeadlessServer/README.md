@@ -64,7 +64,10 @@ systemctl enable --now rpce-headless
 
 Edit `/etc/rpce-headless/rpce-headless.env` before enabling oracle-backed
 tools. The example service exposes a local Unix socket at
-`/run/rpce-headless/rpce.sock`.
+`/run/rpce-headless/rpce.sock` for discovery agents. That socket is
+discovery-restricted and does not expose `oracle_send`; configure MCP clients
+that need `oracle_send` to launch `rpce-headless serve --root ...` over stdio,
+or use the `context-build --response-type question|plan` CLI path.
 
 ## Run
 
@@ -159,9 +162,10 @@ export RPCE_ORACLE_BASE_URL=https://openrouter.ai/api/v1
 export RPCE_ORACLE_MODEL=openrouter/auto
 ```
 
-`OPENROUTER_API_KEY` is accepted as a fallback for local shells. For a custom
-OpenAI-compatible endpoint, set `RPCE_ORACLE_BASE_URL`, `RPCE_ORACLE_API_KEY`,
-and `RPCE_ORACLE_MODEL` to that provider's values.
+`OPENROUTER_API_KEY` is accepted as a fallback for local shells when
+`RPCE_ORACLE_API_KEY` is unset. For a custom OpenAI-compatible endpoint, set
+`RPCE_ORACLE_BASE_URL`, `RPCE_ORACLE_API_KEY`, and `RPCE_ORACLE_MODEL` to that
+provider's values.
 
 For a new `oracle_send` chat, workspace context is included by default.
 Continuations with `chat_id` default to no new context unless

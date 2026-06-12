@@ -215,6 +215,46 @@ class LifecycleQueueTests(LifecycleTestCase):
         self.assertEqual(lanes, ["build", "debugArtifact", "release"])
         self.assertEqual(timeout, conductor.RELEASE_TIMEOUT_SECONDS)
 
+    def test_swift_build_accepts_headless_product(self) -> None:
+        tmp, state = self.make_state()
+        self.addCleanup(tmp.cleanup)
+        with mock.patch.object(conductor, "enqueue_and_maybe_wait", return_value=0) as enqueue:
+            code = conductor.handle_real_operation(state.paths, "swift-build", ["--product", "rpce-headless"])
+
+        registry = conductor.OperationRegistry(state.paths.repo_root)
+        argv, lanes, _cwd, _env, _timeout = registry.prepare(
+            {"operation": "swift-build", "args": {"product": "rpce-headless"}}
+        )
+
+        self.assertEqual(code, 0)
+        self.assertEqual(enqueue.call_args.args[2], {"product": "rpce-headless"})
+        self.assertEqual(argv, ["swift", "build", "--product", "rpce-headless"])
+        self.assertEqual(lanes, ["build"])
+
+    def test_swift_build_all_includes_headless_product(self) -> None:
+        calls: list[tuple[str, list[str]]] = []
+
+        def fake_run_operation_command(
+            label: str, argv: list[str], _repo_root: Path
+        ) -> tuple[int, str, str]:
+            calls.append((label, argv))
+            return 0, "", ""
+
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(
+            conductor, "run_operation_command", side_effect=fake_run_operation_command
+        ):
+            code = conductor.operation_swift_build_all(Path(tmp))
+
+        self.assertEqual(code, 0)
+        self.assertEqual(
+            calls,
+            [
+                ("swift build --product RepoPrompt", ["swift", "build", "--product", "RepoPrompt"]),
+                ("swift build --product repoprompt-mcp", ["swift", "build", "--product", "repoprompt-mcp"]),
+                ("swift build --product rpce-headless", ["swift", "build", "--product", "rpce-headless"]),
+            ],
+        )
+
     def test_packaged_smoke_uses_only_live_app_lane(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             registry = conductor.OperationRegistry(Path(tmp))
