@@ -290,7 +290,12 @@ print_matches \
 # 8. Agent-authored reports and working notes stay local unless explicitly
 # promoted into the contributor-facing documentation set.
 allowed_tracked_docs=(
+  "docs/adr/0001-compose-beads-workflows-with-local-components.md"
+  "docs/agents/domain.md"
+  "docs/agents/issue-tracker.md"
+  "docs/agents/triage-labels.md"
   "docs/architecture/provider-plugins.md"
+  "docs/architecture/smithers-beads-workflows.md"
   "docs/architecture/source-layout.md"
   "docs/open-source-readiness.md"
   "docs/releasing.md"

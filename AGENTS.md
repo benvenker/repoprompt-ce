@@ -12,9 +12,24 @@ RepoPrompt CE is a Swift Package macOS app with three agent-facing surfaces:
 
 - Check `git status --short` before edits. The tree may already contain intended work; do not revert or clean dirty files unless the user explicitly asks.
 - Use Honcho MCP for creating or managing memories.
+- For issue-tracker, triage-label, and domain-doc conventions used by engineering skills, read the `## Agent skills` section below.
 - Prefer `rg` / `rg --files` for local search.
 - Prefer the coordinated daemon for builds, tests, runs, formatting, and release checks. Direct `swift`, `make build`, `make run`, and `make test` are fallback paths.
 - Ask for explicit approval immediately before force-push, history rewrite, branch deletion, fork deletion, credential rotation, GitHub-visible destructive mutation, visible app launch/relaunch, or stopping a visible app.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs are tracked in GitHub Issues for `benvenker/repoprompt-ce`; use the `gh` CLI from this clone. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the canonical triage label vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This is a single-context repo: read root `CONTEXT.md` for glossary language and `docs/adr/` for architectural decisions. See `docs/agents/domain.md`.
 
 ## Git and preflight
 
@@ -26,6 +41,12 @@ Before every commit or push, read and run the repository-local `$rpce-contributi
 ```
 
 Commit mode is required after staging and must be rerun after any staging change, including partial staging. Push mode is required after committing and before pushing the current branch.
+
+Versioned hooks live in `.githooks/` and delegate to the same preflight script. Enable them in a clone with:
+
+```bash
+git config core.hooksPath .githooks
+```
 
 Stage only intended files. Keep local `docs/investigations/*.md` reports unstaged unless the user specifically asks to commit them.
 
