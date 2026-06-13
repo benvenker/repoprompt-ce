@@ -783,7 +783,7 @@ final class StoreBackedWorkspaceSearchTests: XCTestCase {
 
     func testSearchScopeParserKeepsRequiredResolutionOrder() throws {
         let source = try String(
-            contentsOf: RepoRoot.url().appendingPathComponent("Sources/RepoPrompt/Features/Search/StoreBackedWorkspaceSearch.swift"),
+            contentsOf: RepoRoot.url().appendingPathComponent("Sources/RepoPromptContextCore/Search/StoreBackedWorkspaceSearch.swift"),
             encoding: .utf8
         )
         try assertOrdered([

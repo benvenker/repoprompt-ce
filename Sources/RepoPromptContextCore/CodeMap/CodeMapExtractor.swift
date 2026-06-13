@@ -114,10 +114,23 @@ public enum CodeMapExtractor {
 
     private static func acceptedFileAPIs(from files: [WorkspaceFileRecord], allFileAPIs: [FileAPI]) -> [FileAPI] {
         guard !files.isEmpty, !allFileAPIs.isEmpty else { return [] }
-        let apisByPath = Dictionary(grouping: allFileAPIs, by: { standardizedAPIFilePath($0) })
-        return files.compactMap { file in
-            apisByPath[file.standardizedFullPath]?.first
-        }
+        #if DEBUG || EDIT_FLOW_PERF
+            let pathGrouping = EditFlowPerf.begin(EditFlowPerf.Stage.ReadFile.AutoSelect.AcceptedFileAPIFilter.pathGrouping)
+            let apisByPath = Dictionary(grouping: allFileAPIs, by: { standardizedAPIFilePath($0) })
+            EditFlowPerf.end(EditFlowPerf.Stage.ReadFile.AutoSelect.AcceptedFileAPIFilter.pathGrouping, pathGrouping)
+
+            let selectedRecordProjection = EditFlowPerf.begin(EditFlowPerf.Stage.ReadFile.AutoSelect.AcceptedFileAPIFilter.selectedRecordProjection)
+            let selectedAPIs = files.compactMap { file in
+                apisByPath[file.standardizedFullPath]?.first
+            }
+            EditFlowPerf.end(EditFlowPerf.Stage.ReadFile.AutoSelect.AcceptedFileAPIFilter.selectedRecordProjection, selectedRecordProjection)
+            return selectedAPIs
+        #else
+            let apisByPath = Dictionary(grouping: allFileAPIs, by: { standardizedAPIFilePath($0) })
+            return files.compactMap { file in
+                apisByPath[file.standardizedFullPath]?.first
+            }
+        #endif
     }
 
     private static func acceptedFileAPIs(
@@ -125,9 +138,18 @@ public enum CodeMapExtractor {
         firstFileAPIByStandardizedNestedPath: [String: FileAPI]
     ) -> [FileAPI] {
         guard !files.isEmpty, !firstFileAPIByStandardizedNestedPath.isEmpty else { return [] }
-        return files.compactMap { file in
-            firstFileAPIByStandardizedNestedPath[file.standardizedFullPath]
-        }
+        #if DEBUG || EDIT_FLOW_PERF
+            let selectedRecordProjection = EditFlowPerf.begin(EditFlowPerf.Stage.ReadFile.AutoSelect.AcceptedFileAPIFilter.selectedRecordProjection)
+            let selectedAPIs = files.compactMap { file in
+                firstFileAPIByStandardizedNestedPath[file.standardizedFullPath]
+            }
+            EditFlowPerf.end(EditFlowPerf.Stage.ReadFile.AutoSelect.AcceptedFileAPIFilter.selectedRecordProjection, selectedRecordProjection)
+            return selectedAPIs
+        #else
+            return files.compactMap { file in
+                firstFileAPIByStandardizedNestedPath[file.standardizedFullPath]
+            }
+        #endif
     }
 
     public static func resolveReferencedFilePaths(
@@ -135,7 +157,13 @@ public enum CodeMapExtractor {
         among allFileAPIs: [FileAPI]
     ) -> [String] {
         guard !selectedFiles.isEmpty else { return [] }
-        let selectedAPIs = acceptedFileAPIs(from: selectedFiles, allFileAPIs: allFileAPIs)
+        #if DEBUG || EDIT_FLOW_PERF
+            let acceptedFileAPIFilter = EditFlowPerf.begin(EditFlowPerf.Stage.ReadFile.AutoSelect.acceptedFileAPIFilter)
+            let selectedAPIs = acceptedFileAPIs(from: selectedFiles, allFileAPIs: allFileAPIs)
+            EditFlowPerf.end(EditFlowPerf.Stage.ReadFile.AutoSelect.acceptedFileAPIFilter, acceptedFileAPIFilter)
+        #else
+            let selectedAPIs = acceptedFileAPIs(from: selectedFiles, allFileAPIs: allFileAPIs)
+        #endif
         return resolveReferencedFilePaths(from: selectedFiles, selectedAPIs: selectedAPIs, among: allFileAPIs)
     }
 
@@ -161,7 +189,13 @@ public enum CodeMapExtractor {
 
         let selectedPaths = Set(selectedFiles.map(\.standardizedFullPath))
         let unselectedAPIs = allFileAPIs.filter { !selectedPaths.contains(standardizedAPIFilePath($0)) }
-        let referencedAPIs = getAutoReferencedAPIs(selectedAPIs: selectedAPIs, unselectedAPIs: unselectedAPIs)
+        #if DEBUG || EDIT_FLOW_PERF
+            let autoReferencedAPIComputation = EditFlowPerf.begin(EditFlowPerf.Stage.ReadFile.AutoSelect.autoReferencedAPIComputation)
+            let referencedAPIs = getAutoReferencedAPIs(selectedAPIs: selectedAPIs, unselectedAPIs: unselectedAPIs)
+            EditFlowPerf.end(EditFlowPerf.Stage.ReadFile.AutoSelect.autoReferencedAPIComputation, autoReferencedAPIComputation)
+        #else
+            let referencedAPIs = getAutoReferencedAPIs(selectedAPIs: selectedAPIs, unselectedAPIs: unselectedAPIs)
+        #endif
 
         var seen = Set<String>()
         var ordered: [String] = []

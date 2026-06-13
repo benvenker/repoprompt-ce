@@ -108,7 +108,7 @@
         }
 
         func testExpectedAttributionStagesRemainPresent() throws {
-            let perf = try source("Sources/RepoPrompt/Infrastructure/Diffing/EditFlowPerf.swift")
+            let perf = try source("Sources/RepoPromptContextCore/Diagnostics/EditFlowPerf.swift")
             for stage in [
                 "EditFlow.MCPToolCall.PreToolFilesystemFlush",
                 "EditFlow.MCPToolCall.EffectivePolicySnapshot",
@@ -351,7 +351,7 @@
             XCTAssertFalse(server.contains("guard await shouldAutoSelectAgentSlices()"))
             XCTAssertFalse(provider.contains("maybeAutoSelectFileSearchSlices"))
 
-            let perf = try source("Sources/RepoPrompt/Infrastructure/Diffing/EditFlowPerf.swift")
+            let perf = try source("Sources/RepoPromptContextCore/Diagnostics/EditFlowPerf.swift")
             XCTAssertTrue(perf.contains("var usesWorktreeProjection: Bool?"))
             XCTAssertTrue(perf.contains("usesWorktreeProjection: Bool? = nil"))
             XCTAssertTrue(perf.contains("self.usesWorktreeProjection = usesWorktreeProjection"))
@@ -991,7 +991,7 @@
         }
 
         func testProviderAutoSelectDecompositionStagesRemainStaticCompleteAndScoped() throws {
-            let perf = try source("Sources/RepoPrompt/Infrastructure/Diffing/EditFlowPerf.swift")
+            let perf = try source("Sources/RepoPromptContextCore/Diagnostics/EditFlowPerf.swift")
             for stage in [
                 "EditFlow.ReadFile.AutoSelect.Total",
                 "EditFlow.ReadFile.AutoSelect.EligibilityResolution",
@@ -1048,7 +1048,7 @@
                 XCTAssertTrue(viewModel.contains("Stage.ReadFile.AutoSelect.\(hook)"), "Missing view-model nested auto-select hook: \(hook)")
             }
 
-            let mutations = try source("Sources/RepoPrompt/Infrastructure/WorkspaceContext/Selection/WorkspaceSelectionMutationService.swift")
+            let mutations = try source("Sources/RepoPromptContextCore/WorkspaceContext/Selection/WorkspaceSelectionMutationService.swift")
             for hook in [
                 "candidateResolutionTotal",
                 "structuralMerge",
@@ -1060,16 +1060,12 @@
                 XCTAssertTrue(mutations.contains("Stage.ReadFile.AutoSelect.\(hook)"), "Missing mutation-service nested auto-select hook: \(hook)")
             }
 
-            let extractor = try source("Sources/RepoPrompt/Features/CodeMap/CodeMapExtractor.swift")
-            let workspaceOverloadStart = try XCTUnwrap(extractor.range(of: "static func resolveReferencedFilePaths(\n        from selectedFiles: [WorkspaceFileRecord]"))
-            let workspaceOverloadEnd = try XCTUnwrap(extractor.range(of: "/// Returns the list of file paths", range: workspaceOverloadStart.upperBound ..< extractor.endIndex))
-            let workspaceOverload = String(extractor[workspaceOverloadStart.lowerBound ..< workspaceOverloadEnd.lowerBound])
-            XCTAssertTrue(workspaceOverload.contains("Stage.ReadFile.AutoSelect.acceptedFileAPIFilter"))
-            XCTAssertTrue(workspaceOverload.contains("Stage.ReadFile.AutoSelect.autoReferencedAPIComputation"))
-
-            let fileViewModelOverloadStart = try XCTUnwrap(extractor.range(of: "static func resolveReferencedFilePaths(\n        from selectedFiles: [FileViewModel]"))
-            let fileViewModelOverload = String(extractor[fileViewModelOverloadStart.lowerBound ..< workspaceOverloadStart.lowerBound])
-            XCTAssertFalse(fileViewModelOverload.contains("Stage.ReadFile.AutoSelect"))
+            let extractor = try source("Sources/RepoPromptContextCore/CodeMap/CodeMapExtractor.swift")
+            let workspaceResolverStart = try XCTUnwrap(extractor.range(of: "public static func resolveReferencedFilePaths(\n        from selectedFiles: [WorkspaceFileRecord]"))
+            let workspaceResolver = String(extractor[workspaceResolverStart.lowerBound ..< extractor.endIndex])
+            XCTAssertTrue(workspaceResolver.contains("Stage.ReadFile.AutoSelect.acceptedFileAPIFilter"))
+            XCTAssertTrue(workspaceResolver.contains("Stage.ReadFile.AutoSelect.autoReferencedAPIComputation"))
+            XCTAssertFalse(extractor.contains("FileViewModel"))
 
             let provider = try source("Sources/RepoPrompt/Infrastructure/MCP/WindowTools/MCPFileToolProvider.swift")
             let manager = try source("Sources/RepoPrompt/Infrastructure/MCP/MCPConnectionManager.swift")
@@ -1089,7 +1085,7 @@
             XCTAssertLessThan(dependencyAwait.lowerBound, valueEncoding.lowerBound)
 
             let viewModel = try source("Sources/RepoPrompt/Infrastructure/MCP/ViewModels/MCPServerViewModel.swift")
-            let mutations = try source("Sources/RepoPrompt/Infrastructure/WorkspaceContext/Selection/WorkspaceSelectionMutationService.swift")
+            let mutations = try source("Sources/RepoPromptContextCore/WorkspaceContext/Selection/WorkspaceSelectionMutationService.swift")
             let nestedSources = viewModel + mutations
             for outcome in [
                 "eligible",
@@ -1202,9 +1198,9 @@
         }
 
         func testAcceptedFileAPIFilterInnerAttributionRemainsBehaviorNeutralScopedAndOrdered() throws {
-            let extractor = try source("Sources/RepoPrompt/Features/CodeMap/CodeMapExtractor.swift")
+            let extractor = try source("Sources/RepoPromptContextCore/CodeMap/CodeMapExtractor.swift")
             let helperStart = try XCTUnwrap(extractor.range(of: "    private static func acceptedFileAPIs(from files: [WorkspaceFileRecord], allFileAPIs: [FileAPI]) -> [FileAPI] {"))
-            let helperEnd = try XCTUnwrap(extractor.range(of: "    private static func isUnderCurrentRoots", range: helperStart.upperBound ..< extractor.endIndex))
+            let helperEnd = try XCTUnwrap(extractor.range(of: "    private static func acceptedFileAPIs(\n        from files: [WorkspaceFileRecord],\n        firstFileAPIByStandardizedNestedPath: [String: FileAPI]", range: helperStart.upperBound ..< extractor.endIndex))
             let helper = String(extractor[helperStart.lowerBound ..< helperEnd.lowerBound])
 
             var searchStart = helper.startIndex
@@ -1249,7 +1245,7 @@
             }
 
             let indexedHelperStart = try XCTUnwrap(extractor.range(of: "    private static func acceptedFileAPIs(\n        from files: [WorkspaceFileRecord],\n        firstFileAPIByStandardizedNestedPath: [String: FileAPI]"))
-            let indexedHelperEnd = try XCTUnwrap(extractor.range(of: "    private static func isUnderCurrentRoots", range: indexedHelperStart.upperBound ..< extractor.endIndex))
+            let indexedHelperEnd = try XCTUnwrap(extractor.range(of: "    public static func resolveReferencedFilePaths", range: indexedHelperStart.upperBound ..< extractor.endIndex))
             let indexedHelper = String(extractor[indexedHelperStart.lowerBound ..< indexedHelperEnd.lowerBound])
             XCTAssertTrue(indexedHelper.contains("guard !files.isEmpty, !firstFileAPIByStandardizedNestedPath.isEmpty else { return [] }"))
             XCTAssertTrue(indexedHelper.contains("EditFlowPerf.begin(EditFlowPerf.Stage.ReadFile.AutoSelect.AcceptedFileAPIFilter.selectedRecordProjection)"))
@@ -1258,13 +1254,10 @@
             XCTAssertFalse(indexedHelper.contains("pathGrouping"))
             XCTAssertFalse(indexedHelper.contains("Dictionary(grouping:"))
 
-            let fileViewModelHelperStart = try XCTUnwrap(extractor.range(of: "    private static func acceptedFileAPIs(from files: [FileViewModel]) -> [FileAPI] {"))
-            let fileViewModelHelper = String(extractor[fileViewModelHelperStart.lowerBound ..< helperStart.lowerBound])
-            XCTAssertFalse(fileViewModelHelper.contains("AcceptedFileAPIFilter"))
+            XCTAssertFalse(extractor.contains("FileViewModel"))
 
-            let resolverStart = try XCTUnwrap(extractor.range(of: "static func resolveReferencedFilePaths(\n        from selectedFiles: [WorkspaceFileRecord]"))
-            let resolverEnd = try XCTUnwrap(extractor.range(of: "/// Returns the list of file paths", range: resolverStart.upperBound ..< extractor.endIndex))
-            let resolver = String(extractor[resolverStart.lowerBound ..< resolverEnd.lowerBound])
+            let resolverStart = try XCTUnwrap(extractor.range(of: "public static func resolveReferencedFilePaths(\n        from selectedFiles: [WorkspaceFileRecord]"))
+            let resolver = String(extractor[resolverStart.lowerBound ..< extractor.endIndex])
             let outerBegin = try XCTUnwrap(resolver.range(of: "EditFlowPerf.begin(EditFlowPerf.Stage.ReadFile.AutoSelect.acceptedFileAPIFilter)"))
             let helperCall = try XCTUnwrap(resolver.range(of: "acceptedFileAPIs(from: selectedFiles, allFileAPIs: allFileAPIs)", range: outerBegin.upperBound ..< resolver.endIndex))
             let outerEnd = try XCTUnwrap(resolver.range(of: "EditFlowPerf.end(EditFlowPerf.Stage.ReadFile.AutoSelect.acceptedFileAPIFilter, acceptedFileAPIFilter)", range: helperCall.upperBound ..< resolver.endIndex))
@@ -1301,7 +1294,7 @@
         }
 
         func testAllCodemapFileAPIsActorOwnedCacheHooksRemainScopedAndExhaustivelyInvalidated() throws {
-            let store = try source("Sources/RepoPrompt/Infrastructure/WorkspaceContext/WorkspaceFileContextStore.swift")
+            let store = try source("Sources/RepoPromptContextCore/WorkspaceContext/WorkspaceFileContextStore.swift")
             XCTAssertTrue(store.contains("private var cachedCodemapFileAPIAggregate: WorkspaceCodemapFileAPIAggregate?"))
             XCTAssertFalse(store.contains("private var cachedAllCodemapFileAPIs: [FileAPI]?"))
             XCTAssertEqual(store.components(separatedBy: "invalidateAllCodemapFileAPIsCache").count - 1, 9)
@@ -1314,11 +1307,11 @@
                 XCTAssertFalse(invalidator.contains(forbidden), "Forbidden aggregate-cache invalidator semantic: \(forbidden)")
             }
 
-            let compatibilityAccessorStart = try XCTUnwrap(store.range(of: "    func allCodemapFileAPIs() -> [FileAPI] {"))
-            let accessorStart = try XCTUnwrap(store.range(of: "    func codemapFileAPIAggregate() -> WorkspaceCodemapFileAPIAggregate {", range: compatibilityAccessorStart.upperBound ..< store.endIndex))
+            let compatibilityAccessorStart = try XCTUnwrap(store.range(of: "    public func allCodemapFileAPIs() -> [FileAPI] {"))
+            let accessorStart = try XCTUnwrap(store.range(of: "    public func codemapFileAPIAggregate() -> WorkspaceCodemapFileAPIAggregate {", range: compatibilityAccessorStart.upperBound ..< store.endIndex))
             let compatibilityAccessor = String(store[compatibilityAccessorStart.lowerBound ..< accessorStart.lowerBound])
             XCTAssertTrue(compatibilityAccessor.contains("codemapFileAPIAggregate().orderedFileAPIs"))
-            let accessorEnd = try XCTUnwrap(store.range(of: "    func codemapSnapshotDictionary()", range: accessorStart.upperBound ..< store.endIndex))
+            let accessorEnd = try XCTUnwrap(store.range(of: "    public func codemapSnapshotDictionary()", range: accessorStart.upperBound ..< store.endIndex))
             let accessor = String(store[accessorStart.lowerBound ..< accessorEnd.lowerBound])
             var searchStart = accessor.startIndex
             for hook in [
@@ -1385,8 +1378,8 @@
                 XCTAssertTrue(store.contains(requiredInvalidationWiring), "Missing aggregate-cache invalidation wiring: \(requiredInvalidationWiring)")
             }
 
-            let unloadStart = try XCTUnwrap(store.range(of: "    func unloadRoots(ids rootIDs: [UUID]) async {"))
-            let unloadEnd = try XCTUnwrap(store.range(of: "    func file(rootID: UUID, relativePath: String)", range: unloadStart.upperBound ..< store.endIndex))
+            let unloadStart = try XCTUnwrap(store.range(of: "    public func unloadRoots(ids rootIDs: [UUID]) async {"))
+            let unloadEnd = try XCTUnwrap(store.range(of: "    public func file(rootID: UUID, relativePath: String)", range: unloadStart.upperBound ..< store.endIndex))
             let unload = String(store[unloadStart.lowerBound ..< unloadEnd.lowerBound])
             let rootDetach = try XCTUnwrap(unload.range(of: "rootStatesByID.removeValue(forKey: rootID)"))
             let stopWatching = try XCTUnwrap(unload.range(of: "await reconcileWatcherServiceState(entry.state.service, rootID: entry.rootID)"))
@@ -1399,8 +1392,8 @@
             XCTAssertFalse(String(unload[managedOnlyCleanup.lowerBound ..< rootSnapshotCleanup.lowerBound]).contains("await"))
 
             let provider = try source("Sources/RepoPrompt/Infrastructure/MCP/WindowTools/MCPFileToolProvider.swift")
-            let mutations = try source("Sources/RepoPrompt/Infrastructure/WorkspaceContext/Selection/WorkspaceSelectionMutationService.swift")
-            let extractor = try source("Sources/RepoPrompt/Features/CodeMap/CodeMapExtractor.swift")
+            let mutations = try source("Sources/RepoPromptContextCore/WorkspaceContext/Selection/WorkspaceSelectionMutationService.swift")
+            let extractor = try source("Sources/RepoPromptContextCore/CodeMap/CodeMapExtractor.swift")
             let diagnostics = try diagnosticsSource() + source("Sources/RepoPrompt/Features/Diagnostics/MCP/MCPConnectionManager+DebugDiagnosticsReadSearchLatency.swift")
             for forbiddenOwner in [provider, mutations, extractor, diagnostics] {
                 XCTAssertFalse(forbiddenOwner.contains("AllCodemapFileAPIs"))
@@ -1409,7 +1402,7 @@
                 XCTAssertFalse(forbiddenOwner.contains("invalidateAllCodemapFileAPIsCache"))
             }
 
-            let recomputeStart = try XCTUnwrap(mutations.range(of: "    func recomputeAutoCodemaps("))
+            let recomputeStart = try XCTUnwrap(mutations.range(of: "    public func recomputeAutoCodemaps("))
             let recompute = String(mutations[recomputeStart.lowerBound ..< mutations.endIndex])
             let outerBegin = try XCTUnwrap(recompute.range(of: "let codemapAPILoad = EditFlowPerf.begin(EditFlowPerf.Stage.ReadFile.AutoSelect.codemapAPILoad)"))
             let outerAwait = try XCTUnwrap(recompute.range(of: "let aggregate = await store.codemapFileAPIAggregate()", range: outerBegin.upperBound ..< recompute.endIndex))
@@ -1458,7 +1451,7 @@
                 XCTAssertTrue(viewModel.contains(hook), "Missing view-model read-resolution hook: \(hook)")
             }
 
-            let readableService = try source("Sources/RepoPrompt/Infrastructure/WorkspaceContext/WorkspaceReadableFileService.swift")
+            let readableService = try source("Sources/RepoPromptContextCore/WorkspaceContext/WorkspaceReadableFileService.swift")
             for hook in [
                 "exactCatalogLookupAwait",
                 "explicitMaterialization",
@@ -1468,7 +1461,7 @@
                 XCTAssertTrue(readableService.contains(hook), "Missing readable-service resolution hook: \(hook)")
             }
 
-            let store = try source("Sources/RepoPrompt/Infrastructure/WorkspaceContext/WorkspaceFileContextStore.swift")
+            let store = try source("Sources/RepoPromptContextCore/WorkspaceContext/WorkspaceFileContextStore.swift")
             XCTAssertTrue(store.contains("exactCatalogLookupActorBody"))
             XCTAssertTrue(store.contains("exactCatalogLookupRoute"))
             XCTAssertTrue(store.contains("Dimensions(status: exactCatalogLookupRoute, outcome: exactCatalogLookupOutcome)"))
@@ -1481,13 +1474,13 @@
             XCTAssertFalse(viewModel.contains("let readableServiceOutcome ="))
             XCTAssertTrue(viewModel.contains("Dimensions(outcome: {\n                    switch readableFile"))
 
-            let readableService = try source("Sources/RepoPrompt/Infrastructure/WorkspaceContext/WorkspaceReadableFileService.swift")
+            let readableService = try source("Sources/RepoPromptContextCore/WorkspaceContext/WorkspaceReadableFileService.swift")
             XCTAssertFalse(readableService.contains("let exactCatalogLookupOutcome ="))
             XCTAssertFalse(readableService.contains("let explicitMaterializationOutcome ="))
             XCTAssertTrue(readableService.contains("Dimensions(outcome: {\n                switch exactCatalogLookup"))
             XCTAssertTrue(readableService.contains("Dimensions(outcome: {\n                switch materialization"))
 
-            let store = try source("Sources/RepoPrompt/Infrastructure/WorkspaceContext/WorkspaceFileContextStore.swift")
+            let store = try source("Sources/RepoPromptContextCore/WorkspaceContext/WorkspaceFileContextStore.swift")
             XCTAssertTrue(store.contains("#if DEBUG || EDIT_FLOW_PERF\n            var exactCatalogLookupOutcome"))
             XCTAssertTrue(store.contains("var exactCatalogLookupRoute = \"empty\""))
             XCTAssertTrue(store.contains("exactCatalogLookupRoute = \"absolute\""))
@@ -1498,7 +1491,7 @@
         }
 
         func testSearchCatalogSnapshotCacheRemainsBoundedGenerationKeyedAndCoarselyDiagnosed() throws {
-            let store = try source("Sources/RepoPrompt/Infrastructure/WorkspaceContext/WorkspaceFileContextStore.swift")
+            let store = try source("Sources/RepoPromptContextCore/WorkspaceContext/WorkspaceFileContextStore.swift")
             XCTAssertTrue(store.contains("private static let maxCachedSearchCatalogSnapshotScopes = 16"))
             XCTAssertTrue(store.contains("private var searchCatalogSnapshotsByScope: [WorkspaceLookupRootScope: SearchCatalogSnapshotCacheEntry] = [:]"))
             XCTAssertTrue(store.contains("case .sessionBoundWorkspace:\n            scopedSnapshotGeneration(scope: .allLoaded)"))
@@ -1522,7 +1515,7 @@
         }
 
         func testInactiveCaptureFastPathRemainsAtomicAndUnusedOutputBytesIsAbsent() throws {
-            let perf = try source("Sources/RepoPrompt/Infrastructure/Diffing/EditFlowPerf.swift")
+            let perf = try source("Sources/RepoPromptContextCore/Diagnostics/EditFlowPerf.swift")
             XCTAssertTrue(perf.contains("Lightweight, gated instrumentation for hot-path diagnostics."))
             XCTAssertTrue(perf.contains("private let activeHint = DebugCaptureActiveHint()"))
             XCTAssertTrue(perf.contains("if let active = activeHint.loadIfAvailable(), !active { return nil }"))
@@ -1622,7 +1615,7 @@
         }
 
         func testLifecycleEventInventoryAndHiddenTimelineToggleRemainPresent() throws {
-            let perf = try source("Sources/RepoPrompt/Infrastructure/Diffing/EditFlowPerf.swift")
+            let perf = try source("Sources/RepoPromptContextCore/Diagnostics/EditFlowPerf.swift")
             for eventName in [
                 "MCP.ToolCall.Received",
                 "MCP.ToolCall.RoutingSnapshotCompleted",
@@ -1904,7 +1897,7 @@
         }
 
         func testContentReadWorkerPermitAndBroadSearchAdmissionHooksRemainOwnedSanitizedAndOrdered() throws {
-            let contentLoading = try source("Sources/RepoPrompt/Infrastructure/FileSystem/FileSystemService+ContentLoading.swift")
+            let contentLoading = try source("Sources/RepoPromptContextCore/FileSystem/FileSystemService+ContentLoading.swift")
             XCTAssertTrue(contentLoading.contains("EditFlowPerf.Stage.FileSystem.contentReadWorkerPermitWait"))
             XCTAssertTrue(contentLoading.contains("EditFlowPerf.Lifecycle.FileSystem.contentReadWorkerPermitWaitBegan"))
             XCTAssertTrue(contentLoading.contains("EditFlowPerf.Lifecycle.FileSystem.contentReadWorkerPermitAcquired"))
@@ -1931,7 +1924,7 @@
                 ]
             )
 
-            let coordinator = try source("Sources/RepoPrompt/Features/Search/StoreBackedWorkspaceSearchLane.swift")
+            let coordinator = try source("Sources/RepoPromptContextCore/Search/StoreBackedWorkspaceSearchLane.swift")
             XCTAssertTrue(coordinator.contains("EditFlowPerf.Stage.Search.broadAdmissionWait"))
             XCTAssertTrue(coordinator.contains("EditFlowPerf.Lifecycle.Search.broadAdmissionWaitBegan"))
             XCTAssertTrue(coordinator.contains("EditFlowPerf.Lifecycle.Search.broadAdmissionPermitAcquired"))
@@ -1977,7 +1970,7 @@
             XCTAssertEqual(manager.components(separatedBy: "try await toolDef.callAsFunction(effectiveArgs)").count - 1, 1)
             XCTAssertFalse(manager.contains("service.call("))
 
-            let readable = try source("Sources/RepoPrompt/Infrastructure/WorkspaceContext/WorkspaceReadableFileService.swift")
+            let readable = try source("Sources/RepoPromptContextCore/WorkspaceContext/WorkspaceReadableFileService.swift")
             XCTAssertTrue(readable.contains("EditFlowPerf.Stage.ReadFile.explicitIngressFreshnessWait"))
             XCTAssertTrue(readable.contains("EditFlowPerf.Lifecycle.ReadFile.explicitFreshnessBegan"))
             XCTAssertTrue(readable.contains("EditFlowPerf.Lifecycle.ReadFile.explicitFreshnessEnded"))
@@ -2004,7 +1997,7 @@
                 ]
             )
 
-            let store = try source("Sources/RepoPrompt/Infrastructure/WorkspaceContext/WorkspaceFileContextStore.swift")
+            let store = try source("Sources/RepoPromptContextCore/WorkspaceContext/WorkspaceFileContextStore.swift")
             for hook in [
                 "EditFlowPerf.Stage.ReadFile.storeReadContentForwardAwait",
                 "EditFlowPerf.Lifecycle.ReadFile.storeReadContentEntered",
@@ -2018,7 +2011,7 @@
                 XCTAssertTrue(store.contains(hook), "Missing store attribution hook: \(hook)")
             }
 
-            let fileSystem = try source("Sources/RepoPrompt/Infrastructure/FileSystem/FileSystemService+ContentLoading.swift")
+            let fileSystem = try source("Sources/RepoPromptContextCore/FileSystem/FileSystemService+ContentLoading.swift")
             for hook in [
                 "EditFlowPerf.Stage.FileSystem.contentLoadTotal",
                 "EditFlowPerf.Stage.FileSystem.contentReadRequestPreparation",
@@ -2032,7 +2025,7 @@
                 XCTAssertTrue(fileSystem.contains(hook), "Missing filesystem attribution hook: \(hook)")
             }
 
-            let fileEvents = try source("Sources/RepoPrompt/Infrastructure/FileSystem/FileSystemService+FSEvents.swift")
+            let fileEvents = try source("Sources/RepoPromptContextCore/FileSystem/FileSystemService+FSEvents.swift")
             XCTAssertTrue(fileEvents.contains("EditFlowPerf.Stage.Search.contentFreshnessValidationRootActorBody"))
             XCTAssertTrue(fileEvents.contains("EditFlowPerf.Lifecycle.Search.contentFreshnessRootEntered"))
             XCTAssertTrue(fileEvents.contains("EditFlowPerf.Lifecycle.Search.contentFreshnessRootReturned"))
@@ -2071,7 +2064,7 @@
         }
 
         func testSearchTailTelemetryRemainsCoarseAndPrivacySafe() throws {
-            let searchMatch = try source("Sources/RepoPrompt/Features/Search/SearchMatch.swift")
+            let searchMatch = try source("Sources/RepoPromptContextCore/Search/SearchMatch.swift")
             for hook in [
                 "EditFlowPerf.Stage.Search.contentFreshnessValidation",
                 "EditFlowPerf.Stage.Search.contentScanTotal",
@@ -2107,7 +2100,7 @@
         }
 
         func testAdmissionDebugControlsRemainIdleOnlyAggregateBoundedAndPrivacySafe() throws {
-            let coordinator = try source("Sources/RepoPrompt/Features/Search/StoreBackedWorkspaceSearchLane.swift")
+            let coordinator = try source("Sources/RepoPromptContextCore/Search/StoreBackedWorkspaceSearchLane.swift")
             XCTAssertTrue(coordinator.contains("snapshotForTesting"))
             XCTAssertTrue(coordinator.contains("configureForTesting"))
             XCTAssertTrue(coordinator.contains("resetConfigurationForTesting"))
@@ -2128,7 +2121,7 @@
             XCTAssertFalse(sibling.contains("store_identifier"))
             XCTAssertFalse(sibling.contains("workspace_name"))
 
-            let contentLoading = try source("Sources/RepoPrompt/Infrastructure/FileSystem/FileSystemService+ContentLoading.swift")
+            let contentLoading = try source("Sources/RepoPromptContextCore/FileSystem/FileSystemService+ContentLoading.swift")
             XCTAssertTrue(contentLoading.contains("struct Snapshot: Equatable"))
             XCTAssertTrue(contentLoading.contains("activePermitCount == 0 && queuedWaiterCount == 0 && ownerLaneCount == 0"))
             XCTAssertTrue(contentLoading.contains("maxQueuedWaiterCount: 512"))
@@ -2175,8 +2168,8 @@
             XCTAssertTrue(viewModel.contains("EditFlowPerf.Lifecycle.MCPRunTool.unregister"))
             XCTAssertTrue(viewModel.contains("EditFlowPerf.Lifecycle.MCPRunTool.idleWaitersResumed"))
 
-            let fileSystemService = try source("Sources/RepoPrompt/Infrastructure/FileSystem/FileSystemService.swift")
-            let fileSystem = try source("Sources/RepoPrompt/Infrastructure/FileSystem/FileSystemService+FSEvents.swift")
+            let fileSystemService = try source("Sources/RepoPromptContextCore/FileSystem/FileSystemService.swift")
+            let fileSystem = try source("Sources/RepoPromptContextCore/FileSystem/FileSystemService+FSEvents.swift")
             assertSourceOrder(
                 in: fileSystem,
                 hooks: [
@@ -2188,7 +2181,7 @@
                 ]
             )
 
-            let store = try source("Sources/RepoPrompt/Infrastructure/WorkspaceContext/WorkspaceFileContextStore.swift")
+            let store = try source("Sources/RepoPromptContextCore/WorkspaceContext/WorkspaceFileContextStore.swift")
             assertSourceOrder(
                 in: store,
                 hooks: [
@@ -2243,7 +2236,7 @@
                     "let exactPathIssueDetection = EditFlowPerf.begin(EditFlowPerf.Stage.ReadFile.exactPathIssueDetection)"
                 ]
             )
-            let search = try source("Sources/RepoPrompt/Features/Search/StoreBackedWorkspaceSearch.swift")
+            let search = try source("Sources/RepoPromptContextCore/Search/StoreBackedWorkspaceSearch.swift")
             assertSourceOrder(
                 in: search,
                 hooks: [
@@ -2256,9 +2249,9 @@
         }
 
         func testFileSystemChangePublisherSendsRemainCentralized() throws {
-            let service = try source("Sources/RepoPrompt/Infrastructure/FileSystem/FileSystemService.swift")
-            let fsevents = try source("Sources/RepoPrompt/Infrastructure/FileSystem/FileSystemService+FSEvents.swift")
-            let operations = try source("Sources/RepoPrompt/Infrastructure/FileSystem/FileSystemService+FileOperations.swift")
+            let service = try source("Sources/RepoPromptContextCore/FileSystem/FileSystemService.swift")
+            let fsevents = try source("Sources/RepoPromptContextCore/FileSystem/FileSystemService+FSEvents.swift")
+            let operations = try source("Sources/RepoPromptContextCore/FileSystem/FileSystemService+FileOperations.swift")
 
             XCTAssertTrue(service.contains("source: FileSystemDeltaPublicationSource"))
             XCTAssertEqual(service.components(separatedBy: "changePublisher.send(publication)").count - 1, 3)
