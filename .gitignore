@@ -35,8 +35,20 @@ docs/analysis/
 docs/designs/
 docs/references/
 docs/reviews/
+docs/investigations/*
+!docs/investigations/test-coverage-value-audit-ledger-2026-05-29.md
 docs/plans/*
 !docs/plans/test-coverage-value-audit-2026-05-29.md
+prompt-exports/
+
+# Local agent/tool configuration
+.codex/
+
+# Smithers runtime state accidentally created from the repo root
+smithers.db*
+
+# Scratch smoke output
+smoke.txt
 
 # Python cache artifacts
 __pycache__/
