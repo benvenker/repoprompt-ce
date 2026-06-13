@@ -34,7 +34,7 @@ struct HeadlessMCPServer {
         try await serve(transport: transport, discoveryRestricted: true)
     }
 
-    private func serve<T: Transport>(transport: T, discoveryRestricted: Bool) async throws {
+    private func serve(transport: some Transport, discoveryRestricted: Bool) async throws {
         var logger = Logger(label: "rpce-headless")
         logger.logLevel = .warning
         let server = MCP.Server(
@@ -114,7 +114,7 @@ struct HeadlessMCPServer {
             )
             return textResult(text)
         case "file_search":
-            return textResult(try await host.fileSearch(args: arguments))
+            return try await textResult(host.fileSearch(args: arguments))
         case "get_code_structure":
             let text = try await host.codeStructure(
                 paths: arguments["paths"]?.stringArray,
@@ -128,13 +128,13 @@ struct HeadlessMCPServer {
         case "workspace_context":
             let reply = try await host.workspaceContext(args: arguments)
             return try CallTool.Result(
-                content: [.text(text: reply.context.isEmpty ? try HeadlessJSON.string(reply) : reply.context, annotations: nil, _meta: nil)],
+                content: [.text(text: reply.context.isEmpty ? HeadlessJSON.string(reply) : reply.context, annotations: nil, _meta: nil)],
                 structuredContent: reply,
                 isError: false
             )
         case "prompt":
             let op = arguments["op"]?.stringValue?.lowercased() ?? "get"
-            return textResult(try await host.prompt(op: op, text: arguments["text"]?.stringValue))
+            return try await textResult(host.prompt(op: op, text: arguments["text"]?.stringValue))
         case "oracle_send":
             return try await OracleSendTool.call(arguments: arguments, service: oracleService)
         case "context_builder":
@@ -160,7 +160,7 @@ struct HeadlessMCPServer {
         CallTool.Result(content: [.text(text: text, annotations: nil, _meta: nil)], isError: false)
     }
 
-    private func jsonTextResult<T: Codable>(_ value: T) throws -> CallTool.Result {
+    private func jsonTextResult(_ value: some Codable) throws -> CallTool.Result {
         try CallTool.Result(
             content: [.text(text: HeadlessJSON.string(value), annotations: nil, _meta: nil)],
             structuredContent: value,
