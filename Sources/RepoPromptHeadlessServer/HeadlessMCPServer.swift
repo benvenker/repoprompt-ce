@@ -47,6 +47,7 @@ struct HeadlessMCPServer {
         )
         let tools = discoveryRestricted ? HeadlessToolSchemas.discoveryTools : HeadlessToolSchemas.tools
         let oracleService = OracleService(host: host)
+        let contextBuilderService = HeadlessContextBuilderService(host: host)
         await server.withMethodHandler(ListTools.self) { _ in
             ListTools.Result(tools: tools)
         }
@@ -59,7 +60,7 @@ struct HeadlessMCPServer {
                         isError: true
                     )
                 }
-                return try await callTool(name: params.name, arguments: arguments, host: host, oracleService: oracleService)
+                return try await callTool(name: params.name, arguments: arguments, host: host, oracleService: oracleService, contextBuilderService: contextBuilderService)
             } catch let failure as HeadlessToolFailure {
                 return CallTool.Result(
                     content: [.text(text: failure.message, annotations: nil, _meta: nil)],
@@ -79,7 +80,7 @@ struct HeadlessMCPServer {
         await oracleService.shutdown()
     }
 
-    private func callTool(name: String, arguments: [String: MCP.Value], host: HeadlessWorkspaceHost, oracleService: OracleService) async throws -> CallTool.Result {
+    private func callTool(name: String, arguments: [String: MCP.Value], host: HeadlessWorkspaceHost, oracleService: OracleService, contextBuilderService: HeadlessContextBuilderService) async throws -> CallTool.Result {
         switch name {
         case "read_file":
             guard let path = arguments["path"]?.stringValue else { throw HeadlessToolFailure(message: "missing path") }
@@ -121,6 +122,10 @@ struct HeadlessMCPServer {
             return textResult(try await host.prompt(op: op, text: arguments["text"]?.stringValue))
         case "oracle_send":
             return try await OracleSendTool.call(arguments: arguments, service: oracleService)
+        case "context_builder":
+            let request = try HeadlessContextBuilderService.requestFromMCP(arguments: arguments)
+            let execution = try await contextBuilderService.run(request: request, oracleService: oracleService)
+            return try jsonTextResult(execution.mcpResult)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(name)")
         }

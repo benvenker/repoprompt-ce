@@ -4,6 +4,7 @@ enum ContextBuildResponseType: String {
     case selection
     case question
     case plan
+    case review
 }
 
 struct ContextBuildOptions {

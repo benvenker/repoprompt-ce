@@ -28,7 +28,7 @@ init = rpc("initialize", {"protocolVersion":"2024-11-05","capabilities":{},
 notify("notifications/initialized")
 tools = {t["name"] for t in rpc("tools/list")["tools"]}
 expected = {"read_file","get_file_tree","file_search","get_code_structure",
-            "manage_selection","workspace_context","prompt","oracle_send"}
+            "manage_selection","workspace_context","prompt","oracle_send","context_builder"}
 assert expected <= tools, f"missing: {expected - tools}"
 print("INIT OK", sorted(tools))
 if phase != "init" and "all" in (phase,):

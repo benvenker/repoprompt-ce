@@ -2,13 +2,15 @@ import Foundation
 
 enum DiscoverPromptBuilder {
     static func build(instructions: String, tokenBudget: Int = 118_500, responseType: ContextBuildResponseType = .selection) -> String {
-        let responseGuidance: String = switch responseType {
+        let responseGuidance = switch responseType {
         case .selection:
             "Build a curated selection and handoff prompt only. Do not answer the task."
         case .question:
             "Build a curated selection and handoff prompt for answering the user's question; the headless orchestrator may ask the oracle after you halt."
         case .plan:
             "Build a curated selection and handoff prompt for producing an implementation plan; the headless orchestrator may ask the oracle after you halt."
+        case .review:
+            "Build a curated selection and handoff prompt for reviewing code or a diff; the headless orchestrator may ask the oracle after you halt."
         }
 
         return """
@@ -17,7 +19,7 @@ enum DiscoverPromptBuilder {
         **Headless RepoPrompt CE contract**
         - You can access the repository only through the RepoPrompt MCP tools.
         - Available tools: `manage_selection`, `prompt`, `workspace_context`, `get_file_tree`, `get_code_structure`, `file_search`, `read_file`.
-        - `git`, edit tools, shell commands, app tabs/windows, and user-interaction tools are unavailable in this headless discovery socket.
+        - `git`, edit tools, shell commands, app tabs/windows, `context_builder`, `oracle_send`, and user-interaction tools are unavailable in this headless discovery socket.
         - Slices are not supported in headless v1; select full files first and use `codemap_only` for supporting API context when needed.
 
         **User instructions**
@@ -100,7 +102,7 @@ enum DiscoverPromptBuilder {
         - Mentioning relevant files in the prompt without selecting them.
         - Skipping the mandatory handoff prompt.
         - Implementing the task or editing files.
-        - Calling unavailable tools (`git`, shell, apply_edits, file_actions, ask_user, oracle_send).
+        - Calling unavailable tools (`git`, shell, apply_edits, file_actions, ask_user, context_builder, oracle_send).
 
         Remember: You are the scout who maps the territory. Don't solve the problem—provide complete context so the next model can choose its own approach.
         """

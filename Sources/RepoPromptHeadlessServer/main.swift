@@ -150,7 +150,7 @@ enum HeadlessCLI {
             case "--response-type":
                 let valueIndex = index + 1
                 guard valueIndex < args.count, let value = ContextBuildResponseType(rawValue: args[valueIndex]) else {
-                    throw usage("--response-type must be selection, question, or plan")
+                    throw usage("--response-type must be selection, question, plan, or review")
                 }
                 responseType = value
                 index += 2

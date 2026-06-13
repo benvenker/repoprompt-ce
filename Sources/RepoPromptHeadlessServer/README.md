@@ -77,7 +77,7 @@ or use the `context-build --response-type question|plan` CLI path.
 
 Stdout is reserved for newline-delimited JSON-RPC. Diagnostics go to stderr.
 This stdio mode is intended for MCP clients that launch the process directly;
-it exposes all tools, including `oracle_send`.
+it exposes all tools, including `oracle_send` and `context_builder`.
 
 Socket serving for discovery agents:
 
@@ -96,11 +96,11 @@ All socket connections are discovery-restricted to:
 - `file_search`
 - `read_file`
 
-Stdio serving remains unrestricted and includes `oracle_send`.
+Stdio serving remains unrestricted and includes `oracle_send` and `context_builder`.
 
 The socket mode is intended for a local daemon plus discovery agents on the
-same host. It does not expose `oracle_send`; use stdio mode or
-`context-build --response-type question|plan` for oracle-backed answers.
+same host. It does not expose `oracle_send` or `context_builder`; use stdio mode or
+`context-build --response-type question|plan|review` for oracle-backed answers.
 
 A diagnostic catalog summary is also available:
 
@@ -136,7 +136,7 @@ the container or invoke `./Scripts/package_headless_linux.sh` directly.
 
 ## Headless context builder
 
-`context-build` starts an in-process restricted Unix socket server, renders a Discover prompt, launches an operator-configured discovery agent, then harvests the resulting selection and prompt:
+`context-build` starts an in-process restricted Unix socket server, renders a Discover prompt, launches an operator-configured discovery agent, then harvests the resulting selection and prompt. The unrestricted stdio MCP server exposes the same orchestration as the `context_builder` tool; discovery-restricted sockets intentionally do not expose `context_builder` or `oracle_send`.
 
 ```bash
 .build/debug/rpce-headless context-build \
@@ -153,6 +153,16 @@ Agent templates live in `Examples/agents.json`; operators can copy/edit them at 
 - `{MCP_CONFIG_PATH_RAW}`
 - `{FAKE_AGENT_SCRIPT}` (test harness only)
 
+MCP `context_builder` configuration is resolved from the process environment:
+
+- `RPCE_CONTEXT_BUILDER_AGENT` (defaults to `fake` when `FAKE_AGENT_SCRIPT` is set, otherwise `claude`)
+- `RPCE_CONTEXT_BUILDER_AGENT_CONFIG`
+- `RPCE_CONTEXT_BUILDER_TIMEOUT_SECONDS`
+- `RPCE_CONTEXT_BUILDER_TOKEN_BUDGET`
+- `RPCE_CONTEXT_BUILDER_SOCKET_PATH`
+
+MCP `response_type:"clarify"` is offline and only harvests context. `question`, `plan`, and `review` use the oracle after discovery and therefore require oracle API configuration. `export_response:true` is explicitly unsupported by headless v1 and returns a tool error.
+
 Dry-run rendering:
 
 ```bash
@@ -163,6 +173,7 @@ Offline acceptance:
 
 ```bash
 python3 Sources/RepoPromptHeadlessServer/Scripts/context_build_fake_agent_test.py .build/debug/rpce-headless "$PWD"
+python3 Sources/RepoPromptHeadlessServer/Scripts/context_builder_mcp_fake_agent_test.py .build/debug/rpce-headless "$PWD"
 ```
 
 Expected success output: `CONTEXT_BUILD OK`.
@@ -199,6 +210,7 @@ Continuations with `chat_id` default to no new context unless
 - `workspace_context`
 - `prompt`
 - `oracle_send` (stdio only)
+- `context_builder` (stdio only)
 
 ## v1 semantics and deferred work
 
