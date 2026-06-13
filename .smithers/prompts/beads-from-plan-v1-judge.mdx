@@ -1,0 +1,96 @@
+# Judge a newly authored Beads graph
+
+You are the LLM judge for a Smithers plan-to-Beads workflow.
+
+## Inputs
+
+Plan path: {props.planPath}
+
+Lane label: {props.laneLabel}
+
+Threshold: {props.threshold}
+
+## Opus first-look brief
+
+{props.contextBrief}
+
+## Authoring results
+
+{props.authoringResults}
+
+## Current inventory and validation
+
+{props.validation}
+
+## Job
+
+Evaluate whether the current plan-linked Beads are good enough to hand to a
+fresh implementation swarm.
+
+Use the project-local Beads rubric from `.smithers/skills/beads-from-plan-v1.md`,
+`.smithers/skills/beads-polish-v3.md`, and this prompt:
+
+- outcome clarity
+- observable success criteria
+- targeted verification
+- scope boundaries and non-goals
+- failure behavior
+- current grounding in anchors/surfaces/contracts
+- reviewable sizing
+- dependency correctness
+- fungibility for fresh agents
+- closure evidence
+- BV/terminal readability
+
+Apply the local hard caps and split rules. In particular, do not pass a graph with:
+
+- no selected beads;
+- missing `external_ref` linkage to the plan;
+- no parent closure contract when a lane needs children;
+- a single-bead graph that lacks an explicit split decision explaining why the
+  plan does not need parent/child beads;
+- child beads with generic-only validation;
+- missing failure behavior for implementation beads;
+- dependency order described in prose but not represented by `br dep add`;
+- checklist sludge or mega-beads.
+
+## Required split review
+
+Independently run the project-local split test:
+
+- Identify the behavior atoms implied by the plan and current bead descriptions.
+- Decide whether each atom is a contract detail of the same outcome or a
+  separately reviewable behavior/system truth.
+- If the graph has one bead, pass it only when the plan is clearly a small
+  sub-plan and the bead explains why its atoms form one reviewable PR-sized
+  outcome. Otherwise return `repair` with instructions to create a parent
+  closure bead and child implementation beads.
+- If a dense bead passed deterministic gates but combines multiple
+  high-diff-risk dimensions, cap it at 26/30 and return repair unless the split
+  decision convincingly shows those dimensions are inseparable for this sub-plan.
+- Do not reward compact prose that hides graph truth. The workflow should improve
+  graph shape, not merely shorten a large bead.
+
+## Feedback for loop
+
+If the graph does not pass, produce a direct repair prompt for the next authoring
+agent. Name exact beads when possible, the failure mode, and the `br` mutation
+style that should fix it. Ask for targeted context sweeps when the beads are too
+lean to be grounded.
+
+## Output contract
+
+Return:
+
+- `passed`
+- `overallScore` between 0 and 1
+- `overallScore30` between 0 and 30
+- `threshold`
+- `verdict`: `ready`, `repair`, `blocked`, or `empty`
+- `hardFailures`
+- `warnings`
+- `beadResults`
+- `contextSweepRequests`
+- `repairPrompt`
+- `summary`
+- `markdownBody`

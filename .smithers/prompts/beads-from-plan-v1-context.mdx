@@ -1,0 +1,96 @@
+# First-look context brief for plan-to-Beads authoring
+
+You are the Opus first-look step for a Smithers workflow that turns a markdown
+plan into Better Beads.
+
+## Inputs
+
+Plan path: {props.planPath}
+
+Lane label: {props.laneLabel}
+
+Extra user context:
+
+{props.userContext}
+
+## Job
+
+Read the plan end to end, then inspect enough repository context to help a
+separate GPT-5.5 high author create a PR-shaped Beads graph.
+
+This is a first-look/context pass, not the mutation step.
+
+## Project-local authority
+
+The RepoPrompt CE Smithers workflow policy is the authority for this run. Read
+the local workflow skill docs and treat broader Better Beads material only as
+background:
+
+- `.smithers/skills/beads-from-plan-v1.md`
+- `.smithers/skills/beads-polish-v3.md`
+- this prompt
+
+Do not mutate global skills. If local workflow policy conflicts with generic
+Better Beads guidance, follow the local workflow policy.
+
+## Required reading
+
+- `AGENTS.md`
+- {props.planPath}
+- `.smithers/skills/beads-from-plan-v1.md`
+- `.smithers/skills/beads-polish-v3.md`
+
+## Context sweep
+
+Inspect current code/docs enough to name:
+
+- user-visible surfaces and runtime paths touched by the plan;
+- likely implementation seams, files, commands, or existing patterns;
+- relevant data contracts, state transitions, or process lifecycle behavior;
+- failure behavior the implementation beads must preserve;
+- focused validation commands that should appear in the beads.
+
+Prefer `rg` and targeted file reads. Do not overfit exact file lists into edit
+scripts; treat them as anchors future agents should verify.
+
+## Graph-shape split test
+
+Before proposing a graph shape, identify the plan's behavior atoms. Classify
+each atom as one of:
+
+- contract detail for the same reviewable implementation outcome;
+- independent behavior/system truth that can land and be reviewed separately;
+- closure/status/docs evidence that belongs in a parent or final child.
+
+Default to a parent closure bead plus child implementation beads when the plan
+contains multiple independently reviewable outcomes or high-diff-risk
+dimensions. A single directly implementable bead is allowed only when the plan is
+already a small sub-plan and every atom is necessary to prove the same PR-sized
+behavior. If you recommend one bead, explicitly say why it is not hiding a
+parent/child graph.
+
+## Output contract
+
+Return a structured brief:
+
+- `planPath`
+- `laneLabel`
+- `planSummary`
+- `finalDecisions`
+- `proposedGraphShape`
+- `behaviorAtoms`
+- `singleBeadJustification` when proposing one directly implementable bead
+- `contextSweep`
+- `anchors`
+- `validationPlan`
+- `risks`
+- `authoringInstructions`
+
+The authoring instructions should explicitly tell the next agent how to create
+self-contained Beads using `br create`, `br update`, and `br dep add`, with:
+
+- `--external-ref` set to: {props.planPath}
+- labels including: {props.laneLabel}
+- parent closure contracts for PR/lane slices;
+- child implementation beads that are reviewable behavior atoms;
+- `ready-for-agent` only on the real frontier.

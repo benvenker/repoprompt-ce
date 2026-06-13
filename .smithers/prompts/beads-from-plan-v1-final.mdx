@@ -1,0 +1,53 @@
+# Summarize plan-to-Beads workflow result
+
+Summarize this Smithers workflow run.
+
+## Plan
+
+Plan path: {props.planPath}
+
+Lane label: {props.laneLabel}
+
+## Context brief
+
+{props.contextBrief}
+
+## Authoring results
+
+{props.authoringResults}
+
+## Validation results
+
+{props.validationResults}
+
+## Judge results
+
+{props.judgeResults}
+
+## Decision results
+
+{props.decisions}
+
+Return a concise status:
+
+- whether the graph is ready;
+- which bead ids were created/updated;
+- judge score and threshold, with fractional display in text fields and structured values as integer percents;
+- validation commands run;
+- remaining risks or next actions.
+
+Return fields matching the workflow final schema:
+
+- `status`: `ready`, `partial`, `blocked`, or `empty`
+- `summary`
+- `createdIds`
+- `updatedIds`
+- `selectedCount`
+- `roundsRun`
+- `judgeScoreText`, for example `0.94`
+- `judgeThresholdText`, for example `0.86`
+- `judgeScorePercent`, integer 0-100
+- `judgeThresholdPercent`, integer 0-100
+- `remainingRisks`
+- `nextActions`
+- `markdownBody`

@@ -1,0 +1,152 @@
+# Beads Polish Quality Judge
+
+You are the LLM judge step for a Smithers Beads polishing workflow.
+
+Return ONLY the required JSON object.
+Do not include prose, markdown, headings, commentary, or code fences.
+The first character of your response must be `{` and the last character must be `}`.
+
+## Goal
+
+Evaluate whether the workflow improved the selected beads as behavioral execution
+contracts for fungible coding agents.
+
+The most important output is not only the score. If the score does not pass,
+produce a compact repair prompt the next reviewer/apply iteration can follow.
+That prompt should say what failed, why it matters, which bead IDs are affected,
+what context must be swept, and what kind of bead mutation would address it.
+
+This is a judgment step, not a mutation step:
+
+- Do not mutate beads.
+- Do not call `br update`.
+- Do not edit `.beads`.
+- Judge from the before/after evidence provided below.
+- Do not invent codebase facts missing from the evidence. If current code context
+  is needed, mark that as a context sweep request for the next iteration.
+
+## Scoring rubric
+
+Score each bead before and after from 0-30 using:
+
+- outcome clarity
+- observable success criteria
+- verification path
+- scope boundaries / non-goals
+- failure behavior
+- grounding in current surfaces, contracts, anchors, or key fields
+- reviewable implementation sizing
+- dependency correctness
+- fungibility for a fresh agent
+- closure evidence
+- BV / terminal readability
+
+Apply hard caps strictly:
+
+- max 16 if missing outcome/goal
+- max 18 if success criteria are not observable
+- max 18 if scope boundaries or non-goals are absent
+- max 20 if no validation command, behavior-test requirement, or smoke observation exists
+- max 21 if failure behavior is absent for implementation work
+- max 22 if there is no grounding in current surfaces, anchors, contracts, key fields, or likely seams
+- max 24 if there is insufficient inspected context to name behavior, verification, failure behavior, and a current anchor/surface
+- max 24 if validation is only generic project build/test theater
+- max 25 if dependencies are prose-only when explicit dependency edges are required
+- max 26 if parallel safety is unknown for multi-agent graph work
+- max 26 if a child combines multiple high-diff-risk dimensions that should be independent review atoms
+- max 26 if a dense single bead lacks an explicit split decision explaining why
+  its behavior atoms form one reviewable sub-plan outcome instead of a
+  parent/child graph
+- max 27 if the bead dictates exact implementation mechanics where behavior-level constraints would suffice
+
+A bead below 24/30 is not ready for swarm implementation.
+
+## Pass/fail policy
+
+Threshold: {props.threshold}
+
+Set `passed: true` only when:
+
+- `overallScore` is at least the threshold,
+- no hard failure remains,
+- after-state score is not lower than before-state score for any selected bead,
+- material changes improved executability, reviewability, verification, dependency clarity, or closure evidence rather than merely adding prose.
+
+Set `passed: false` for regression, rubric laundering, validation theater,
+missing hard-gate fields, or unresolved hard failures.
+
+## Context sufficiency
+
+Use `contextSufficiency` this way:
+
+- `sufficient`: the bead text, graph, apply results, and validation output are
+  enough to judge quality and produce direct repair instructions.
+- `needs-targeted-sweep`: the next iteration should inspect specific files,
+  symbols, commands, or code anchors before mutating bead text.
+- `insufficient`: the evidence is too thin to trust the score; fail the judge and
+  request a concrete context sweep.
+
+When context is missing, fill `contextSweepRequests` with:
+
+- `beadId`
+- `purpose`: what question the sweep must answer
+- `suggestedCommands`: concrete `rg`, `br show --json`, `bv --robot-*`, or
+  project file-read commands
+- `expectedEvidence`: what the next agent must bring back before mutating
+
+## Split decision review
+
+Independently identify the selected bead graph's behavior atoms before scoring.
+For each dense single bead, decide whether those atoms are:
+
+- same-outcome contract details that belong in one implementation bead; or
+- independent behavior/system truths that should be represented as children
+  under a parent closure contract.
+
+Pass a single-bead graph only when the bead is clearly one small sub-plan or
+child outcome and the after-state includes a convincing split decision. If the
+single-bead graph is probably valid but the bead does not say why, fail or cap
+the score and ask the next apply iteration to add that split decision. If the
+atoms are independently reviewable, fail and ask for a graph correction with
+`br`-created child beads and dependency edges.
+
+## Repair prompt
+
+When `passed` is false, fill `nextAgentPrompt` as if handing the next loop
+iteration a work order. It should be specific enough that a fresh agent can act:
+
+- name failing bead IDs,
+- summarize the failed rubric dimensions,
+- say which failures require context inspection before mutation,
+- describe the intended mutation at behavior-contract level,
+- remind the next agent to use `br` only and not edit `.beads` directly.
+
+Do not ask for generic polish. Do not reward added prose unless it improves
+executability, reviewability, verification, dependency clarity, or closure
+evidence.
+
+## Selection
+
+{props.selectorSummary}
+
+## Before inventory
+
+{props.beforeInventory}
+
+## After inventory
+
+{props.afterInventory}
+
+## Apply results
+
+{props.applyResults}
+
+## Validation results
+
+{props.validationResults}
+
+## Required output
+
+{props.schema}
+
+Return ONLY raw JSON matching the required output schema.

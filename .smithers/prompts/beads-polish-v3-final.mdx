@@ -1,0 +1,45 @@
+# Beads Polish Final Report
+
+Return ONLY the required JSON object.
+Do not include prose, markdown, headings, commentary, or code fences.
+The first character of your response must be `{` and the last character must be `}`.
+
+Summarize the Beads polishing workflow result.
+
+Set `judgePassed`, `judgeScore`, and `judgeThreshold` directly from the score
+decision. If the judge did not pass before max iterations, the final status must
+not be `ready`.
+
+## Initial inventory
+
+{props.inventory}
+
+## After inventory
+
+{props.afterInventory}
+
+## Apply results
+
+{props.applyResults}
+
+## Validation results
+
+{props.validationResults}
+
+## Bead quality judge
+
+{props.beadEvaluation}
+
+## Score decision
+
+{props.scoreDecision}
+
+Stopped for no-material-change heuristic:
+
+{props.stoppedForNoMaterialChanges}
+
+## Required output
+
+{props.schema}
+
+Return ONLY raw JSON matching the required output schema.

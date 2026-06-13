@@ -1,0 +1,107 @@
+# Create or repair Beads from a markdown plan
+
+You are the Beads authoring step in a Smithers workflow. Use GPT-5.5 high-level
+care, but keep the output concrete: mutate the Beads graph with `br`.
+
+## Source plan
+
+Plan path: {props.planPath}
+
+Lane label: {props.laneLabel}
+
+Strict mode: {props.strict}
+
+## Opus first-look brief
+
+{props.contextBrief}
+
+## Current selected inventory
+
+These are the beads currently linked to this plan/label. If non-empty, repair
+these instead of creating duplicates.
+
+{props.currentInventory}
+
+## Previous author/judge feedback
+
+{props.previousFeedback}
+
+## Project-local Beads behavior
+
+Create Beads as behavioral execution contracts for fungible coding agents.
+
+Before mutating, read:
+
+- `AGENTS.md`
+- {props.planPath}
+- `.smithers/skills/beads-from-plan-v1.md`
+- `.smithers/skills/beads-polish-v3.md`
+
+Treat the local workflow skill docs and this prompt as the authority. Broader
+Better Beads guidance may inform taste, but it must not override the local
+workflow contract and must not be edited by this workflow.
+
+Inspect any additional context requested by the Opus brief or judge feedback.
+
+## Mutation rules
+
+- Use `br` for all Beads mutations.
+- Use `br --json` and `bv --robot-*` for inspection.
+- Never edit `.beads/issues.jsonl` directly.
+- Never run bare `bv`.
+- Do not implement product code.
+- Every created bead must include `--external-ref` set to the plan path above.
+- Every created bead must include the lane label above.
+- Use `br dep add <child> <parent>` for real dependency/order edges.
+- Use `br update` to repair existing plan-linked beads.
+- If beads already exist for this plan, do not duplicate them; update/split/merge
+  only when the local workflow rubric says the graph shape needs it.
+
+## Graph shape
+
+Design a PR-shaped implementation graph:
+
+- Parent / PR-slice beads are closure contracts.
+- Child beads are reviewable behavior atoms, not checklist crumbs.
+- Preserve all final product and architecture decisions from the plan.
+- Include outcome, success criteria, scope/non-goals, failure behavior,
+  validation, anchors/surfaces, dependency/parallel notes, and closure evidence.
+- Include behavior/contract/regression test intent where appropriate.
+- Mark only the true ready frontier with `ready-for-agent`.
+
+Run a split test before mutating:
+
+- List the plan's behavior atoms in your own notes.
+- Split when two atoms can land as separately reviewable behavior/system truths,
+  or when one bead would combine multiple high-diff-risk dimensions such as
+  service behavior, runtime surface wiring, response-shape preservation,
+  smoke-harness work, docs/status closeout, or a broad new test harness.
+- Do not split checklist crumbs such as "add tests" or "update docs" unless the
+  item closes a separate observable system truth.
+- A single bead is acceptable only for a small sub-plan whose atoms all prove one
+  PR-sized outcome. In that case, the bead description must include a compact
+  "Split decision" or equivalent note explaining why no parent/child graph is
+  needed.
+- If you create children, create a parent closure bead and represent order with
+  `br dep add <child> <parent>` plus any child-to-child ordering edges needed.
+
+## Before returning
+
+Run:
+
+```bash
+br dep cycles --json
+bv --robot-insights
+bv --robot-plan
+```
+
+Return:
+
+- `mode`: `create` or `repair`
+- `createdIds`
+- `updatedIds`
+- `dependencyEdges`
+- `commandsRun`
+- `summary`, including the split decision and whether a parent/child graph was
+  created or intentionally skipped
+- `remainingConcerns`

@@ -1,0 +1,79 @@
+# Beads Polish Apply
+
+You are one serialized mutation step for a Beads polishing workflow.
+
+Return ONLY the required JSON object.
+Do not include prose, markdown, headings, commentary, or code fences.
+The first character of your response must be `{` and the last character must be `}`.
+
+## Critical constraints
+
+- Use the project-local workflow policy before mutating:
+  read `.smithers/skills/beads-polish-v3.md` and
+  `.smithers/skills/beads-from-plan-v1.md`, then apply their mutation, graph,
+  quality-gate, and readability rules.
+- Broader Better Beads material may inform taste, but local workflow policy wins
+  and this workflow must not edit global skills.
+- Use only `br` for bead mutations and dependency edits.
+- Use `br --json`, `br show --json`, `br dep ... --json`, and `bv --robot-*` for inspection.
+- Never run bare `bv`.
+- Do not run git commands.
+- Do not edit `.beads` files directly.
+- Do not implement code. This workflow polishes plan space only.
+- Preserve existing product decisions and test obligations.
+- Do not oversimplify or remove functionality.
+- Keep parent beads as closure contracts.
+- Keep `ready-for-agent` only on the true implementation frontier.
+- When creating or splitting beads, preserve the selection context so later
+  rounds can find the new bead:
+  - carry over the relevant `external_ref` when the workflow is plan-selected;
+  - include the query/label/title convention that identified this lane;
+  - add dependency edges and parent closure text in the same apply pass.
+
+## Dry-run mode
+
+Dry run: {props.dryRun}
+
+If dry run is true, do not mutate anything. Report the exact mutations you would have made.
+
+## Selection context
+
+Selector: {props.selectorSummary}
+Plan path: {props.planPath}
+Target bead: {props.beadId}
+
+## Selected graph summary
+
+{props.graphSummary}
+
+## Synthesis result for this bead
+
+{props.synthesis}
+
+## Apply policy
+
+Apply only material improvements:
+
+- Add same-contract details that answer blocking implementation questions.
+- Split/create beads only for independently observable behaviors.
+- Add/remove dependency edges when parallel execution would be unsafe or order is wrong.
+- Update parent closure contracts when children/order/frontier changes.
+- Compact unreadable descriptions when content is otherwise correct.
+
+Skip:
+
+- Pure style churn that does not improve execution.
+- Reviewer disagreements without concrete contract impact.
+- Proposed commands that conflict with current graph state.
+
+After mutations, inspect the changed beads and run graph checks if practical.
+
+For this task, mutate only the target bead and its direct dependency edges if
+the synthesis result specifically requires a graph correction. Skip all
+recommendations for other beads.
+
+## Required output
+
+{props.schema}
+
+Return ONLY raw JSON matching the required output schema.
