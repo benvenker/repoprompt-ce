@@ -742,6 +742,16 @@ final class AgentModeViewModel: ObservableObject {
             }
         }
 
+        func test_drainWorkspaceSwitchBackgroundCleanup() async {
+            while !workspaceSwitchBackgroundCleanupTasks.isEmpty {
+                let tasks = Array(workspaceSwitchBackgroundCleanupTasks.values)
+                for task in tasks {
+                    await task.value
+                }
+                await Task.yield()
+            }
+        }
+
         func test_setMCPControlledTabIDs(_ tabIDs: Set<UUID>) {
             mcpControlledTabIDs = tabIDs
         }
@@ -8787,7 +8797,8 @@ final class AgentModeViewModel: ObservableObject {
     ) {
         guard !targets.isEmpty else { return }
         let cleanupID = UUID()
-        let task = Task(priority: .utility) { @MainActor [weak self] in
+        // Inherit priority so explicit drains do not wait behind lower-priority MainActor cleanup work.
+        let task = Task { @MainActor [weak self] in
             await Task.yield()
             guard let self else { return }
             for target in targets {
@@ -8807,7 +8818,6 @@ final class AgentModeViewModel: ObservableObject {
             }
             let codexCoordinator = codexCoordinator
             let claudeCoordinator = claudeCoordinator
-            workspaceSwitchBackgroundCleanupTasks.removeValue(forKey: cleanupID)
             for target in targets {
                 await Self.disposeDetachedWorkspaceSwitchTarget(
                     target,
@@ -8816,6 +8826,7 @@ final class AgentModeViewModel: ObservableObject {
                 )
                 await Task.yield()
             }
+            workspaceSwitchBackgroundCleanupTasks.removeValue(forKey: cleanupID)
         }
         workspaceSwitchBackgroundCleanupTasks[cleanupID] = task
     }

@@ -24,6 +24,7 @@ final class AgentModeWorkspaceSwitchCleanupTests: XCTestCase {
         try await waitUntil { await provider.isDisposeStarted() }
         await provider.releaseDispose()
         try await waitUntil { await provider.isDisposeFinished() }
+        await viewModel.test_drainWorkspaceSwitchBackgroundCleanup()
     }
 
     func testWorkspaceSwitchBackgroundCleanupUsesCapturedRunIDAfterForegroundSessionsAreCleared() async throws {
@@ -49,6 +50,7 @@ final class AgentModeWorkspaceSwitchCleanupTests: XCTestCase {
         XCTAssertTrue(viewModel.sessions.isEmpty)
         try await waitUntil { await routing.contains(runID: oldRunID, reason: "workspace_switch") }
         XCTAssertTrue(cancelled.containsSync(runID: oldRunID, reason: "workspace_switch"))
+        await viewModel.test_drainWorkspaceSwitchBackgroundCleanup()
     }
 
     func testDetachedMCPTeardownDoesNotDeactivateNewLiveControlContextWithSameSessionID() async throws {
@@ -74,6 +76,7 @@ final class AgentModeWorkspaceSwitchCleanupTests: XCTestCase {
 
         try await waitUntil { await routing.contains(runID: oldRunID, reason: "workspace_switch") }
         XCTAssertEqual(newSession.mcpControlContext?.sessionID, mcpSessionID)
+        await viewModel.test_drainWorkspaceSwitchBackgroundCleanup()
     }
 
     func testDetachedWorkspaceSwitchCleanupDoesNotClearNewSessionOnSameTab() async throws {
@@ -99,6 +102,7 @@ final class AgentModeWorkspaceSwitchCleanupTests: XCTestCase {
         try await waitUntil { await provider.isDisposeStarted() }
         await provider.releaseDispose()
         try await waitUntil { await provider.isDisposeFinished() }
+        await viewModel.test_drainWorkspaceSwitchBackgroundCleanup()
 
         XCTAssertTrue(viewModel.sessions[tabID] === newSession)
         XCTAssertEqual(newSession.providerSessionID, "new-provider-session")
