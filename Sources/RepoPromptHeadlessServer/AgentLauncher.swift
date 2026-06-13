@@ -42,7 +42,7 @@ enum AgentLauncher {
         tempDirectory: URL,
         environment: [String: String] = ProcessInfo.processInfo.environment
     ) throws -> RenderedAgentLaunch {
-        let definitions = try loadDefinitions(configPath: configPath)
+        let definitions = try definitions(configPath: configPath)
         guard let definition = definitions[agentName] else {
             throw HeadlessCLI.ExitError(code: 64, message: "Unknown agent '\(agentName)'. Available agents: \(definitions.keys.sorted().joined(separator: ", "))")
         }
@@ -91,7 +91,7 @@ enum AgentLauncher {
         )
     }
 
-    private static func loadDefinitions(configPath: String?) throws -> [String: AgentDefinition] {
+    static func definitions(configPath: String?) throws -> [String: AgentDefinition] {
         if let configPath {
             let expanded = (configPath as NSString).expandingTildeInPath
             let data = try Data(contentsOf: URL(fileURLWithPath: expanded))

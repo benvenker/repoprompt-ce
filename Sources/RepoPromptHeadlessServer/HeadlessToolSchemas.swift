@@ -101,6 +101,33 @@ enum HeadlessToolSchemas {
             annotations: .init(readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false)
         ),
         Tool(
+            name: "agent_run",
+            description: "Start and control headless process-backed agents for this rpce-headless server. Full stdio mode only; discovery-restricted sockets do not expose this tool. Supported ops: start, poll, wait, cancel.",
+            inputSchema: object([
+                "op": string(operationDescription, enumValues: ["start", "poll", "wait", "cancel"]),
+                "message": string("Message/prompt for op=start"),
+                "model_id": string("Configured headless agent name from agent_manage list_agents; defaults to RPCE_AGENT_RUN_DEFAULT_AGENT or claude"),
+                "session_name": string("Optional display name for the headless process session"),
+                "detach": boolean("For op=start, return immediately after launching instead of waiting"),
+                "timeout": integer("Timeout in seconds for start/wait; 0 behaves like poll"),
+                "session_id": string("Headless session id for poll, wait, or cancel")
+            ]),
+            annotations: .init(readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true)
+        ),
+        Tool(
+            name: "agent_manage",
+            description: "Inspect and manage headless process-backed agent sessions for this rpce-headless server. These are not app/window Agent Mode sessions. Supported ops: list_agents, list_sessions, get_log, stop_session, cleanup_sessions.",
+            inputSchema: object([
+                "op": string(operationDescription, enumValues: ["list_agents", "list_sessions", "get_log", "stop_session", "cleanup_sessions"]),
+                "session_id": string("Headless session id for get_log or stop_session"),
+                "session_ids": array(string("Headless session id"), "Session ids for cleanup_sessions"),
+                "state": string("Optional state filter for list_sessions", enumValues: ["running", "completed", "failed", "cancelled"]),
+                "limit": integer("Maximum sessions or log turns to return"),
+                "offset": integer("Log turn offset for get_log")
+            ]),
+            annotations: .init(readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true)
+        ),
+        Tool(
             name: "context_builder",
             description: "Headless Context Builder orchestration. Launches a configured discovery agent over a restricted local MCP socket, harvests the selected context and handoff prompt, and optionally asks the oracle for question/plan/review responses. export_response is currently unsupported in headless v1.",
             inputSchema: object([
@@ -124,6 +151,8 @@ enum HeadlessToolSchemas {
             annotations: .init(readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true)
         )
     ]
+
+    private static let operationDescription = "Operation"
 
     private static func object(_ properties: [String: MCP.Value], required: [String] = []) -> MCP.Value {
         var value: [String: MCP.Value] = [

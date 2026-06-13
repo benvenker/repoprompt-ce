@@ -48,6 +48,7 @@ struct HeadlessMCPServer {
         let tools = discoveryRestricted ? HeadlessToolSchemas.discoveryTools : HeadlessToolSchemas.tools
         let oracleService = OracleService(host: host)
         let contextBuilderService = HeadlessContextBuilderService(host: host)
+        let agentSessionManager = discoveryRestricted ? nil : HeadlessAgentSessionManager(host: host)
         await server.withMethodHandler(ListTools.self) { _ in
             ListTools.Result(tools: tools)
         }
@@ -60,7 +61,7 @@ struct HeadlessMCPServer {
                         isError: true
                     )
                 }
-                return try await callTool(name: params.name, arguments: arguments, host: host, oracleService: oracleService, contextBuilderService: contextBuilderService)
+                return try await callTool(name: params.name, arguments: arguments, host: host, oracleService: oracleService, contextBuilderService: contextBuilderService, agentSessionManager: agentSessionManager)
             } catch let failure as HeadlessToolFailure {
                 return CallTool.Result(
                     content: [.text(text: failure.message, annotations: nil, _meta: nil)],
@@ -75,12 +76,26 @@ struct HeadlessMCPServer {
                 )
             }
         }
-        try await server.start(transport: transport)
-        await server.waitUntilCompleted()
+        do {
+            try await server.start(transport: transport)
+            await server.waitUntilCompleted()
+        } catch {
+            await agentSessionManager?.shutdown()
+            await oracleService.shutdown()
+            throw error
+        }
+        await agentSessionManager?.shutdown()
         await oracleService.shutdown()
     }
 
-    private func callTool(name: String, arguments: [String: MCP.Value], host: HeadlessWorkspaceHost, oracleService: OracleService, contextBuilderService: HeadlessContextBuilderService) async throws -> CallTool.Result {
+    private func callTool(
+        name: String,
+        arguments: [String: MCP.Value],
+        host: HeadlessWorkspaceHost,
+        oracleService: OracleService,
+        contextBuilderService: HeadlessContextBuilderService,
+        agentSessionManager: HeadlessAgentSessionManager?
+    ) async throws -> CallTool.Result {
         switch name {
         case "read_file":
             guard let path = arguments["path"]?.stringValue else { throw HeadlessToolFailure(message: "missing path") }
@@ -126,6 +141,16 @@ struct HeadlessMCPServer {
             let request = try HeadlessContextBuilderService.requestFromMCP(arguments: arguments)
             let execution = try await contextBuilderService.run(request: request, oracleService: oracleService)
             return try jsonTextResult(execution.mcpResult)
+        case "agent_run":
+            guard let agentSessionManager else {
+                throw HeadlessToolFailure(message: "agent_run is unavailable on discovery-restricted socket connections.")
+            }
+            return try await agentSessionManager.executeAgentRun(arguments: arguments)
+        case "agent_manage":
+            guard let agentSessionManager else {
+                throw HeadlessToolFailure(message: "agent_manage is unavailable on discovery-restricted socket connections.")
+            }
+            return try await agentSessionManager.executeAgentManage(arguments: arguments)
         default:
             throw MCPError.methodNotFound("Unknown tool: \(name)")
         }
