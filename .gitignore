@@ -56,3 +56,6 @@ Icon
 .vscode/
 .idea/
 .claude/settings.local.json
+
+# bv (beads viewer) local config and caches
+.bv/

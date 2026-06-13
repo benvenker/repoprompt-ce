@@ -4,137 +4,135 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 ![Platform: macOS 26+](https://img.shields.io/badge/platform-macOS%2026%2B-black)
 
-**A free, open-source native macOS app and agent orchestrator for context engineering.**
+RepoPrompt CE is a free, open-source native macOS app for context engineering
+and agent orchestration. It builds reviewable repository context from files,
+CodeMaps, trees, selections, and diffs, then exposes that context through the
+app, MCP, headless tools, Smithers workflows, and agent skills.
 
-RepoPrompt CE helps coding agents understand your codebase before they act. It
-assembles focused, reviewable context from files, CodeMaps, repository
-structure, and Git diffs, then hands that context to AI tools and CLI agents.
+## Quick Start
 
-RepoPrompt CE also builds an agent harness around its bundled MCP server.
-Connect MCP-compatible clients and CLI agents to search repositories, inspect
-files, curate context, run agent sessions, and orchestrate work through a shared
-native macOS interface.
-
-## Get Started
-
-Choose one of these setup paths. You do not need to open Xcode.
-
-### Install with Homebrew
-
-For the signed and notarized public app, use the dedicated RepoPrompt CE
-Homebrew tap:
+Install the signed public app:
 
 ```bash
 brew tap repoprompt/repoprompt-ce
 brew install --cask repoprompt-ce
 ```
 
-This installs `/Applications/RepoPrompt CE.app` from the
-[`repoprompt/homebrew-repoprompt-ce`](https://github.com/repoprompt/homebrew-repoprompt-ce)
-tap. The cask consumes the promoted public updater ZIP from
-[`repoprompt/repoprompt-ce-updates`](https://github.com/repoprompt/repoprompt-ce-updates);
-it does not build from source. Source-build paths remain below for contributors
-and local development.
+Build and relaunch the local debug app:
 
-### Build and launch locally
+```bash
+./conductor app relaunch
+```
 
-For development and quick evaluation, double-click
-[`Launch RepoPrompt CE.command`](Launch%20RepoPrompt%20CE.command) in Finder.
-
-The launcher builds RepoPrompt CE from source, opens the debug app, and keeps a
-small terminal window available for rebuild, status, and stop controls.
-
-The debug launcher uses an available `Apple Development:` signing identity. If
-your Mac does not have one, run the same debug app from Terminal with explicit
-ad-hoc signing:
+If signing is unavailable, use ad-hoc signing. Ad-hoc debug builds use
+in-memory secure storage, so saved API keys and secure permission changes do
+not persist across launches.
 
 ```bash
 ALLOW_ADHOC_SIGNING=1 ./conductor app relaunch
 ```
 
-Ad-hoc debug builds use in-memory secure storage, so saved API keys and secure
-permission changes do not persist across launches. For persistent debug
-Keychain storage, pass a stable Apple Development identity explicitly:
+Finder launchers:
+
+- [`Launch RepoPrompt CE.command`](Launch%20RepoPrompt%20CE.command): debug
+  build and relaunch
+- [`Install RepoPrompt CE Local Production.command`](Install%20RepoPrompt%20CE%20Local%20Production.command):
+  local release-mode app under `/Applications`
+
+Source-build requirements: macOS 26+, Xcode 26 or matching Command Line Tools,
+and Python 3 for the coordinated developer daemon.
+
+## Agent Entry Points
+
+Read [`AGENTS.md`](AGENTS.md) before editing. It owns coordinated builds,
+tests, app launches, live MCP checks, source placement, and pre-commit
+preflight.
+
+Common coordinated commands:
 
 ```bash
-SIGN_IDENTITY="Apple Development: Your Name (TEAMID)" ./conductor app relaunch
+make dev-build
+make dev-test
+make dev-test FILTER=WorkspaceFileContextStoreTests
+make dev-lint
+make dev-smoke
 ```
 
-For a stable locally signed app under `/Applications`, use the local production
-installer below. Its self-signed identity is separate from the debug launcher's
-Apple Development signing path.
+The `dev-*` targets route through `./conductor`, which serializes build, test,
+style, and live-app lanes so agents do not collide over `.build` or the running
+app.
 
-> **Note:** If you use the debug app to modify RepoPrompt CE itself, validation
-> flows that launch the app or run live smoke checks may rebuild and relaunch it.
-> Expect the debug app to restart while those checks run.
+Committed agent assets in this checkout:
 
-| Key | Action                                      |
-| --- | ------------------------------------------- |
-| `r` | Rebuild and relaunch                        |
-| `s` | Show app status                             |
-| `x` | Stop the app                                |
-| `q` | Close the launcher without stopping the app |
+- [`.agents/skills/`](.agents/skills/): RepoPrompt workflow skills and `rpce-*`
+  project skills
+- [`.claude/`](.claude/) and [`.codex/`](.codex/): local agent configuration
+- [`.beads/`](.beads/): Beads issue state for `repoprompt-ce`
+- [`prompt-exports/`](prompt-exports/) and [`skills-lock.json`](skills-lock.json):
+  exported oracle prompts and the skill lockfile
 
-### Install a local production build
+## Headless MCP
 
-For a release-mode app under `/Applications`, install Python 3 and double-click
-[`Install RepoPrompt CE Local Production.command`](Install%20RepoPrompt%20CE%20Local%20Production.command)
-in Finder. The Finder launcher uses the coordinated developer daemon.
+[`rpce-headless`](Sources/RepoPromptHeadlessServer) is a standalone MCP server
+and CLI for RepoPrompt CE context tools. It does not require the macOS app.
 
-The installer builds RepoPrompt CE from source and replaces any existing
-`/Applications/RepoPrompt CE.app` using a dedicated self-signed certificate
-trusted only on your Mac. macOS may ask you to approve the certificate.
+```bash
+make dev-swift-build PRODUCT=rpce-headless
+.build/debug/rpce-headless serve --root "$PWD"
+.build/debug/rpce-headless context-build --root "$PWD" --instructions "Map the MCP server" --agent fake --dry-run
+```
 
-The resulting app is local-only. It is not notarized and should not be copied to
-another Mac or redistributed.
+Stdio `serve` exposes the full headless tool set, including `oracle_send`,
+`context_builder`, `agent_run`, and `agent_manage`. Socket connections are
+discovery-restricted by default to read/search/selection tools. The full guide
+is [`Sources/RepoPromptHeadlessServer/README.md`](Sources/RepoPromptHeadlessServer/README.md).
 
-### Source-build requirements
+## Smithers
 
-- macOS 26 or later
-- Xcode 26, or matching Command Line Tools with the macOS 26 SDK
+Smithers workflows live in [`.smithers/`](.smithers/). The pack is a
+Bun/TypeScript workspace with local scripts in
+[`.smithers/package.json`](.smithers/package.json), agent pools in
+[`.smithers/agents.ts`](.smithers/agents.ts), workflow UIs in
+[`.smithers/ui/`](.smithers/ui/), and workflow graphs in
+[`.smithers/workflows/`](.smithers/workflows/).
 
-## Features
+From the repository root:
 
-- **Context engineering**: Build dense, reviewable prompts with the files and
-  repository details an AI model actually needs.
-- **Codebase orientation**: Combine file trees, selected file contents, line
-  slices, CodeMaps, and Git diffs.
-- **Context Builder**: Let an agent explore the repository, identify relevant
-  files, and curate context within a token budget.
-- **Agent orchestration**: Run and coordinate CLI-backed coding agents from the
-  native macOS app. See [`docs/worktrees.md`](docs/worktrees.md) for app-managed
-  worktrees and `.worktreeinclude` local file copying.
-- **MCP server and CLI integration**: Connect external MCP-compatible tools and
-  CLI agents to RepoPrompt CE's repository context and agent harness.
-- **Multi-root workspaces**: Work across related repositories, packages, and
-  documentation folders in one workspace.
-- **Reviewable handoffs**: Inspect and refine selected context before sending it
-  to another model or agent.
+```bash
+cd .smithers
+bun install
+bun run workflow:list
+bun run workflow:run -- plan --prompt "Plan the next change"
+bun run gateway
+```
 
-## About the Community Edition
+The workflow package scripts run Smithers from the repository root so discovery
+sees `.smithers/workflows`; direct CLI use should do the same, for example
+`.smithers/node_modules/.bin/smithers workflow list`. `bun run workflow:list`
+prints the local workflow catalog. The gateway
+defaults to `http://127.0.0.1:7331` and mounts UIs for core workflows such as
+`plan`, `implement`, `research-plan-implement`, `review`, `kanban`, `mission`,
+`workflow-skill`, and `vcs`. Override the bind address with `HOST` and `PORT`.
 
-RepoPrompt CE is the free, open-source community edition of RepoPrompt. It is a
-native macOS workspace for context engineering, agent orchestration, and local
-development.
+Smithers runtime state stays out of git under `.smithers/runs`,
+`.smithers/executions`, `.smithers/state`, `.smithers/sandboxes`, and
+`.smithers/tmp`; see [`.smithers/.gitignore`](.smithers/.gitignore).
 
-Maintainers track release signing, Sparkle metadata, dependency pins, and
-third-party notices in
-[`docs/open-source-readiness.md`](docs/open-source-readiness.md).
+## Where To Look
 
-## Contributor Documentation
-
-- [`AGENTS.md`](AGENTS.md): coordinated builds, tests, launches, live MCP
-  checks, source placement, and contribution preflight
-- [`CONTRIBUTING.md`](CONTRIBUTING.md): contribution policy and pull request
-  steps
-- [`docs/architecture/source-layout.md`](docs/architecture/source-layout.md):
-  source ownership and placement rules
-- [`docs/architecture/provider-plugins.md`](docs/architecture/provider-plugins.md):
-  Agent Mode provider architecture
-- [`docs/releasing.md`](docs/releasing.md): release-candidate and publishing
-  workflows
-- [`docs/open-source-readiness.md`](docs/open-source-readiness.md): public
-  readiness inventory
+- App and MCP: [`Sources/RepoPrompt`](Sources/RepoPrompt),
+  [`Sources/RepoPromptMCP`](Sources/RepoPromptMCP), and
+  [`Sources/RepoPromptHeadlessServer`](Sources/RepoPromptHeadlessServer)
+- Shared context: [`Sources/RepoPromptContextCore`](Sources/RepoPromptContextCore)
+  and [`Sources/RepoPromptShared`](Sources/RepoPromptShared)
+- Providers: [`Packages/RepoPromptAgentProviders`](Packages/RepoPromptAgentProviders)
+- Agent tooling: [`.smithers/`](.smithers/), [`.agents/skills/`](.agents/skills/),
+  and [`.beads/`](.beads/)
+- Contributor docs: [`CONTRIBUTING.md`](CONTRIBUTING.md),
+  [`docs/architecture/source-layout.md`](docs/architecture/source-layout.md),
+  [`docs/architecture/provider-plugins.md`](docs/architecture/provider-plugins.md),
+  [`docs/worktrees.md`](docs/worktrees.md), [`docs/releasing.md`](docs/releasing.md),
+  and [`docs/open-source-readiness.md`](docs/open-source-readiness.md)
 
 ## License
 

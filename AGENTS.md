@@ -1,263 +1,170 @@
 # Agent Notes
 
-This is a Swift Package macOS app for RepoPrompt CE.
+RepoPrompt CE is a Swift Package macOS app with three agent-facing surfaces:
 
-Prefer the coordinated developer daemon (`make dev-*`, see "Developer daemon / coordinated validation" below) for builds, runs, and tests. It runs every job through a lane-serialized queue so concurrent agents do not build, launch, or test over each other, and it returns a ticket for each job so long builds can be detached and checked on later instead of blocking. The plain `make` / `swift` / `./Scripts` commands shown below are the uncoordinated fallback for when the daemon is unavailable.
+- The app and debug MCP CLI, built through `make dev-*` and `./conductor`.
+- `rpce-headless`, a standalone MCP server under `Sources/RepoPromptHeadlessServer`.
+- Repo-local agent assets under `.agents/skills`, `.smithers`, `.claude`, `.codex`, `.beads`, and `prompt-exports`.
 
-## Contribution preflight
+`CLAUDE.md` is a symlink to this file. Keep this file short enough for agents to read before acting.
 
-Before every commit or push, read and run the repository-local `$rpce-contribution-check` skill:
+## First moves
+
+- Check `git status --short` before edits. The tree may already contain intended work; do not revert or clean dirty files unless the user explicitly asks.
+- Use Honcho MCP for creating or managing memories.
+- Prefer `rg` / `rg --files` for local search.
+- Prefer the coordinated daemon for builds, tests, runs, formatting, and release checks. Direct `swift`, `make build`, `make run`, and `make test` are fallback paths.
+- Ask for explicit approval immediately before force-push, history rewrite, branch deletion, fork deletion, credential rotation, GitHub-visible destructive mutation, visible app launch/relaunch, or stopping a visible app.
+
+## Git and preflight
+
+Before every commit or push, read and run the repository-local `$rpce-contribution-check` skill.
 
 ```bash
 .agents/skills/rpce-contribution-check/scripts/preflight.sh commit
 .agents/skills/rpce-contribution-check/scripts/preflight.sh push
 ```
 
-Stage only the intended changes, then use `commit` mode before creating a commit; rerun it after any staging change, including partial-staging updates. Use `push` mode after committing but before pushing the intended current branch. The skill enforces redacted staged-index and outgoing-range secret scanning, repository guardrails, clean push boundaries, and the applicable coordinated validation lanes. Obtain explicit user approval immediately before any force-push, history rewrite, branch deletion, fork deletion, credential rotation, other GitHub-visible destructive mutation, visible app launch/relaunch, or stopping a visible app.
+Commit mode is required after staging and must be rerun after any staging change, including partial staging. Push mode is required after committing and before pushing the current branch.
 
-Local `docs/investigations/*.md` reports are intentionally left unignored so RepoPrompt tooling can read them. Do not stage or merge these local investigation artifacts unless intentionally requested.
+Stage only intended files. Keep local `docs/investigations/*.md` reports unstaged unless the user specifically asks to commit them.
 
-## Run
+## Coordinated daemon
 
-```bash
-make doctor     # verify Swift/Xcode command line tool setup, SDK, signing diagnostics, SwiftUI probe, and debug CLI status
-make dev-run    # coordinated build, package, stop existing RepoPrompt, and launch the debug app
-```
+Use `./conductor` or `make dev-*`. The daemon lane-serializes build, debug artifact, live app, release, and style work so concurrent agents do not stampede `.build` or the running app. It also returns tickets for long jobs.
 
-`make dev-run` routes through the developer daemon (see "Developer daemon / coordinated validation") and remains the ordinary FIFO coordinated launch path. For a user-directed newest lifecycle action, use `./conductor app relaunch`; the Finder launcher uses that operation when `python3` is available. The uncoordinated equivalents are `make run` or `./Scripts/run.sh`.
-
-Debug packaging may auto-detect an Apple Development signing identity for a valid local app signature, but auto-detected debug signing still uses ephemeral in-memory secure storage to avoid macOS Keychain prompts. Set an explicit `SIGN_IDENTITY="Apple Development: ..."` to opt in to persistent debug Keychain storage; `DEBUG_SECURE_STORAGE_BACKEND=keychain` is also supported for explicit debug storage opt-in when the signed app has a TeamIdentifier. If no stable identity is available, set `ALLOW_ADHOC_SIGNING=1` to build an ad-hoc debug app; ad-hoc debug builds use ephemeral in-memory secure storage, so API keys and secure permission changes do not persist across launches. Release packaging requires `SIGN_IDENTITY` and continues to use real Keychain storage.
-
-## Debug
-
-Package without launching:
-
-```bash
-make dev-build                  # coordinated debug package (preferred)
-# uncoordinated equivalents:
-make build
-./Scripts/package_app.sh debug
-```
-
-Use verbose shell tracing when packaging fails or hangs:
-
-```bash
-VERBOSE=1 ./Scripts/package_app.sh debug 2>&1 | tee /tmp/repoprompt-build.log
-```
-
-The debug app bundle is created through:
-
-```text
-.build/debug/RepoPrompt.app
-```
-
-SwiftPM’s architecture-specific build output is usually under:
-
-```text
-.build/arm64-apple-macosx/debug/
-```
-
-## Debug CLI / MCP
-
-Use the CE-specific debug CLI when testing this app. The production `rp-cli` / `rp-cli-debug` connection is only an analogue and may talk to the non-CE app.
-
-Install or inspect the debug CLI:
-
-```bash
-make debug-cli-status
-make install-debug-cli     # packages the debug app, then installs /usr/local/bin/rpce-cli-debug
-./Scripts/doctor.sh --install-debug-cli
-```
-
-The installer links:
-
-```text
-/usr/local/bin/rpce-cli-debug
-  -> ~/Library/Application Support/RepoPrompt CE/repoprompt_ce_cli_debug
-  -> ~/Library/Application Support/RepoPrompt CE/DebugApps/RepoPrompt.app/Contents/MacOS/repoprompt-mcp
-```
-
-If `/usr/local/bin` needs administrator privileges, run the install target from an interactive terminal so `sudo` can prompt, or install the CLI from Settings → MCP → CLI Tools. Without the PATH link, use the direct fallback:
-
-```bash
-"$HOME/Library/Application Support/RepoPrompt CE/repoprompt_ce_cli_debug" -e 'windows'
-```
-
-Live CE MCP smoke flow:
-
-```bash
-make run
-rpce-cli-debug -e 'windows'
-rpce-cli-debug -w 1 -e 'workspace switch repoprompt-ce'
-rpce-cli-debug -w 1 -e 'tree --type roots'
-rpce-cli-debug -w 1 -c agent_manage -j '{"op":"list_agents","roles_only":true}'
-```
-
-Then use `agent_run` for end-to-end Agent Mode behavior:
-
-```bash
-rpce-cli-debug -w 1 -c agent_run -j '{"op":"start","model_id":"explore","session_name":"CE debug CLI smoke","message":"Reply exactly with CE_AGENT_RUN_SMOKE_OK and stop. Do not edit files.","detach":true}'
-rpce-cli-debug -w 1 -c agent_run -j '{"op":"wait","session_id":"<session_id>","timeout":120}'
-```
-
-Before live Agent Mode or Claude investigations, enable debug-only diagnostics through the CE debug app's MCP `app_settings` surface:
-
-```bash
-rpce-cli-debug -w 1 -c app_settings -j '{"op":"list","group":"agent_mode","detailed":true}'
-rpce-cli-debug -w 1 -c app_settings -j '{"op":"set","key":"agent_mode.claude_raw_event_logging_enabled","value":true}'
-rpce-cli-debug -w 1 -c app_settings -j '{"op":"set","key":"agent_mode.claude_raw_event_log_file_path","value":"/tmp/repoprompt-ce-claude-raw-events"}'
-rpce-cli-debug -w 1 -c app_settings -j '{"op":"set","key":"agent_mode.perf_diagnostics_enabled","value":true}'
-```
-
-These settings are intentionally DEBUG-only. If a key is unavailable, confirm `rpce-cli-debug --version` is resolving to the current CE debug build before falling back to lower-level defaults.
-
-## Developer daemon / coordinated validation
-
-Prefer the developer daemon as the default way to build, run, and validate. Two properties are the whole reason it exists — and the reason to reach for it instead of a bare `swift build` / `swift test`:
-
-- **Lane-serialized job queue** — every job claims named lanes (`build`, `debugArtifact`, `liveApp`, `release`, `style`); the daemon runs jobs that share a lane one at a time while letting unrelated lanes proceed concurrently. That serial queue is what stops multiple agents from building, launching, or running style tooling over each other and corrupting `.build` or the live app.
-- **Tickets + async jobs** — every job gets a ticket and can run detached (`--async`). Fire a build, keep working, and query or wait on it later (`job status` / `job wait`) instead of blocking on a long compile. Jobs survive reconnects and are reusable by `--request-key`.
-
-`conductor` is repo-internal developer tooling for this checkout; the daemon auto-starts on first use.
-
-Happy path — daemon aliases:
+Common commands:
 
 ```bash
 make dev-status
 make dev-build
-make dev-swift-build PRODUCT=repoprompt-mcp         # focused product build (PRODUCT=RepoPrompt|repoprompt-mcp|all, default all)
-make dev-run
-make dev-test                                       # full coordinated test suite
-make dev-test FILTER=WorkspaceFileContextStoreTests # focused coordinated test run
-make dev-provider-test                              # RepoPromptAgentProviders package tests (FILTER= also supported)
-make dev-smoke          # non-disruptive: requires an already-running CE debug app and installed debug CLI
-make dev-smoke-launch   # builds/launches the debug app, then runs the smoke flow
-make dev-format-check   # non-mutating coordinated SwiftFormat check
-make dev-lint           # non-mutating coordinated format-check + SwiftLint strict
-make dev-format         # mutates first-party Swift files; run only when intended
-make dev-format-tools-status
-make dev-check-format-tools
-make dev-install-format-tools
+make dev-swift-build PRODUCT=RepoPrompt
+make dev-swift-build PRODUCT=repoprompt-mcp
+make dev-swift-build PRODUCT=rpce-headless
+make dev-test
+make dev-test FILTER=WorkspaceFileContextStoreTests
+make dev-provider-test
+make dev-format-check
+make dev-lint
+make dev-smoke
+make dev-smoke-launch
+make guardrails
+make doctor
 ```
 
-Lane detail: the mutating `format` daemon job also claims `build` (it rewrites files the compiler reads); non-mutating `format-check` and `lint` use only `style`; read-only `format-tools-status` is intentionally unlaned so it never queues behind a build.
-
-Daemon lanes coordinate daemon-submitted operations only; they do not freeze source files against editor changes, direct commands, or edits from another agent. Avoid starting a coordinated build or relaunch while another actor is editing the same checkout. If compilation fails because an input file was modified during the build, wait for edits/builds to settle before retrying; for stable compiler errors, fix them and retry. A compile/rebuild failure is not lifecycle supersession.
-
-Async/reconnectable jobs (so work survives reconnects and is shareable by key):
+Use `make dev-format` only when mutating Swift formatting is intended. Use async jobs for long builds:
 
 ```bash
 ./conductor build --async --request-key debug-package
 ./conductor job wait --request-key debug-package
 ```
 
-`--request-key` is idempotent: a matching queued/running job is reused instead of enqueuing a duplicate. Track and reconnect to jobs with `./conductor job list`, `job status`, `job wait`, and `job cancel`, each addressable by ticket or `--request-key`. `make dev-stop-app` / `./conductor app stop` is an overriding interactive stop: it cancels older active or queued `liveApp` operations before confirming the app is stopped. `make dev-daemon-stop` stops the daemon itself.
+`--request-key` reuses a matching queued or running job. Use `./conductor job status`, `job wait`, `job list`, and `job cancel` to reconnect.
 
-Daemon output defaults are intentionally concise for agent use: synchronous `dev-*` commands and `job wait` print progress highlights, a terminal summary, and the full log path instead of replaying raw build/test/style output. Full raw logs are still preserved under the daemon jobs directory and can be rendered with `--full-log`, for example `./conductor build --full-log` or `./conductor job wait --request-key debug-package --full-log`. `--verbose` is separate: it passes `VERBOSE=1` to delegated scripts where supported so more detail is captured in the stored log, but it does not by itself replay raw output. On failures, inspect the concise highlights first, then open the printed log path or rerun/wait with `--full-log` if the summary is insufficient.
+## Running the app
 
-Behavior notes:
-
-- `make dev-run` (daemon `run`) still delegates to the debug launch flow and stops any existing `RepoPrompt`, same as `make run`; it remains FIFO and does not supersede older lifecycle work.
-- `./conductor app relaunch` is the overriding interactive relaunch used by the Finder launcher; like `app stop`, it can cancel older active or queued `liveApp` work. It builds/packages before replacing the visible app, so a failure before lifecycle work begins does not itself stop or reopen an already-running app.
-- Do not assume an in-flight `run`, `smoke`, or diagnostics job will complete if another operator issues `app stop` or interactive `app relaunch`.
-- `make dev-smoke` is the non-disruptive live-only check: it assumes the CE debug app is already running and the debug CLI is installed/resolvable.
-- `make dev-smoke-launch` (or `./conductor smoke --launch`) builds/packages and launches the debug app before smoke validation.
-- `./conductor smoke --agent-run` is opt-in, for when provider credentials and model access are available.
-- Style checks (`make dev-format-check`, `make dev-lint`) are non-mutating and do not auto-install tools; `make dev-install-format-tools` is the explicit install path.
-- Do not run `make dev-format` unless formatting mutation is intended. If a format job is canceled after starting, inspect `git diff` and rerun format or restore files as needed.
-
-Direct / uncoordinated commands — use only when the daemon is unavailable (for example, no `python3`):
+Use `make dev-run` for normal development. For a user-directed newest lifecycle action, use:
 
 ```bash
-make build
-make run
-make test
+./conductor app relaunch
 ```
 
-These do not claim daemon lanes or lifecycle supersession, so when multiple agents are active they can build, launch, or run style tooling over each other; a direct launch may reopen the app after a coordinated stop. The Finder launcher also falls back to this direct behavior when `python3` is unavailable, with process-only status/stop controls. Prefer the `dev-*` aliases when the daemon is available. The manual `rpce-cli-debug` commands above remain valid for direct live MCP validation.
+`app relaunch` and `app stop` can cancel older queued or active live-app work. Get explicit approval before using either when it affects the visible app.
 
-## Source placement rules
+Debug signing may auto-detect an Apple Development identity. Without a stable identity, set `ALLOW_ADHOC_SIGNING=1`; ad-hoc debug builds use ephemeral in-memory secure storage. Release packaging requires `SIGN_IDENTITY` and real Keychain storage.
 
-See `docs/architecture/source-layout.md` for the full ownership map and documented exceptions, and `docs/architecture/provider-plugins.md` for the Agent Mode provider plugin seam (Claude-compatible package, bridge/adapter layout, "add a new provider" recipe). In short:
+## Debug CLI and live MCP
 
-- Product-flow code goes under `Sources/RepoPrompt/Features/<FeatureName>`.
-- App lifecycle, launch/configuration, command, and composition-root wiring stays under `Sources/RepoPrompt/App`.
-- Cross-cutting service/platform substrate goes under `Sources/RepoPrompt/Infrastructure/<Area>`.
-- App-wide notification names and root app views/view models belong under `Sources/RepoPrompt/App`.
-- Bridging-header-sensitive support stays under `Sources/RepoPrompt/Support` unless `Package.swift` is updated in the same change.
-- Reusable UI, diffing, regex, networking, process, security, and utility substrate should use the narrowest `Sources/RepoPrompt/Infrastructure/<Area>` owner.
-- App-integrated diagnostics belong under `Sources/RepoPrompt/Features/Diagnostics` and need a documented entry point/purpose.
-- App/CLI protocol code shared by both products belongs under `Sources/RepoPromptShared`.
-- Test doubles, fixtures, parser inputs, sample projects, and XCTest-only helpers belong under `Tests/RepoPromptTests`, not `Sources/RepoPrompt`.
-- Do not recreate legacy top-level `Views`, `ViewModels`, `Services`, `Models`, `Utils`, or `Shared` buckets.
-- Do not put directories named `Tests`, `TestSupport`, or `Fixtures` under `Sources/RepoPrompt`.
-- Keep `MCPControlMessages.swift` single-sourced in `Sources/RepoPromptShared/MCP`.
-
-## Swift style workflow
-
-For Swift edits, run the formatter before handoff. Prefer the coordinated daemon alias so the mutating job is serialized with other daemon work:
+Use the CE debug CLI for this repo. Production `rp-cli` / `rp-cli-debug` may talk to the non-CE app.
 
 ```bash
-make dev-format
-# uncoordinated equivalent:
-make format
+make debug-cli-status
+make install-debug-cli
 ```
 
-Run the combined style check before handoff when style tooling is relevant or Swift files changed:
+Fallback path when `/usr/local/bin/rpce-cli-debug` is not linked: `"$HOME/Library/Application Support/RepoPrompt CE/repoprompt_ce_cli_debug" -e 'windows'`.
 
 ```bash
-make dev-lint
-# uncoordinated equivalent:
-make lint
+make dev-smoke
+make dev-smoke-launch
 ```
 
-For a non-mutating formatter-only check, use `make dev-format-check` (or uncoordinated `make format-check`).
+Enable debug-only Agent Mode diagnostics through `app_settings` only when needed. Confirm `rpce-cli-debug --version` resolves to the current CE debug build before chasing lower-level failures.
 
-If SwiftFormat or SwiftLint is missing, install them through the repo entrypoint:
+## Headless MCP
+
+`rpce-headless` is a standalone MCP server/CLI that does not require the macOS app.
 
 ```bash
-make install-format-tools
-# or inspect first:
-make format-tools-status
-# daemon equivalents:
-make dev-install-format-tools
-make dev-format-tools-status
+make dev-swift-build PRODUCT=rpce-headless
+.build/debug/rpce-headless serve --root "$PWD"
+.build/debug/rpce-headless dump --root "$PWD"
 ```
 
-`make lint` and `make dev-lint` run `format-check` followed by `swiftlint lint --strict`. Do not perform a full repository formatting baseline unless the task explicitly asks for it; do not run `make dev-format` unless formatting mutation is intended.
-
-## Test
-
-Prefer the coordinated daemon so concurrent agents do not test over each other:
+Stdio `serve` exposes the full headless tool set, including `oracle_send`, `context_builder`, `agent_run`, and `agent_manage`. Socket mode is discovery-restricted:
 
 ```bash
-make dev-test                                        # full coordinated suite
-make dev-test FILTER=WorkspaceFileContextStoreTests   # focused coordinated run
+.build/debug/rpce-headless serve --root "$PWD" --socket /tmp/rpce.sock
+.build/debug/rpce-headless connect --socket /tmp/rpce.sock
 ```
 
-Focused validation commands commonly used for this tree (all daemon-coordinated):
+Discovery sockets expose only selection, prompt, tree, search, structure, workspace context, and file reads. They intentionally block oracle, context builder, and process-backed agent tools.
+
+Oracle-backed headless tools read `RPCE_ORACLE_API_KEY` or `OPENROUTER_API_KEY`; `RPCE_ORACLE_BASE_URL` defaults to OpenRouter and `RPCE_ORACLE_MODEL` defaults to `openrouter/auto`. Use `Sources/RepoPromptHeadlessServer/README.md` for smoke harnesses, Linux artifacts, service setup, and v1 limitations.
+
+## Smithers
+
+Smithers workflows live under `.smithers`. Use Bun package scripts from that directory; the workflow scripts intentionally run the Smithers CLI from the repository root so discovery sees `.smithers/workflows` instead of `.smithers/.smithers/workflows`:
 
 ```bash
-make dev-format-check
-make dev-lint
-make dev-test FILTER=CodexIntegrationConfigurationTests
-make dev-test FILTER=WorkspaceFileContextStoreTests
-make dev-swift-build PRODUCT=RepoPrompt
-make dev-swift-build PRODUCT=repoprompt-mcp
-make dev-provider-test
-make guardrails
-make doctor
-make dev-build
+cd .smithers
+bun run typecheck
+bun run workflow:list
+bun run workflow:run -- plan --prompt "Plan the next change"
+bun run gateway
 ```
 
-Run the smallest relevant daemon build/test command above to validate a change. If the change affects packaging, the MCP server, the MCP CLI, Agent Mode, or any feature that depends on the running app, follow it with the live CE MCP smoke flow above.
+The gateway binds to `http://127.0.0.1:7331` by default; override with `HOST` and `PORT`. Workflow UIs are registered from `.smithers/gateway.ts`. Repo validation commands for Smithers are configured in `.smithers/smithers.config.ts` as `make dev-lint` and `make dev-test`.
 
-Direct `swift test --filter <name>` and `swift build --product <name>` still work and produce the same result, but they are uncoordinated — use them only when the daemon is unavailable (for example, no `python3`), and avoid them when other agents may be building.
-
-Use `make dev-run` (or `make run`) only when it is safe to stop any existing RepoPrompt instance and launch the local debug app.
-
-## Cleanup
+Smithers has two skill surfaces in this repo. Global agent skills, such as `~/.agents/skills/smithers-*`, teach the current coding agent how to operate Smithers. Repo-local workflow skills under `.smithers/skills` document this repository's current `.smithers/workflows` pack for future agents. Treat the scaffolded Smithers default workflows as user-owned local source after init: edit them in place, prefer local workflows over global defaults when names collide, and regenerate repo-local workflow skills when workflow shape or metadata changes:
 
 ```bash
-make clean    # removes .build
+cd .smithers
+bun run workflow:skills -- --output .smithers/skills --force
 ```
+
+Committed Smithers source includes `.smithers/agents.ts`, `.smithers/agents`, `.smithers/workflows`, `.smithers/ui`, `.smithers/skills`, config, prompts, and package metadata. Runtime state stays ignored under `.smithers/node_modules`, `.smithers/runs`, `.smithers/executions`, `.smithers/state`, `.smithers/sandboxes`, `.smithers/tmp`, `.smithers/remote`, and `.smithers/dist`.
+
+## Repo-local agent assets
+
+- `.agents/skills`: RepoPrompt CE workflows and contribution/release/test-quality skills. Use the named skill when the user invokes it.
+- `.claude` / `.codex`: local agent configuration. Do not expose secrets or machine-local details in summaries.
+- `.beads`, `prompt-exports`, `skills-lock.json`: bead metadata, exported prompts, and managed-skill lock state.
+
+Treat these as first-class repo assets when documenting or validating the dirty tree.
+
+## Source placement
+
+See `docs/architecture/source-layout.md` for the full ownership map. Short version:
+
+- Product-flow code: `Sources/RepoPrompt/Features/<FeatureName>`.
+- App lifecycle, launch, commands, and composition root: `Sources/RepoPrompt/App`.
+- Cross-cutting platform/service substrate: `Sources/RepoPrompt/Infrastructure/<Area>`.
+- Bridging-header-sensitive support: `Sources/RepoPrompt/Support`, unless `Package.swift` changes too.
+- Shared app/CLI protocol code: `Sources/RepoPromptShared`.
+- Test doubles, fixtures, parser inputs, sample projects, and XCTest-only helpers: `Tests/RepoPromptTests`.
+
+App-integrated diagnostics belong under `Sources/RepoPrompt/Features/Diagnostics` with a documented entry point and purpose. Do not recreate legacy top-level buckets (`Views`, `ViewModels`, `Services`, `Models`, `Utils`, `Shared`). Do not put `Tests`, `TestSupport`, or `Fixtures` under `Sources/RepoPrompt`. Keep `MCPControlMessages.swift` single-sourced in `Sources/RepoPromptShared/MCP`.
+
+## Validation choice
+
+Run the smallest check that proves the change:
+
+- Docs only: `git diff --check -- <docs>` plus path/link sanity.
+- Swift source: `make dev-format-check`, focused `make dev-test FILTER=...`, or focused `make dev-swift-build PRODUCT=...`.
+- Shared MCP or CLI behavior: add `make dev-swift-build PRODUCT=repoprompt-mcp` or `PRODUCT=rpce-headless`.
+- Running-app behavior: `make dev-smoke` if the app is already running; `make dev-smoke-launch` only when app launch is approved.
+- Smithers changes: from `.smithers`, run `bun run typecheck` and `bun run workflow:list`; for direct CLI use, run `.smithers/node_modules/.bin/smithers ...` from the repository root.
+- Source layout changes: `make guardrails`.
+
+Before handoff, report what you ran and what remains unverified. Before commit or push, run the contribution preflight above.
