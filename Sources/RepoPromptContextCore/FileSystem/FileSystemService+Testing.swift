@@ -70,22 +70,22 @@ import Foundation
                     limit: limit
                 )?.paths.count ?? 0
             #else
-            let safeCount = min(limit ?? pathObjects.count, pathObjects.count, flags.count, ids.count)
-            guard safeCount > 0 else { return 0 }
-            let cfArray = pathObjects as! CFArray
-            let eventPaths = UnsafeMutableRawPointer(Unmanaged.passUnretained(cfArray).toOpaque())
-            return flags.withUnsafeBufferPointer { flagBuffer in
-                guard let flagBase = flagBuffer.baseAddress else { return 0 }
-                return ids.withUnsafeBufferPointer { idBuffer in
-                    guard let idBase = idBuffer.baseAddress else { return 0 }
-                    return buildOwnedFSEventPayload(
-                        numEvents: safeCount,
-                        eventPaths: eventPaths,
-                        eventFlags: flagBase,
-                        eventIds: idBase
-                    )?.entries.count ?? 0
+                let safeCount = min(limit ?? pathObjects.count, pathObjects.count, flags.count, ids.count)
+                guard safeCount > 0 else { return 0 }
+                let cfArray = pathObjects as! CFArray
+                let eventPaths = UnsafeMutableRawPointer(Unmanaged.passUnretained(cfArray).toOpaque())
+                return flags.withUnsafeBufferPointer { flagBuffer in
+                    guard let flagBase = flagBuffer.baseAddress else { return 0 }
+                    return ids.withUnsafeBufferPointer { idBuffer in
+                        guard let idBase = idBuffer.baseAddress else { return 0 }
+                        return buildOwnedFSEventPayload(
+                            numEvents: safeCount,
+                            eventPaths: eventPaths,
+                            eventFlags: flagBase,
+                            eventIds: idBase
+                        )?.entries.count ?? 0
+                    }
                 }
-            }
             #endif
         }
 
@@ -103,27 +103,27 @@ import Foundation
                     limit: limit
                 )
             #else
-            let safeCount = min(limit ?? pathObjects.count, pathObjects.count, flags.count, ids.count)
-            guard safeCount > 0 else { return nil }
-            let cfArray = pathObjects as! CFArray
-            let eventPaths = UnsafeMutableRawPointer(Unmanaged.passUnretained(cfArray).toOpaque())
-            return flags.withUnsafeBufferPointer { flagBuffer in
-                guard let flagBase = flagBuffer.baseAddress else { return nil }
-                return ids.withUnsafeBufferPointer { idBuffer in
-                    guard let idBase = idBuffer.baseAddress else { return nil }
-                    guard let payload = buildOwnedFSEventPayload(
-                        numEvents: safeCount,
-                        eventPaths: eventPaths,
-                        eventFlags: flagBase,
-                        eventIds: idBase
-                    ) else { return nil }
-                    return (
-                        payload.entries.map(\.path),
-                        payload.entries.map(\.flags),
-                        payload.entries.map(\.id)
-                    )
+                let safeCount = min(limit ?? pathObjects.count, pathObjects.count, flags.count, ids.count)
+                guard safeCount > 0 else { return nil }
+                let cfArray = pathObjects as! CFArray
+                let eventPaths = UnsafeMutableRawPointer(Unmanaged.passUnretained(cfArray).toOpaque())
+                return flags.withUnsafeBufferPointer { flagBuffer in
+                    guard let flagBase = flagBuffer.baseAddress else { return nil }
+                    return ids.withUnsafeBufferPointer { idBuffer in
+                        guard let idBase = idBuffer.baseAddress else { return nil }
+                        guard let payload = buildOwnedFSEventPayload(
+                            numEvents: safeCount,
+                            eventPaths: eventPaths,
+                            eventFlags: flagBase,
+                            eventIds: idBase
+                        ) else { return nil }
+                        return (
+                            payload.entries.map(\.path),
+                            payload.entries.map(\.flags),
+                            payload.entries.map(\.id)
+                        )
+                    }
                 }
-            }
             #endif
         }
 

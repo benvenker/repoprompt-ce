@@ -1,6 +1,6 @@
 import Foundation
-import SwiftOpenAI
 import RepoPromptContextCore
+import SwiftOpenAI
 
 class OpenRouterProvider: AIProvider {
     private let cachedApiKey: String

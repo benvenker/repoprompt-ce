@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Compact, font‑scale aware workspace picker.
 ///

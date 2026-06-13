@@ -80,5 +80,4 @@ extension CodeMapExtractor {
             hasCodeMap: file.hasAcceptedCodeMap
         )
     }
-
 }

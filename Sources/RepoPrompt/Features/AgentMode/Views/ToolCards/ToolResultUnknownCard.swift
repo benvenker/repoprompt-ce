@@ -1,6 +1,6 @@
 import Foundation
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct UnknownToolResultCard: View {
     let item: AgentChatItem

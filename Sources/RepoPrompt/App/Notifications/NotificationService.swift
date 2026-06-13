@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
-import UserNotifications
 import RepoPromptContextCore
+import UserNotifications
 
 #if DEBUG
     private var notificationServiceDebugLoggingEnabled = false

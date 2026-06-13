@@ -23,7 +23,9 @@ enum HeadlessAgentRunStatus: String, Codable {
     case cancelled
     case expired
 
-    var isTerminal: Bool { self != .running }
+    var isTerminal: Bool {
+        self != .running
+    }
 }
 
 struct HeadlessAgentRunSnapshot: Codable {
@@ -194,7 +196,7 @@ extension DateFormatter {
     }()
 }
 
-extension Dictionary where Key == String, Value == String {
+extension [String: String] {
     func headlessTrimmed(_ key: String) -> String? {
         guard let value = self[key]?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
         return value

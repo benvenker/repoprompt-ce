@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct AIQuerySettingsView: View {
     @ObservedObject var promptViewModel: PromptViewModel

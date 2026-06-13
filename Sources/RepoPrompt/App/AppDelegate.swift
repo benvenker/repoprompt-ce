@@ -1,9 +1,9 @@
 import Cocoa
 import Combine
 import Darwin
+import RepoPromptContextCore
 import Sparkle
 import SwiftUI
-import RepoPromptContextCore
 
 #if DEBUG
     private var appDelegateDebugLoggingEnabled = false

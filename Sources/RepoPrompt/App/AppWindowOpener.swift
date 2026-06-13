@@ -8,8 +8,8 @@
 //  window creation from non-SwiftUI contexts like WindowStatesManager.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Enables programmatic opening of new windows from non-SwiftUI contexts.
 ///

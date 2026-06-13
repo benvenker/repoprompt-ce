@@ -7,9 +7,9 @@
 //
 
 import AppKit
+import RepoPromptContextCore
 import SwiftUI
 import UniformTypeIdentifiers
-import RepoPromptContextCore
 
 struct AgentComposerActions {
     let storeDraft: (_ tabID: UUID, _ text: String) -> Void

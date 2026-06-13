@@ -1,7 +1,6 @@
 import Foundation
 
 public enum CodeMapExtractor {
-
     public struct RootInfo: Hashable {
         public let standardizedRootFullPath: String
         public let displayName: String

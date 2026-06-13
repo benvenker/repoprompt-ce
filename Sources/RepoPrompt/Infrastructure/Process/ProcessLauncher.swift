@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
-import RepoPromptShared
 import RepoPromptContextCore
+import RepoPromptShared
 
 struct SpawnedProcess: @unchecked Sendable {
     let pid: pid_t

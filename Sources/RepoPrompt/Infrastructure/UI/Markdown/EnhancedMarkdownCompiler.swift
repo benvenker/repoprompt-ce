@@ -13,8 +13,8 @@
 import AppKit
 import Foundation
 import Markdown
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 // MARK: - Enhanced Markdown Compiler
 

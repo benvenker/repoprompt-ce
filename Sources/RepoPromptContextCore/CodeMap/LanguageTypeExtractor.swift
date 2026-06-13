@@ -2105,8 +2105,8 @@ public enum LanguageTypeExtractor {
     }
 }
 
-extension LanguageTypeExtractor {
-    public enum TS {
+public extension LanguageTypeExtractor {
+    enum TS {
         static func extractTypeAnnotation(from line: String) -> String? {
             LanguageTypeExtractor.extractTSTypeAnnotation(from: line)
         }

@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct TextFieldResizeHandle: View {
     @Binding var height: CGFloat

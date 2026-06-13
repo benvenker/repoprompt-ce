@@ -16,8 +16,8 @@
 //  - Sub:      /RepoPrompt/Views/Settings/AgentSubagentPolicySettingsView.swift
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 // MARK: - Layout constants
 

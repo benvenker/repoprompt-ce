@@ -63,7 +63,7 @@ public struct FileTreeFileSnapshot: Hashable {
     }
 }
 
-indirect public enum FileTreeNodeSnapshot: Hashable {
+public indirect enum FileTreeNodeSnapshot: Hashable {
     case folder(FileTreeFolderSnapshot)
     case file(FileTreeFileSnapshot)
 

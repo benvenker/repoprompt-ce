@@ -6,8 +6,8 @@
 //  Updated by <your-name> on 2025-06-29.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 // All update actions now funnel through SparkleUpdaterManager, exactly like the Settings screen.
 // No direct references to SPUUpdater or Sparkle remain.

@@ -2,8 +2,8 @@ import AppKit
 import Combine
 import Foundation
 import Neon
-import SwiftTreeSitter
 import RepoPromptContextCore
+import SwiftTreeSitter
 
 // MARK: - SVG-Safe Preview Types
 

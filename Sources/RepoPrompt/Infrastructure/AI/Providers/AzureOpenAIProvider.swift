@@ -1,6 +1,6 @@
 import Foundation
-import SwiftOpenAI
 import RepoPromptContextCore
+import SwiftOpenAI
 
 public struct AzureOpenAIConfiguration: Codable, Equatable {
     public struct ModelDescriptor: Codable, Equatable {

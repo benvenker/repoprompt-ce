@@ -1,8 +1,8 @@
 import Combine
 import Darwin
 import Foundation
-import RepoPromptShared
 import RepoPromptContextCore
+import RepoPromptShared
 
 /// Monitors the MCP events directory for error events written by external CLI clients.
 /// Surfaces these events to the UI even when network communication is impossible.

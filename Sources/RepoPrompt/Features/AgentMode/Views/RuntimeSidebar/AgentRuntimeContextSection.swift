@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct AgentRuntimeContextSection: View {
     let snapshot: AgentRuntimeSidebarViewModel.ContextSnapshot

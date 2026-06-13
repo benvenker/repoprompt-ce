@@ -5,8 +5,8 @@
 //  Created by Eric Provencher on 2025-03-21.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Slimmed Advanced Settings page. Controls are grouped into two sections
 /// ("File System" and "AI Behavior") for progressive-disclosure-friendly

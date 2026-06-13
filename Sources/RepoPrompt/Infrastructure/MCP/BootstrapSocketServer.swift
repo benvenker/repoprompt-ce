@@ -10,8 +10,8 @@ import Darwin
 import Dispatch
 import Foundation
 import Logging
-import RepoPromptShared
 import RepoPromptContextCore
+import RepoPromptShared
 
 #if DEBUG
     private var bootstrapSocketServerDebugLoggingEnabled = ProcessInfo.processInfo.environment["REPOPROMPT_MCP_DEBUG"] == "1"

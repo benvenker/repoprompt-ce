@@ -6,9 +6,9 @@
 //
 
 import Combine
+import RepoPromptContextCore
 import Sparkle
 import SwiftUI
-import RepoPromptContextCore
 
 #if DEBUG
     private var sparkleUpdaterManagerDebugLoggingEnabled = false

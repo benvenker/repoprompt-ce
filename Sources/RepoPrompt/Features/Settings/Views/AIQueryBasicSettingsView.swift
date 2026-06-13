@@ -5,8 +5,8 @@
 //  Created by Eric Provencher on 2025-05-04.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct AIQueryBasicSettingsView: View {
     @ObservedObject var promptViewModel: PromptViewModel

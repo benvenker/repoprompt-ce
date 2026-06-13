@@ -5,8 +5,8 @@
 //  Reworked 2025-04-16 - show greyed-out 2nd User Instructions row.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct PromptOrderSettingsView: View {
     // MARK: - Dependencies

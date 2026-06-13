@@ -1,7 +1,7 @@
 import Foundation
 
-extension CodeMapExtractor {
-    public static func generateFileTree(using snapshot: FileTreeSelectionSnapshot) -> String {
+public extension CodeMapExtractor {
+    static func generateFileTree(using snapshot: FileTreeSelectionSnapshot) -> String {
         guard snapshot.mode.lowercased() != "none" else { return "" }
         guard !snapshot.roots.isEmpty else { return "" }
         if Task.isCancelled { return "" }
@@ -153,12 +153,9 @@ extension CodeMapExtractor {
             .joined(separator: "\n")
     }
 
-
-
-    public static func estimateTokens(for text: String) -> Int {
+    static func estimateTokens(for text: String) -> Int {
         Int((Double(text.utf8.count) / 4.0) * 1.05)
     }
-
 }
 
 private let snapshotBadExt: Set<String> = ["o", "obj", "a", "so", "dll", "exe", "tmp", "swp"]
@@ -174,7 +171,7 @@ private struct SnapshotStringBuilder {
     private(set) var estimatedTokens: Int = 0
     private var storage = ""
 
-    public init(reserve: Int = 0) {
+    init(reserve: Int = 0) {
         if reserve > 0 {
             storage.reserveCapacity(reserve)
         }

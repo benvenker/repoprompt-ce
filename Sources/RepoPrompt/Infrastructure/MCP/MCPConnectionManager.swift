@@ -7,9 +7,9 @@ import Logging
 import MCP
 import Ontology
 import OSLog
+import RepoPromptContextCore
 import RepoPromptShared
 import SwiftUI
-import RepoPromptContextCore
 
 #if DEBUG
     import CryptoKit

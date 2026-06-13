@@ -10,9 +10,9 @@ import Darwin
 import Foundation
 import Logging
 import OSLog
+import RepoPromptContextCore
 import RepoPromptShared
 import SwiftUI
-import RepoPromptContextCore
 
 #if DEBUG
     private var serverControllerDebugLoggingEnabled = false

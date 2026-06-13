@@ -1,6 +1,6 @@
 import AppKit
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Popover content for agent handoff configuration.
 /// Lets the user pick destination agent/model, copy the handoff payload, or execute handoff.

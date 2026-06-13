@@ -7,8 +7,8 @@
 //
 
 import AppKit
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// A scrollable monospace text view with a fixed max height.
 /// Uses NSTextView (TextKit) for efficient rendering of large text content.

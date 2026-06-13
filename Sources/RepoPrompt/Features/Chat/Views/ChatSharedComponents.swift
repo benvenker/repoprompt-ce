@@ -7,8 +7,8 @@
 
 import AppKit
 import QuartzCore
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct LoadingIndicatorWithStop: View {
     let isHovered: Bool

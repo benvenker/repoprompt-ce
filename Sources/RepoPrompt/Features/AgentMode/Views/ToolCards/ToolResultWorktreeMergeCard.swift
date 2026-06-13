@@ -1,6 +1,6 @@
 import Foundation
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 // MARK: - Worktree Merge Tool Result Card
 

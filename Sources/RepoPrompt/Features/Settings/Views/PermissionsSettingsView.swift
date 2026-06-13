@@ -5,8 +5,8 @@
 //  Settings view for managing workspace operation permissions.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct PermissionsSettingsView: View {
     @ObservedObject private var approvalManager = WorkspaceApprovalManager.shared

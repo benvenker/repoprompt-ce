@@ -2,7 +2,7 @@
     import Combine
     import MCP
     @testable import RepoPrompt
-@testable import RepoPromptContextCore
+    @testable import RepoPromptContextCore
     import XCTest
 
     final class MCPReadSearchLatencyDiagnosticsGuardTests: XCTestCase {

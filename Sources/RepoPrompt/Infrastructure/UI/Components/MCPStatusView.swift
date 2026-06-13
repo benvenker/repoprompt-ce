@@ -5,8 +5,8 @@
 //  Created by RepoPrompt MCP integration
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// A comprehensive MCP server status dashboard view.
 /// Shows connections, tool activity, and auto-approve management.

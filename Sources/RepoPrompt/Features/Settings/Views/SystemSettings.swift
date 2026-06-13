@@ -5,8 +5,8 @@
 //  Created by Eric Provencher on 2025-03-16.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct SystemSettingsView: View {
     // MARK: - Appearance Options

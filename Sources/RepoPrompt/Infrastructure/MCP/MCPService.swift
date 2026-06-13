@@ -6,9 +6,9 @@
 //
 
 import Foundation
+import RepoPromptContextCore
 import RepoPromptShared
 import SwiftUI
-import RepoPromptContextCore
 
 #if DEBUG
     private var mcpServiceDebugLoggingEnabled = false

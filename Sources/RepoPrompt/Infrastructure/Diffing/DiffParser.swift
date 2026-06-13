@@ -1,8 +1,8 @@
 // File: RepoPrompt/Models/DiffParserUtils.swift
 
 import Foundation
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Central on/off switch for every debug print in the diff-parser stack.
 enum DebugFlags { static var parser = false }

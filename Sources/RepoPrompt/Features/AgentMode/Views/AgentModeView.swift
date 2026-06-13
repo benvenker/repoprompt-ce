@@ -1,6 +1,6 @@
 import Combine
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Agent Mode view - a chat-style interface for long-running agent interactions
 /// with per-tab session management, markdown message rendering, and tool call display

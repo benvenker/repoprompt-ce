@@ -4,8 +4,8 @@
 //
 
 import KeyboardShortcuts
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 // MARK: - Catalog
 

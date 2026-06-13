@@ -2,8 +2,8 @@
 //  Changelog.swift
 import Foundation
 import MarkdownUI
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct Version: Identifiable {
     let id: String

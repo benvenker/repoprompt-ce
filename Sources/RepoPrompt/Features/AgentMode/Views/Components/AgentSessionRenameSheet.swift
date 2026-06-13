@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct AgentSessionRenameSheet: View {
     @Binding var renameText: String

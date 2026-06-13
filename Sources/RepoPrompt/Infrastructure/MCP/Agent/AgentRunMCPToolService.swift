@@ -1,7 +1,7 @@
 import Foundation
 import MCP
-import RepoPromptShared
 import RepoPromptContextCore
+import RepoPromptShared
 
 struct OracleExportFile: Equatable {
     let path: String

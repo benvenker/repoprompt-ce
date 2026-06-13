@@ -57,16 +57,16 @@ actor HeadlessAgentSessionManager {
             self.process = process
             self.stdoutPipe = stdoutPipe
             self.stderrPipe = stderrPipe
-            self.startedAt = now
-            self.updatedAt = now
-            self.status = .running
-            self.processID = nil
-            self.exitCode = nil
-            self.cancellationRequested = false
-            self.stdout = ""
-            self.stderr = ""
-            self.stdoutTruncated = false
-            self.stderrTruncated = false
+            startedAt = now
+            updatedAt = now
+            status = .running
+            processID = nil
+            exitCode = nil
+            cancellationRequested = false
+            stdout = ""
+            stderr = ""
+            stdoutTruncated = false
+            stderrTruncated = false
         }
     }
 
@@ -94,13 +94,13 @@ actor HeadlessAgentSessionManager {
         let op = arguments["op"]?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? "wait"
         switch op {
         case "start":
-            return try jsonTextResult(try await startRun(arguments: arguments))
+            return try await jsonTextResult(startRun(arguments: arguments))
         case "poll":
-            return try jsonTextResult(try pollRun(arguments: arguments))
+            return try jsonTextResult(pollRun(arguments: arguments))
         case "wait":
-            return try jsonTextResult(try await waitRun(arguments: arguments))
+            return try await jsonTextResult(waitRun(arguments: arguments))
         case "cancel":
-            return try jsonTextResult(try await cancelRun(arguments: arguments))
+            return try await jsonTextResult(cancelRun(arguments: arguments))
         default:
             throw HeadlessToolFailure(message: "Unsupported headless agent_run op '\(op)'. Use start, poll, wait, or cancel.")
         }
@@ -116,11 +116,11 @@ actor HeadlessAgentSessionManager {
         case "list_sessions":
             return try jsonTextResult(listSessions(arguments: arguments))
         case "get_log":
-            return try jsonTextResult(try getLog(arguments: arguments))
+            return try jsonTextResult(getLog(arguments: arguments))
         case "stop_session":
-            return try jsonTextResult(try await stopSession(arguments: arguments))
+            return try await jsonTextResult(stopSession(arguments: arguments))
         case "cleanup_sessions":
-            return try jsonTextResult(try cleanupSessions(arguments: arguments))
+            return try jsonTextResult(cleanupSessions(arguments: arguments))
         default:
             throw HeadlessToolFailure(message: "Unsupported headless agent_manage op '\(op)'. Use list_agents, list_sessions, get_log, stop_session, or cleanup_sessions.")
         }
@@ -157,7 +157,7 @@ actor HeadlessAgentSessionManager {
             configPath: configuration.agentConfigPath,
             prompt: message,
             socketPath: socketPath,
-            executablePath: try currentHeadlessExecutablePath(),
+            executablePath: currentHeadlessExecutablePath(),
             tempDirectory: tempDirectory
         )
 
@@ -482,15 +482,15 @@ actor HeadlessAgentSessionManager {
     private func statusText(for record: SessionRecord) -> String {
         switch record.status {
         case .running:
-            return "Headless agent process is running."
+            "Headless agent process is running."
         case .completed:
-            return "Headless agent process completed with exit code \(record.exitCode ?? 0)."
+            "Headless agent process completed with exit code \(record.exitCode ?? 0)."
         case .failed:
-            return "Headless agent process failed with exit code \(record.exitCode ?? -1)."
+            "Headless agent process failed with exit code \(record.exitCode ?? -1)."
         case .cancelled:
-            return "Headless agent process was cancelled."
+            "Headless agent process was cancelled."
         case .expired:
-            return "Headless agent session is unavailable or expired."
+            "Headless agent session is unavailable or expired."
         }
     }
 
@@ -605,5 +605,7 @@ private func currentHeadlessExecutablePath() throws -> String {
 }
 
 private extension String {
-    var nilIfEmpty: String? { isEmpty ? nil : self }
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
+    }
 }

@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Style variants for log entry rows
 enum AgentLogRowStyle {

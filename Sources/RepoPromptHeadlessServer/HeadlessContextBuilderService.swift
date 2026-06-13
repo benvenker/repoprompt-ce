@@ -159,12 +159,11 @@ actor HeadlessContextBuilderService {
 
         let agentExit = try await runAgent(prepared.launch, timeoutSeconds: request.timeoutSeconds)
         let harvest = try await host.contextBuildHarvest()
-        let oracle: (reply: HeadlessContextBuilderOracleReply?, answer: String?)
-        if agentExit == 0, !harvest.selectedFiles.isEmpty {
-            oracle = try await runOracleFollowUpIfNeeded(request: request, harvest: harvest, oracleService: oracleService)
+        let oracle: (reply: HeadlessContextBuilderOracleReply?, answer: String?) = if agentExit == 0, !harvest.selectedFiles.isEmpty {
+            try await runOracleFollowUpIfNeeded(request: request, harvest: harvest, oracleService: oracleService)
         } else {
             // Skip oracle spend when discovery failed or selected nothing; status reports agent_failed/empty_selection.
-            oracle = (nil, nil)
+            (nil, nil)
         }
 
         return HeadlessContextBuilderExecution(
@@ -193,7 +192,7 @@ actor HeadlessContextBuilderService {
             configPath: request.agentConfigPath,
             prompt: prompt,
             socketPath: socketPath,
-            executablePath: try currentExecutablePath(),
+            executablePath: currentExecutablePath(),
             tempDirectory: tempDirectory
         )
         return (launch, socketPath, tempDirectory)
@@ -282,13 +281,13 @@ actor HeadlessContextBuilderService {
     private static func modeInstruction(for responseType: ContextBuildResponseType) -> String {
         switch responseType {
         case .selection:
-            return "Return only the selected context."
+            "Return only the selected context."
         case .question:
-            return "Answer the question directly."
+            "Answer the question directly."
         case .plan:
-            return "Produce a concrete implementation plan."
+            "Produce a concrete implementation plan."
         case .review:
-            return "Produce a code review of the selected context."
+            "Produce a code review of the selected context."
         }
     }
 

@@ -5,8 +5,8 @@
 //  Created by Eric Provencher on 2025-05-16.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct AppearanceSettingsView: View {
     // Appearance preferences are persisted in the JSON-backed GlobalSettingsStore.

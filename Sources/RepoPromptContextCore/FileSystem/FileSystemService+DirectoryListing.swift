@@ -11,15 +11,15 @@ import Foundation
     private typealias POSIXDirectoryHandle = OpaquePointer
 #endif
 
-extension FileSystemService {
-    public struct DirEntry {
+public extension FileSystemService {
+    struct DirEntry {
         let name: String
         let isDir: Bool
         let isSym: Bool
     }
 
     /// Result of scanning a directory including ignore file detection
-    public struct DirectoryScanResult {
+    struct DirectoryScanResult {
         let entries: [DirEntry]
         let hasGitignore: Bool
         let hasRepoIgnore: Bool
@@ -28,7 +28,7 @@ extension FileSystemService {
 
     /// A collection of common directory names we *always* skip
     /// in order to avoid scanning huge or irrelevant caches.
-    public static let universalIgnoreDirs: Set<String> = [
+    static let universalIgnoreDirs: Set<String> = [
         // Version Control
         ".git", ".svn", ".hg",
 
@@ -127,7 +127,7 @@ extension FileSystemService {
     }
 
     @inline(__always)
-    public static func isRepoPromptTempFilename(_ name: String) -> Bool {
+    static func isRepoPromptTempFilename(_ name: String) -> Bool {
         name.hasPrefix(".repoprompt.tmp.")
     }
 
@@ -214,7 +214,7 @@ extension FileSystemService {
     }
 
     /// Enhanced directory listing that also detects ignore files
-    public static func listDirectoryWithIgnoreDetection(_ path: String) throws -> DirectoryScanResult {
+    static func listDirectoryWithIgnoreDetection(_ path: String) throws -> DirectoryScanResult {
         // Open the directory
         guard let dir = opendir(path) else {
             throw NSError(
@@ -385,14 +385,14 @@ extension FileSystemService {
     }
 
     /// Physical directory identity (stable for cycle checks).
-    public struct DirID: Hashable {
+    struct DirID: Hashable {
         let dev: UInt64
         let ino: UInt64
     }
 
     /// `stat()` follows symlinks → this returns the target directory identity.
     @inline(__always)
-    public static func dirID(followingSymlinksAtPath path: String) -> DirID? {
+    static func dirID(followingSymlinksAtPath path: String) -> DirID? {
         var st = stat()
         guard stat(path, &st) == 0 else { return nil }
         return DirID(dev: UInt64(st.st_dev), ino: UInt64(st.st_ino))
@@ -400,7 +400,7 @@ extension FileSystemService {
 
     /// Canonicalize a path via `realpath()`. Returns nil on ELOOP, missing targets, etc.
     @inline(__always)
-    public static func realpathString(_ path: String) -> String? {
+    static func realpathString(_ path: String) -> String? {
         path.withCString { cPath in
             guard let resolved = realpath(cPath, nil) else { return nil }
             defer { free(resolved) }

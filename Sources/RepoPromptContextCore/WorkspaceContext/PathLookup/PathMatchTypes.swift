@@ -225,8 +225,8 @@ public struct PathMatchSnapshot {
     }
 }
 
-extension PathMatchSnapshot {
-    public func canonical(_ s: String) -> String {
+public extension PathMatchSnapshot {
+    func canonical(_ s: String) -> String {
         PathMatchIndexes.canonical(s, caseSensitive: caseSensitive)
     }
 }

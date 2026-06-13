@@ -1,6 +1,6 @@
 #if DEBUG
     @testable import RepoPrompt
-@testable import RepoPromptContextCore
+    @testable import RepoPromptContextCore
     import XCTest
 
     final class IgnoreDebugMetricsRecorderTests: XCTestCase {

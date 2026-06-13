@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Structured multi-question ask_user card shared by Agent Mode and Context Builder.
 /// Presents one question at a time while keeping all draft state in the owning view model.

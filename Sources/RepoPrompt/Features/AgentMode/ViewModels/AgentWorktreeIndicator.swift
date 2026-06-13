@@ -1,6 +1,6 @@
 import Foundation
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// View-model summary describing the bound-worktree visual identity for one
 /// logical workspace root within an Agent session.

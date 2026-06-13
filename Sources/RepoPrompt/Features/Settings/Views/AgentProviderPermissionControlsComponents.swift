@@ -10,8 +10,8 @@
 //  Claude tools runtime section, CLI Providers inline permissions
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct AgentProviderPermissionLevelSection: View {
     let binding: AgentPermissionChromeBinding

@@ -1,6 +1,6 @@
 import Combine
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 // MARK: - Recommendation Toolbar Button View
 

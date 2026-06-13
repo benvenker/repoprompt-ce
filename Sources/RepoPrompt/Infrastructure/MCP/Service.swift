@@ -7,8 +7,8 @@
 
 import Foundation
 import MCP
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 @preconcurrency
 protocol Service {

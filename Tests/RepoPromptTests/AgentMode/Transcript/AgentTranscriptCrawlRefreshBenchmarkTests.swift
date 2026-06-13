@@ -2,7 +2,7 @@
     import Foundation
     import XCTest
     @_spi(TestSupport) @testable import RepoPrompt
-@testable import RepoPromptContextCore
+    @testable import RepoPromptContextCore
 
     @MainActor
     final class AgentTranscriptCrawlRefreshBenchmarkTests: XCTestCase {

@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// An optimized model picker that caches grouped models and only updates when the model list changes.
 /// Uses a nested Menu structure: Provider → Models for better navigation with large model lists.

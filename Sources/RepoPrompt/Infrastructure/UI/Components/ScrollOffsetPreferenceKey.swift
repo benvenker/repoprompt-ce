@@ -5,8 +5,8 @@
 //  Created by Eric Provencher on 2024-07-19.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct ScrollOffsetPreferenceKey: PreferenceKey {
     static var defaultValue: CGPoint = .zero

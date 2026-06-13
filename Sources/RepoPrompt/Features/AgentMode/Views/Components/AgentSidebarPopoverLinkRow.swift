@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Compact "deep link" row used by Agent Mode sidebar popovers (Models,
 /// Permissions, etc.) to route to a specific settings tab. Kept in one place

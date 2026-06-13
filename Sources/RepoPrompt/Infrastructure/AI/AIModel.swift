@@ -1,7 +1,7 @@
 import Foundation
+import RepoPromptContextCore
 import SwiftAnthropic
 import SwiftOpenAI
-import RepoPromptContextCore
 
 enum ModelPickerStringOrdering {
     static func compare(

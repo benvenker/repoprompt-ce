@@ -1,7 +1,7 @@
 import Combine
 import Foundation
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 // MARK: - Agent Workflow Store
 

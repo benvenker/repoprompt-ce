@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 #if os(macOS)
     import AppKit
 #endif

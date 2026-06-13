@@ -1,6 +1,6 @@
 import AppKit
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Settings view for Context Builder configuration.
 ///

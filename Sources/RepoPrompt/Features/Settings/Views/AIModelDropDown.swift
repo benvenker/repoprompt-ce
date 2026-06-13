@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct AIModelDropdown: View {
     @ObservedObject var promptViewModel: PromptViewModel

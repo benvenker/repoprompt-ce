@@ -1,8 +1,8 @@
 import AppKit
 import Combine
 import Foundation
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 enum GitDiffInclusionMode: String, CaseIterable, Codable {
     case none

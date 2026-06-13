@@ -8,8 +8,8 @@
 import Combine
 import Foundation
 import KeyboardShortcuts
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct WindowSessionSnapshot: Codable {
     var version: Int

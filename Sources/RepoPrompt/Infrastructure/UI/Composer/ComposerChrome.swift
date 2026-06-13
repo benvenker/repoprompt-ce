@@ -6,8 +6,8 @@
 //  Handles the visual appearance, sizing, and bottom occlusion calculation.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 // MARK: - Composer Chrome
 

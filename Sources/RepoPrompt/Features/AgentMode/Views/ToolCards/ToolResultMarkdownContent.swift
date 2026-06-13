@@ -1,7 +1,7 @@
 import Foundation
 import MCP
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct ToolMarkdownExpandedContent: View {
     let item: AgentChatItem

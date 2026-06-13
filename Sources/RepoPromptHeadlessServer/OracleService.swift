@@ -102,9 +102,9 @@ actor OracleService {
     private static func defaultStateDirectory(fileManager: FileManager) -> URL {
         let environment = ProcessInfo.processInfo.environment
         #if os(macOS)
-        if let applicationSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-            return applicationSupport.appendingPathComponent("rpce-headless", isDirectory: true)
-        }
+            if let applicationSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+                return applicationSupport.appendingPathComponent("rpce-headless", isDirectory: true)
+            }
         #endif
         if let xdgState = environment["XDG_STATE_HOME"]?.trimmingCharacters(in: .whitespacesAndNewlines), !xdgState.isEmpty {
             return URL(fileURLWithPath: xdgState).appendingPathComponent("rpce-headless", isDirectory: true)

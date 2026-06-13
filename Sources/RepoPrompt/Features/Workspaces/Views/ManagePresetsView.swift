@@ -5,8 +5,8 @@
 //  Created by Eric Provencher on 2025-04-01.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct HoverButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {

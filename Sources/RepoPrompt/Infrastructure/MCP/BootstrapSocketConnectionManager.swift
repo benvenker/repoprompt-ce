@@ -9,8 +9,8 @@
 import Foundation
 import Logging
 import MCP
-import RepoPromptShared
 import RepoPromptContextCore
+import RepoPromptShared
 
 // MARK: - Bundle helpers
 

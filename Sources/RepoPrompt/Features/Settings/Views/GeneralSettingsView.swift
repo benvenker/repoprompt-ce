@@ -1,6 +1,6 @@
 import AppKit
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 enum AppearanceMode: String, CaseIterable, Identifiable {
     case system = "System"

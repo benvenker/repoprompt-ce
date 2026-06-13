@@ -19,9 +19,9 @@ private enum RegexEngine {
 }
 
 private final class PCRE2RegexBox: NSObject {
-    public let regex: PCRE2Regex
+    let regex: PCRE2Regex
 
-    public init(regex: PCRE2Regex) {
+    init(regex: PCRE2Regex) {
         self.regex = regex
     }
 }
@@ -30,14 +30,14 @@ private final class PCRE2RegexBox: NSObject {
 
 /// Caches compiled PCRE2 patterns used by file search fast paths.
 private actor RegexCache {
-    public static let pcre2Compiled: NSCache<NSString, PCRE2RegexBox> = {
+    static let pcre2Compiled: NSCache<NSString, PCRE2RegexBox> = {
         let cache = NSCache<NSString, PCRE2RegexBox>()
         cache.countLimit = 256
         cache.totalCostLimit = 16 * 1024 * 1024
         return cache
     }()
 
-    public static func pcre2Regex(for request: RepoPromptPCRE2CompileRequest) throws -> PCRE2Regex {
+    static func pcre2Regex(for request: RepoPromptPCRE2CompileRequest) throws -> PCRE2Regex {
         let key = "\(request.pattern)|\(request.caseInsensitive)|\(request.multilineAnchors)|\(request.jitMode)" as NSString
 
         if let cached = pcre2Compiled.object(forKey: key) {
@@ -207,38 +207,38 @@ public struct SearchResults: Codable {
 }
 
 private struct SearchHit {
-    public let lineNumber: Int
+    let lineNumber: Int
 }
 
 private struct SearchScanSummary {
-    public let hits: [SearchHit]
-    public let lineMatchCount: Int
+    let hits: [SearchHit]
+    let lineMatchCount: Int
 
-    public var matchedFile: Bool {
+    var matchedFile: Bool {
         lineMatchCount > 0
     }
 }
 
 private struct RegexScanTraits {
-    public let anchored: Bool
-    public let expensiveUnanchored: Bool
-    public let highRisk: Bool
-    public let linePrefilter: PCRE2LinePrefilter?
+    let anchored: Bool
+    let expensiveUnanchored: Bool
+    let highRisk: Bool
+    let linePrefilter: PCRE2LinePrefilter?
 }
 
 private struct SearchContentResult {
-    public let matches: [SearchMatch]
-    public let totalCount: Int
-    public let matchedFileCount: Int
-    public let perFileErrors: [(String, RegexPatternFailure)]
+    let matches: [SearchMatch]
+    let totalCount: Int
+    let matchedFileCount: Int
+    let perFileErrors: [(String, RegexPatternFailure)]
 }
 
 private struct SearchLineIndex {
-    public let lineRanges: [NSRange]
-    public let lineStartsUTF16: [Int]
-    public let lineStartsUTF8: [Int]
+    let lineRanges: [NSRange]
+    let lineStartsUTF16: [Int]
+    let lineStartsUTF8: [Int]
 
-    public init(content: String) {
+    init(content: String) {
         let nsContent = content as NSString
         guard !content.isEmpty else {
             lineRanges = []
@@ -303,11 +303,11 @@ private struct SearchLineIndex {
         lineStartsUTF8 = startsUTF8
     }
 
-    public func lineNumber(forUTF16Offset offset: Int) -> Int {
+    func lineNumber(forUTF16Offset offset: Int) -> Int {
         lineNumber(forOffset: offset, starts: lineStartsUTF16)
     }
 
-    public func lineNumber(forUTF8Offset offset: Int) -> Int {
+    func lineNumber(forUTF8Offset offset: Int) -> Int {
         lineNumber(forOffset: offset, starts: lineStartsUTF8)
     }
 
@@ -329,10 +329,10 @@ private struct SearchLineIndex {
 }
 
 private final class SearchLineIndexBox: NSObject {
-    public let lineIndex: SearchLineIndex
-    public let lineCount: Int
+    let lineIndex: SearchLineIndex
+    let lineCount: Int
 
-    public init(lineIndex: SearchLineIndex) {
+    init(lineIndex: SearchLineIndex) {
         self.lineIndex = lineIndex
         lineCount = lineIndex.lineRanges.count
     }
@@ -342,14 +342,14 @@ private enum SearchLineIndexCacheIdentity {
     case versioned(fileID: UUID, contentRevision: UInt64, utf16Length: Int)
     case hashed(filePath: String, utf16Length: Int, hash: UInt64)
 
-    public var utf16Length: Int {
+    var utf16Length: Int {
         switch self {
         case let .versioned(_, _, length), let .hashed(_, length, _):
             length
         }
     }
 
-    public var scanKind: String {
+    var scanKind: String {
         switch self {
         case .versioned:
             "revision"
@@ -360,37 +360,37 @@ private enum SearchLineIndexCacheIdentity {
 }
 
 private struct SearchDocument {
-    public let filePath: String
-    public let text: String
-    public let lineIndex: SearchLineIndex
-    public let contextLines: Int
+    let filePath: String
+    let text: String
+    let lineIndex: SearchLineIndex
+    let contextLines: Int
 
-    public var nsText: NSString {
+    var nsText: NSString {
         text as NSString
     }
 
-    public var fullRange: NSRange {
+    var fullRange: NSRange {
         NSRange(location: 0, length: nsText.length)
     }
 
-    public var lineRanges: [NSRange] {
+    var lineRanges: [NSRange] {
         lineIndex.lineRanges
     }
 
-    public func lineNumber(forUTF16Offset offset: Int) -> Int {
+    func lineNumber(forUTF16Offset offset: Int) -> Int {
         lineIndex.lineNumber(forUTF16Offset: offset)
     }
 
-    public func lineNumber(forUTF8Offset offset: Int) -> Int {
+    func lineNumber(forUTF8Offset offset: Int) -> Int {
         lineIndex.lineNumber(forUTF8Offset: offset)
     }
 
-    public func lineText(at lineNumber: Int) -> String {
+    func lineText(at lineNumber: Int) -> String {
         guard lineNumber >= 0, lineNumber < lineIndex.lineRanges.count else { return "" }
         return nsText.substring(with: lineIndex.lineRanges[lineNumber])
     }
 
-    public func lineSlice(at lineNumber: Int) -> Substring {
+    func lineSlice(at lineNumber: Int) -> Substring {
         guard lineNumber >= 0, lineNumber < lineIndex.lineRanges.count,
               let range = Range(lineIndex.lineRanges[lineNumber], in: text)
         else {
@@ -399,20 +399,20 @@ private struct SearchDocument {
         return text[range]
     }
 
-    public func contextBefore(at lineNumber: Int) -> [String]? {
+    func contextBefore(at lineNumber: Int) -> [String]? {
         guard contextLines > 0, lineNumber > 0 else { return nil }
         let start = max(0, lineNumber - contextLines)
         return (start ..< lineNumber).map { lineText(at: $0) }
     }
 
-    public func contextAfter(at lineNumber: Int) -> [String]? {
+    func contextAfter(at lineNumber: Int) -> [String]? {
         guard contextLines > 0, lineNumber + 1 < lineIndex.lineRanges.count else { return nil }
         let end = min(lineIndex.lineRanges.count, lineNumber + contextLines + 1)
         guard lineNumber + 1 < end else { return nil }
         return ((lineNumber + 1) ..< end).map { lineText(at: $0) }
     }
 
-    public func materialize(_ hit: SearchHit) -> SearchMatch {
+    func materialize(_ hit: SearchHit) -> SearchMatch {
         SearchMatch(
             filePath: filePath,
             lineNumber: hit.lineNumber,
@@ -424,27 +424,27 @@ private struct SearchDocument {
 }
 
 private struct SearchDocumentBuildResult {
-    public let document: SearchDocument
+    let document: SearchDocument
 }
 
 private struct SearchFileScanBatch {
-    public let ordinal: Int
-    public let document: SearchDocument?
-    public let summary: SearchScanSummary
-    public let errors: [(String, RegexPatternFailure)]
+    let ordinal: Int
+    let document: SearchDocument?
+    let summary: SearchScanSummary
+    let errors: [(String, RegexPatternFailure)]
 }
 
 private struct SearchScanPlan {
-    public let engine: RegexEngine?
-    public let literalPattern: String
-    public let caseInsensitive: Bool
-    public let wholeWord: Bool
-    public let fuzzySpaceMatching: Bool
-    public let contextLines: Int
-    public let countOnly: Bool
-    public let maxCollectedMatches: Int?
-    public let regexTraits: RegexScanTraits?
-    public let contentFreshnessPolicy: FileContentFreshnessPolicy
+    let engine: RegexEngine?
+    let literalPattern: String
+    let caseInsensitive: Bool
+    let wholeWord: Bool
+    let fuzzySpaceMatching: Bool
+    let contextLines: Int
+    let countOnly: Bool
+    let maxCollectedMatches: Int?
+    let regexTraits: RegexScanTraits?
+    let contentFreshnessPolicy: FileContentFreshnessPolicy
 }
 
 public struct SearchFileDescriptor {
@@ -537,42 +537,42 @@ public struct SearchFileDescriptor {
 }
 
 private struct SearchFileInput {
-    public let ordinal: Int
-    public let file: SearchFileDescriptor
+    let ordinal: Int
+    let file: SearchFileDescriptor
 }
 
 private struct SearchContentBatch {
-    public let index: Int
-    public let range: Range<Int>
+    let index: Int
+    let range: Range<Int>
 }
 
 private struct SearchContentBatchResult {
-    public let index: Int
-    public let fileResults: [SearchFileScanBatch]
+    let index: Int
+    let fileResults: [SearchFileScanBatch]
 }
 
 private struct SearchPathScanPlan {
-    public let trimmedPattern: String
-    public let regex: PCRE2Regex?
-    public let pathSuffixPattern: PCRE2PathSuffixPattern?
-    public let caseInsensitive: Bool
-    public let isRegex: Bool
-    public let aliasByRootPath: [String: String]?
+    let trimmedPattern: String
+    let regex: PCRE2Regex?
+    let pathSuffixPattern: PCRE2PathSuffixPattern?
+    let caseInsensitive: Bool
+    let isRegex: Bool
+    let aliasByRootPath: [String: String]?
 }
 
 private struct SearchPathInput {
-    public let ordinal: Int
-    public let file: SearchFileDescriptor
+    let ordinal: Int
+    let file: SearchFileDescriptor
 }
 
 private struct SearchPathBatch {
-    public let index: Int
-    public let range: Range<Int>
+    let index: Int
+    let range: Range<Int>
 }
 
 private struct SearchPathBatchResult {
-    public let index: Int
-    public let hits: [(ordinal: Int, path: String)]
+    let index: Int
+    let hits: [(ordinal: Int, path: String)]
 }
 
 public struct OrderedSearchBatchWindow {

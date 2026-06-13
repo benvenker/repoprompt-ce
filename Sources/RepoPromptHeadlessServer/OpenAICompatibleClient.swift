@@ -140,7 +140,7 @@ private struct ChatCompletionChunk: Decodable {
     let choices: [Choice]
 }
 
-private extension Dictionary where Key == String, Value == String {
+private extension [String: String] {
     func trimmed(_ key: String) -> String? {
         guard let value = self[key]?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
         return value

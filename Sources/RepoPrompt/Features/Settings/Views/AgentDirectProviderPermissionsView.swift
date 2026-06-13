@@ -19,8 +19,8 @@
 //  - Sub:    /RepoPrompt/Views/Settings/AgentSubagentPolicySettingsView.swift
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Direct/top-level CLI provider permissions pane. This does **not** control MCP tool
 /// ACLs (see MCP Tools) or RepoPrompt workspace operation approvals (see Workspace

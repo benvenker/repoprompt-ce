@@ -17,8 +17,8 @@
 //  - Oracle picker: /RepoPrompt/Views/Settings/AIModelDropDown.swift
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Single source of truth for agent-mode model configuration: Oracle model,
 /// Context Builder agent, MCP role defaults, and the Built-in Chat model

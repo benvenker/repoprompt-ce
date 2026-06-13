@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Displays tool calls as a single wrapping Text with inline SF Symbol icons.
 /// No custom Layout, no GeometryReader — just Text concatenation that wraps naturally.

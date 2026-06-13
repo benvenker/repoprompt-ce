@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import SwiftOpenAI
 import RepoPromptContextCore
+import SwiftOpenAI
 
 final class GroqProvider: OpenAIProvider {
     init(apiKey: String) {

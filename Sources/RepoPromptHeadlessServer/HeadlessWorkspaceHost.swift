@@ -35,12 +35,11 @@ actor HeadlessWorkspaceHost {
         guard let handle = await WorkspaceReadableFileService(store: store).resolveReadableFile(path, profile: .mcpRead, rootScope: .allLoaded) else {
             throw HeadlessToolFailure(message: "Unknown or unreadable path: \(path)")
         }
-        let fullText: String
-        switch handle {
+        let fullText: String = switch handle {
         case let .workspace(file):
-            fullText = try await store.readContent(rootID: file.rootID, relativePath: file.standardizedRelativePath, workloadClass: .interactiveRead) ?? ""
+            try await store.readContent(rootID: file.rootID, relativePath: file.standardizedRelativePath, workloadClass: .interactiveRead) ?? ""
         case let .external(file):
-            fullText = try await WorkspaceReadableFileService(store: store).readAlwaysReadableExternalFile(file)
+            try await WorkspaceReadableFileService(store: store).readAlwaysReadableExternalFile(file)
         }
         return lineWindow(fullText, startLine: startLine, limit: limit)
     }
@@ -246,7 +245,7 @@ actor HeadlessWorkspaceHost {
         for path in selection.selectedPaths {
             let tokens: Int
             do {
-                tokens = TokenCalculationService.estimateTokens(for: try await readFile(path: path, startLine: nil, limit: nil))
+                tokens = try await TokenCalculationService.estimateTokens(for: readFile(path: path, startLine: nil, limit: nil))
             } catch {
                 tokens = 0
             }
@@ -281,7 +280,7 @@ actor HeadlessWorkspaceHost {
         let start = max(0, startLine - 1)
         guard start < lines.count else { return "" }
         let end = limit.map { min(lines.count, start + max(0, $0)) } ?? lines.count
-        return lines[start..<end].joined(separator: "\n")
+        return lines[start ..< end].joined(separator: "\n")
     }
 
     private func renderSearchResults(_ results: SearchResults) -> String {

@@ -1,5 +1,6 @@
 import Foundation
 import RepoPromptContextCore
+
 enum FileTreeItem: Identifiable {
     case folder(String, [FileViewModel])
     case file(FileViewModel)

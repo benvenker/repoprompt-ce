@@ -9,8 +9,8 @@ public protocol DeltaReplayPreparing: Actor {
 }
 
 private struct ImmediatePreparedIngressReservation: Equatable {
-    public let id: UInt64
-    public let rootKey: String
+    let id: UInt64
+    let rootKey: String
 }
 
 public struct PreparedImmediateReplay {

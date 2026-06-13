@@ -1,7 +1,7 @@
 import Foundation
 
-extension String {
-    public static func splitContentPreservingLineEndings(_ content: String) -> ([String], String) {
+public extension String {
+    static func splitContentPreservingLineEndings(_ content: String) -> ([String], String) {
         var lines: [String] = []
         var currentLine = ""
         var detectedLineEnding = "\n"
@@ -43,7 +43,7 @@ extension String {
         return (lines, detectedLineEnding)
     }
 
-    public static func splitContentPreservingAllLineEndings(_ content: String) -> [(line: String, ending: String)] {
+    static func splitContentPreservingAllLineEndings(_ content: String) -> [(line: String, ending: String)] {
         var pairs: [(line: String, ending: String)] = []
         var currentLine = ""
         var index = content.startIndex

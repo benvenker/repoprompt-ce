@@ -1,6 +1,6 @@
 import Foundation
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct AppSettingsCardPresentation: Equatable {
     let subtitle: String?

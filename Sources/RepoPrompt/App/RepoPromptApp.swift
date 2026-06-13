@@ -2,9 +2,9 @@ import AppKit
 import Darwin
 import Foundation
 import Logging
+import RepoPromptContextCore
 import Sparkle
 import SwiftUI
-import RepoPromptContextCore
 
 struct RepoPromptFileLogHandler: LogHandler {
     private let stream: FileHandle

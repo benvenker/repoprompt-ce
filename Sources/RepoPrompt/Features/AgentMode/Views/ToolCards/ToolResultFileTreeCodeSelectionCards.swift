@@ -1,6 +1,6 @@
 import Foundation
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct FileTreeCardPresentation: Equatable {
     let subtitle: String

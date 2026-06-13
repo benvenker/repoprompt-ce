@@ -1,6 +1,6 @@
 import Foundation
-import RepoPromptShared
 import RepoPromptContextCore
+import RepoPromptShared
 
 enum MCPToolExecutionContract: Equatable {
     case bounded(deadline: Duration, cancellationGrace: Duration)

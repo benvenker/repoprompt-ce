@@ -1,6 +1,6 @@
 import Foundation
-import UniformTypeIdentifiers
 import RepoPromptContextCore
+import UniformTypeIdentifiers
 
 struct AgentAttachmentStore {
     private static let attachmentsDirectoryName = "agent_attachments"

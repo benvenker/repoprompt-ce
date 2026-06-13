@@ -1,8 +1,8 @@
 // File: RepoPrompt/ViewModels/ExpansionManager.swift
 import Combine
 import Foundation
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 @MainActor
 class ExpansionManager: ObservableObject {

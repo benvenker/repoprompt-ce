@@ -1,8 +1,8 @@
 // ResizableTextField.swift
 import AppKit
+import RepoPromptContextCore
 import SwiftUI
 import UniformTypeIdentifiers
-import RepoPromptContextCore
 
 enum ImagePasteboardTypes {
     static let legacyApplePNG = NSPasteboard.PasteboardType("Apple PNG pasteboard type")

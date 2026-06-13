@@ -27,13 +27,13 @@ private actor CodeScanAsyncLimiter {
         private var maxObservedPermitsInUse = 0
     #endif
 
-    public init(capacity: Int) {
+    init(capacity: Int) {
         precondition(capacity > 0, "Limiter must have at least one permit")
         self.capacity = capacity
         availablePermits = capacity
     }
 
-    public func withPermit<T>(_ body: @Sendable () async throws -> T) async throws -> T {
+    func withPermit<T>(_ body: @Sendable () async throws -> T) async throws -> T {
         try await acquire()
         defer { release() }
         try Task.checkCancellation()

@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Centralized metrics for code view layout to avoid hard-coded literals.
 /// These values enable index-based calculations without per-row geometry.

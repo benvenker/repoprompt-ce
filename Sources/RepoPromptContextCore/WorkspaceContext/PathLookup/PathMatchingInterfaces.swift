@@ -44,7 +44,8 @@ public struct FrozenFileRecord: FileRecord {
         self.relativePath = relativePath
         self.fullPath = fullPath
         self.rootFolderPath = rootFolderPath
-    }}
+    }
+}
 
 public struct FrozenFolderRecord: FolderRecord {
     public let name: String
@@ -59,4 +60,5 @@ public struct FrozenFolderRecord: FolderRecord {
         self.relativePath = relativePath
         self.fullPath = (fullPath as NSString).standardizingPath
         self.rootPath = (rootPath as NSString).standardizingPath
-    }}
+    }
+}

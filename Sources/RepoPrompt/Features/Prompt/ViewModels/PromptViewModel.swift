@@ -1,8 +1,7 @@
 import Combine
 import Foundation
-import SwiftUI
 import RepoPromptContextCore
-
+import SwiftUI
 
 /// Errors that can occur when publishing git diff artifacts
 enum GitArtifactPublishError: LocalizedError {

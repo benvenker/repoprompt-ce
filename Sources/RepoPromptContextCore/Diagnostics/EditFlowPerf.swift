@@ -860,8 +860,8 @@ public enum EditFlowPerf {
         }
 
         private struct DebugCaptureKey: Hashable {
-            public let stageName: String
-            public let sanitizedDimensions: String
+            let stageName: String
+            let sanitizedDimensions: String
         }
 
         private struct DebugCaptureStart {

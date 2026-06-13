@@ -7,9 +7,9 @@
 
 import AppKit
 import Neon
+import RepoPromptContextCore
 import SwiftTreeSitter
 import SwiftUI
-import RepoPromptContextCore
 
 // Workaround: The library expects a property named `nsRange` on NamedRange.
 public extension NamedRange {

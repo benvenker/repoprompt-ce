@@ -6,8 +6,8 @@
 //  Hosted inside the borderless SuggestionWindow via NSHostingView.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 // MARK: - Observable model bridging AppKit → SwiftUI
 

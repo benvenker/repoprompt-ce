@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// A countdown timer view for question/instruction timeouts.
 struct TimeoutCountdownView: View {

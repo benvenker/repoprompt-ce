@@ -155,8 +155,8 @@ public struct AgentWorktreeRuntimeWorkspaceError: LocalizedError, Equatable {
     }
 }
 
-extension Sequence<AgentSessionWorktreeBinding> {
-    public var worktreeBindingSummaries: [AgentSessionWorktreeBindingSummary] {
+public extension Sequence<AgentSessionWorktreeBinding> {
+    var worktreeBindingSummaries: [AgentSessionWorktreeBindingSummary] {
         map(\.summary)
     }
 }

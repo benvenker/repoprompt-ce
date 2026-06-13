@@ -11,7 +11,9 @@ public enum TopLevelScanner {
     public struct TrackDelimiters: OptionSet {
         public let rawValue: Int
 
-        public init(rawValue: Int) { self.rawValue = rawValue }
+        public init(rawValue: Int) {
+            self.rawValue = rawValue
+        }
 
         public static let angle = TrackDelimiters(rawValue: 1 << 0) // < >
         public static let paren = TrackDelimiters(rawValue: 1 << 1) // ( )

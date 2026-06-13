@@ -5,8 +5,8 @@
 //  Created by RepoPrompt MCP integration
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// A full-screen takeover overlay for MCP client approval requests.
 /// Presents a modern, polished UI that blocks interaction until the user responds.

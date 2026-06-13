@@ -5,8 +5,8 @@
 //  Created by Eric Provencher on 2024-08-10.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct ResizeHandle: View {
     @Binding var height: CGFloat

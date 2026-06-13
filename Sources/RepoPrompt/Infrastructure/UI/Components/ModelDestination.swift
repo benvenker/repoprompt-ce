@@ -1,6 +1,6 @@
 import Foundation
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Decouples "what model was picked" from "where/how that choice is applied".
 /// Each destination encapsulates:

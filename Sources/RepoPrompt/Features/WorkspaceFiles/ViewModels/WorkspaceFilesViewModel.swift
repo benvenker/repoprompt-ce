@@ -1,8 +1,8 @@
 import AppKit
 import Combine
 import Foundation
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 #if DEBUG || EDIT_FLOW_PERF
     import os
 #endif

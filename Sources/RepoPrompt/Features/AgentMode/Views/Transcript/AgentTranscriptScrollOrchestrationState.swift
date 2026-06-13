@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 // These types split AgentModeChatDetailView's transcript scroll state into
 // low-frequency reactive view state and high-frequency engine state.

@@ -6,8 +6,8 @@
 //
 
 import AppKit
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 @MainActor
 final class TooltipOverlayController {

@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Floating status pill in top-right of agent chat transcript.
 /// Shows file context when idle, spinner when context builder or oracle is active.

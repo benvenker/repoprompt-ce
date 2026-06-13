@@ -1,5 +1,5 @@
-import Foundation
 import CSwiftPCRE2
+import Foundation
 
 public enum RepoPromptRegexRuntime {
     public static var pcre2JITMode: PCRE2JITMode {

@@ -1,5 +1,5 @@
-import Cuchardet
 import CoreFoundation
+import Cuchardet
 import Foundation
 import UniversalCharsetDetection
 

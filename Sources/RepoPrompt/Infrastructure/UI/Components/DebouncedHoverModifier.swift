@@ -6,8 +6,8 @@
 //
 
 import Combine
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct DebouncedOnHoverModifier: ViewModifier {
     let delay: TimeInterval

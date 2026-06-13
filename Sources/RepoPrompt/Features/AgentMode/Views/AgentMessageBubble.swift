@@ -1,6 +1,6 @@
 import AppKit
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 extension EnvironmentValues {
     @Entry var agentWindowIsFocused: Bool = true

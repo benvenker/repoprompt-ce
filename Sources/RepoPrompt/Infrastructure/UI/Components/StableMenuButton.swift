@@ -1,6 +1,6 @@
 import AppKit
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// A SwiftUI-labelled button that presents an AppKit `NSMenu`.
 ///

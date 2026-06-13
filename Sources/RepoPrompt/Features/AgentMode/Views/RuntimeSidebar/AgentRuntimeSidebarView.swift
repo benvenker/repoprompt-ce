@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct AgentRuntimeSidebarView: View {
     @ObservedObject var contextBuilderAgentVM: ContextBuilderAgentViewModel

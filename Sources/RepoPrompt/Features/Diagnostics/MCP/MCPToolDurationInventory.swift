@@ -1,7 +1,7 @@
 import Foundation
 import MCP
-import RepoPromptShared
 import RepoPromptContextCore
+import RepoPromptShared
 
 #if DEBUG
     /// Payload-free inventory of the server-wide Codex timeout and the independent

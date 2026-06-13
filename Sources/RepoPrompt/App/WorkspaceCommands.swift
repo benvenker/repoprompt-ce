@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Extra File-menu items that operate on the *focused* window’s workspace.
 struct WorkspaceCommands: Commands {

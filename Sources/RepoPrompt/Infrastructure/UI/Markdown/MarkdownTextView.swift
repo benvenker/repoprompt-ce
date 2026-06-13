@@ -1,7 +1,7 @@
 import AppKit
 import Markdown
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 // MARK: - Markdown Text View
 

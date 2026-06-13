@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct SettingsWindowRootView: View {
     @ObservedObject var model: SettingsWindowModel

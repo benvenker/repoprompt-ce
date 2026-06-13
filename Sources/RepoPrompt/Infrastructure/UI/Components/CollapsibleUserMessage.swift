@@ -7,8 +7,8 @@
 //
 
 import AppKit
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 // MARK: - Content Width Observation
 

@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Optimized preset row that minimizes re-renders
 struct OptimizedPresetRow: View {

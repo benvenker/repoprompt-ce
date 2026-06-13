@@ -8,19 +8,19 @@
 import Foundation
 import SwiftTreeSitter
 import TreeSitterC
+import TreeSitterCPP
+import TreeSitterCSharp
 import TreeSitterDart
 import TreeSitterGo
 import TreeSitterJava
 import TreeSitterJavaScript
+import TreeSitterPHP
 import TreeSitterPython
 import TreeSitterRuby
 import TreeSitterRust
+import TreeSitterSwift
 import TreeSitterTSX
 import TreeSitterTypeScript
-import TreeSitterCPP
-import TreeSitterCSharp
-import TreeSitterPHP
-import TreeSitterSwift
 
 public enum LanguageType: String, Comparable, Codable {
     case swift, js, c_sharp, python, c, rust, cpp, go, java, dart, ts, tsx,

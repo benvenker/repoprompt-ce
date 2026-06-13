@@ -2,8 +2,8 @@ import Foundation
 import JSONSchema
 import MCP
 import Ontology
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 #if DEBUG
     private func routingLog(_ message: @autoclosure () -> String) {

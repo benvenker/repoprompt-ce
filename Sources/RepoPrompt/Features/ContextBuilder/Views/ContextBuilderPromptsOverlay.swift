@@ -1,6 +1,6 @@
 import AppKit
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// A simple prompt model for context builder custom instructions.
 /// Stored globally in a JSON file, with per-tab selection.

@@ -1,10 +1,10 @@
 import Foundation
 
-extension FileSystemService {
+public extension FileSystemService {
     // MARK: - Ignore rules change consumption
 
     /// Payload describing ignore rules changes since last consumption
-    public struct IgnoreRulesChange: Sendable {
+    struct IgnoreRulesChange: Sendable {
         public let revision: UInt64
         public let changedDirs: Set<String>
     }
@@ -12,7 +12,7 @@ extension FileSystemService {
     /// Atomically retrieves and clears pending ignore rules changes.
     /// Returns nil if no ignore files have changed since the last call.
     /// Use this instead of the deprecated `filterHashChanged` property.
-    public func takePendingIgnoreRulesChange() -> IgnoreRulesChange? {
+    func takePendingIgnoreRulesChange() -> IgnoreRulesChange? {
         guard !pendingIgnoreChangeDirs.isEmpty else { return nil }
         let change = IgnoreRulesChange(
             revision: ignoreRulesRevision,
@@ -22,7 +22,7 @@ extension FileSystemService {
         return change
     }
 
-    public func rebuildPerFolderIgnoreCache(
+    func rebuildPerFolderIgnoreCache(
         changedDirs: Set<String>? = nil
     ) async {
         // Clear all per-path ignore caches to avoid stale decisions
@@ -87,12 +87,12 @@ extension FileSystemService {
 
     // MARK: - New prefix-based ignore check (cached in this actor)
 
-    public func cachedIgnoreRules(for directoryPath: String) -> IgnoreRules? {
+    func cachedIgnoreRules(for directoryPath: String) -> IgnoreRules? {
         perFolderIgnoreCache[directoryPath]
     }
 
     /// We walk each parent sub-path, caching the result.
-    public func isIgnoredPrefixCheck(relativePath: String, isDirectory: Bool = false) -> Bool {
+    func isIgnoredPrefixCheck(relativePath: String, isDirectory: Bool = false) -> Bool {
         let comps = pathCompsCache.components(for: relativePath)
         return ignoreCacheStore.isIgnoredPrefixCheck(
             components: comps,
@@ -102,7 +102,7 @@ extension FileSystemService {
     }
 
     /// Check if a path is ignored using hierarchical rules (for delta events)
-    public func isIgnoredHierarchical(relativePath: String, isDirectory overrideValue: Bool? = nil) async -> Bool {
+    func isIgnoredHierarchical(relativePath: String, isDirectory overrideValue: Bool? = nil) async -> Bool {
         // Get the file type
         let isDir = overrideValue ?? (visitedItems[relativePath] ?? fileOrFolderIsDir(relativePath))
 
@@ -124,7 +124,7 @@ extension FileSystemService {
     }
 
     /// Hierarchical check that treats the target as a directory regardless of current disk state.
-    public func isIgnoredHierarchicalDir(_ relativePath: String) async -> Bool {
+    func isIgnoredHierarchicalDir(_ relativePath: String) async -> Bool {
         if relativePath.isEmpty {
             return false
         }
@@ -136,7 +136,7 @@ extension FileSystemService {
     }
 
     /// Rules provider implementation for the hierarchical evaluator
-    public final class FileSystemRulesProvider: HierarchicalIgnoreEvaluator.RulesProvider {
+    final class FileSystemRulesProvider: HierarchicalIgnoreEvaluator.RulesProvider {
         let service: FileSystemService
 
         init(service: FileSystemService) {
@@ -176,7 +176,7 @@ extension FileSystemService {
     }
 
     @discardableResult
-    public func ensureRulesChain(for relativeDirectory: String, using scanResult: DirectoryScanResult? = nil) async throws -> IgnoreRules {
+    func ensureRulesChain(for relativeDirectory: String, using scanResult: DirectoryScanResult? = nil) async throws -> IgnoreRules {
         if let cached = perFolderIgnoreCache[relativeDirectory] {
             return cached
         }
@@ -213,46 +213,46 @@ extension FileSystemService {
     }
 
     /// If you had snapshot/merge logic:
-    public func snapshotIgnoreCache() -> [String: Bool] {
+    func snapshotIgnoreCache() -> [String: Bool] {
         ignoreCacheStore.snapshotIgnoreCache()
     }
 
-    public func snapshotIgnoreCacheWithPathKeys() -> [IgnoreCacheStore.PathKey: Bool] {
+    func snapshotIgnoreCacheWithPathKeys() -> [IgnoreCacheStore.PathKey: Bool] {
         ignoreCacheStore.snapshotIgnoreCacheWithPathKeys()
     }
 
-    public func mergeIgnoreCache(_ localCache: [String: Bool]) {
+    func mergeIgnoreCache(_ localCache: [String: Bool]) {
         ignoreCacheStore.mergeIgnoreCache(localCache)
     }
 
-    public func mergeIgnoreCache(_ localCache: [IgnoreCacheStore.PathKey: Bool]) {
+    func mergeIgnoreCache(_ localCache: [IgnoreCacheStore.PathKey: Bool]) {
         guard !localCache.isEmpty else { return }
         ignoreCacheStore.mergeIgnoreCache(localCache)
     }
 
-    public func updateRespectGitignore(_ newValue: Bool) async throws {
+    func updateRespectGitignore(_ newValue: Bool) async throws {
         guard respectGitignore != newValue else { return }
         respectGitignore = newValue
         try await refreshIgnoreRules()
     }
 
-    public func updateRespectRepoIgnore(_ newValue: Bool) async throws {
+    func updateRespectRepoIgnore(_ newValue: Bool) async throws {
         guard respectRepoIgnore != newValue else { return }
         respectRepoIgnore = newValue
         try await refreshIgnoreRules()
     }
 
-    public func updateRespectCursorignore(_ newValue: Bool) async throws {
+    func updateRespectCursorignore(_ newValue: Bool) async throws {
         guard respectCursorignore != newValue else { return }
         respectCursorignore = newValue
         try await refreshIgnoreRules()
     }
 
-    public func updateSkipSymlinks(_ newValue: Bool) {
+    func updateSkipSymlinks(_ newValue: Bool) {
         skipSymlinks = newValue
     }
 
-    public func updateEnableHierarchicalIgnores(_ newValue: Bool) {
+    func updateEnableHierarchicalIgnores(_ newValue: Bool) {
         guard enableHierarchicalIgnores != newValue else { return }
         enableHierarchicalIgnores = newValue
         invalidateAllIgnoreCaches()
@@ -262,7 +262,7 @@ extension FileSystemService {
         }
     }
 
-    public func refreshIgnoreRules() async throws {
+    func refreshIgnoreRules() async throws {
         ignoreRules = try await IgnoreRulesManager.shared.getIgnoreRules(
             for: path,
             respectGitignore: respectGitignore,
@@ -272,7 +272,7 @@ extension FileSystemService {
         invalidateAllIgnoreCaches()
     }
 
-    public func effectiveRules(
+    func effectiveRules(
         for dirURL: URL,
         parentRelPath: String,
         parentRules: IgnoreRules
@@ -296,7 +296,7 @@ extension FileSystemService {
     }
 
     /// Optimized version that minimizes file system operations
-    public func optimizedEffectiveRules(
+    func optimizedEffectiveRules(
         for dirURL: URL,
         parentRelPath: String,
         parentRules: IgnoreRules,
@@ -406,7 +406,7 @@ extension FileSystemService {
         return effectiveRules
     }
 
-    public func effectiveRulesSnapshot(
+    func effectiveRulesSnapshot(
         for dirURL: URL,
         parentRelPath: String,
         hasGitignore: Bool,
@@ -431,7 +431,7 @@ extension FileSystemService {
     }
 
     /// Cache ignore rules with LRU eviction
-    public func cacheIgnoreRules(_ rules: IgnoreRules, for path: String) {
+    func cacheIgnoreRules(_ rules: IgnoreRules, for path: String) {
         let evicted = perFolderIgnoreCache.set(rules, forKey: path)
         if let evictedKey = evicted {
             removeNoIgnoreFilesCached(evictedKey)
@@ -444,30 +444,30 @@ extension FileSystemService {
         }
     }
 
-    public func hasNoIgnoreFilesCached(_ path: String) -> Bool {
+    func hasNoIgnoreFilesCached(_ path: String) -> Bool {
         noIgnoreFileCache[path] == true
     }
 
-    public func markNoIgnoreFilesCached(_ path: String) {
+    func markNoIgnoreFilesCached(_ path: String) {
         _ = noIgnoreFileCache.set(true, forKey: path)
     }
 
-    public func removeNoIgnoreFilesCached(_ path: String) {
+    func removeNoIgnoreFilesCached(_ path: String) {
         noIgnoreFileCache.removeValue(forKey: path)
     }
 
-    public func removeNoIgnoreFilesCached(where shouldRemove: (String) -> Bool) {
+    func removeNoIgnoreFilesCached(where shouldRemove: (String) -> Bool) {
         for key in noIgnoreFileCache.keys where shouldRemove(key) {
             removeNoIgnoreFilesCached(key)
         }
     }
 
-    public func clearNoIgnoreFilesCache() {
+    func clearNoIgnoreFilesCache() {
         noIgnoreFileCache.removeAll()
     }
 
     /// Clear all ignore-related caches and seed the root rules.
-    public func invalidateAllIgnoreCaches() {
+    func invalidateAllIgnoreCaches() {
         ignoreCacheStore = IgnoreCacheStore()
         perFolderIgnoreCache.removeAll()
         clearNoIgnoreFilesCache()
@@ -475,13 +475,13 @@ extension FileSystemService {
     }
 
     /// Mark a directory as having no ignore files
-    public func markNoIgnoreFiles(_ path: String, parentRules: IgnoreRules) {
+    func markNoIgnoreFiles(_ path: String, parentRules: IgnoreRules) {
         markNoIgnoreFilesCached(path)
         cacheIgnoreRules(parentRules, for: path)
     }
 
     /// Mark a directory as having no ignore files using cached parent rules
-    public func markNoIgnoreFilesUsingCache(_ path: String) async throws {
+    func markNoIgnoreFilesUsingCache(_ path: String) async throws {
         let parentRel = parentDirectory(of: path)
         let parentRules: IgnoreRules = if let cached = perFolderIgnoreCache[parentRel] {
             cached

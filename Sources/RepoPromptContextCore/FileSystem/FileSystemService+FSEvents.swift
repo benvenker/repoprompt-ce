@@ -16,30 +16,30 @@ public struct FSEventCallbackPayload {
     }
 }
 
-extension FileSystemService {
+public extension FileSystemService {
     // MARK: - Public watchers API
 
     /// Returns ordered publications whenever changes or watcher progress are detected.
-    public func publisherForChanges() -> AnyPublisher<FileSystemDeltaPublication, Never> {
+    func publisherForChanges() -> AnyPublisher<FileSystemDeltaPublication, Never> {
         changePublisher.eraseToAnyPublisher()
     }
 
     /// Request to stop watching for changes. This tears down the FSEvent stream.
-    public func stopWatchingForChanges() {
+    func stopWatchingForChanges() {
         stopFSEventStream()
     }
 
     /// (Re)start the FSEvent stream if needed.
-    public func startWatchingForChanges() {
+    func startWatchingForChanges() {
         startFSEventStream()
     }
 
-    public func fileExistsOnDisk(relativePath: String) -> Bool {
+    func fileExistsOnDisk(relativePath: String) -> Bool {
         let absolutePath = fullPath(forRelativePath: relativePath)
         return fm.fileExists(atPath: absolutePath, isDirectory: nil)
     }
 
-    public func regularFileExistsOnDisk(relativePath rawRelativePath: String) -> Bool {
+    func regularFileExistsOnDisk(relativePath rawRelativePath: String) -> Bool {
         let lifecycleCorrelation = EditFlowPerf.currentLifecycleCorrelation
         EditFlowPerf.lifecycleEvent(
             EditFlowPerf.Lifecycle.Search.contentFreshnessRootEntered,
@@ -78,11 +78,11 @@ extension FileSystemService {
         return true
     }
 
-    public func catalogEligibleRegularFileExists(relativePath rawRelativePath: String) async -> Bool {
+    func catalogEligibleRegularFileExists(relativePath rawRelativePath: String) async -> Bool {
         await catalogRegularFileEligibility(relativePath: rawRelativePath).isEligible
     }
 
-    public func catalogFolderIsDiscoverable(relativePath rawRelativePath: String) async -> Bool {
+    func catalogFolderIsDiscoverable(relativePath rawRelativePath: String) async -> Bool {
         let relativePath = (rawRelativePath as NSString).standardizingPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         guard !relativePath.isEmpty, relativePath != "..", !relativePath.hasPrefix("../") else { return false }
         let absolutePath = fullPath(forRelativePath: relativePath)
@@ -103,7 +103,7 @@ extension FileSystemService {
         return !isIgnoredPrefixCheck(relativePath: relativePath, isDirectory: true)
     }
 
-    public func catalogRegularFileEligibility(relativePath rawRelativePath: String) async -> CatalogRegularFileEligibility {
+    func catalogRegularFileEligibility(relativePath rawRelativePath: String) async -> CatalogRegularFileEligibility {
         let relativePath = (rawRelativePath as NSString).standardizingPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         guard !relativePath.isEmpty, !relativePath.hasPrefix("../"), relativePath != ".." else {
             return .ineligible(.invalidRelativePath)
@@ -140,7 +140,7 @@ extension FileSystemService {
         return isIgnored ? .ineligible(.ignored) : .eligible
     }
 
-    public func registerExplicitlyManagedRegularFile(relativePath rawRelativePath: String) async -> CatalogRegularFileEligibility {
+    func registerExplicitlyManagedRegularFile(relativePath rawRelativePath: String) async -> CatalogRegularFileEligibility {
         let eligibility = await catalogRegularFileEligibility(relativePath: rawRelativePath)
         switch eligibility {
         case .eligible, .ineligible(.ignored):
@@ -153,7 +153,7 @@ extension FileSystemService {
         return eligibility
     }
 
-    public func pathContainsSymlinkComponent(relativePath: String) -> Bool {
+    func pathContainsSymlinkComponent(relativePath: String) -> Bool {
         var current = rootURL
         for component in relativePath.split(separator: "/") {
             current.appendPathComponent(String(component))
@@ -164,11 +164,11 @@ extension FileSystemService {
         return false
     }
 
-    nonisolated func captureAcceptedWatcherWatermark() -> FileSystemWatcherIngressMailbox.Watermark {
+    internal nonisolated func captureAcceptedWatcherWatermark() -> FileSystemWatcherIngressMailbox.Watermark {
         watcherIngressMailbox.captureAcceptedWatermark()
     }
 
-    public func flushPendingEventsNow() async {
+    func flushPendingEventsNow() async {
         _ = await flushPendingEventsNow(throughAcceptedWatcherWatermark: captureAcceptedWatcherWatermark())
     }
 
@@ -177,7 +177,7 @@ extension FileSystemService {
     /// Later callbacks may already have joined an actor-visible batch or an overflow
     /// sentinel, so this is intentionally a lower-bound barrier rather than a strict
     /// exclusion boundary. It never returns before the captured cut is published.
-    public func flushPendingEventsNow(
+    func flushPendingEventsNow(
         throughAcceptedWatcherWatermark target: FileSystemWatcherIngressMailbox.Watermark
     ) async -> UInt64 {
         drainAcceptedWatcherIngressMailboxPayloads(through: target)
@@ -202,117 +202,117 @@ extension FileSystemService {
     }
 
     #if DEBUG
-        public func pendingRawEventCountForDiagnostics() -> Int {
+        func pendingRawEventCountForDiagnostics() -> Int {
             pendingFSEvents.count
         }
 
-        public func lastPublishedDeltaCoalescingDiagnosticsForTesting() -> PublishedDeltaCoalescingDiagnostics? {
+        func lastPublishedDeltaCoalescingDiagnosticsForTesting() -> PublishedDeltaCoalescingDiagnostics? {
             lastPublishedDeltaCoalescingDiagnostics
         }
 
-        public func coalescedPublishableDeltasForTesting(_ deltas: [FileSystemDelta]) -> [FileSystemDelta] {
+        func coalescedPublishableDeltasForTesting(_ deltas: [FileSystemDelta]) -> [FileSystemDelta] {
             coalescedPublishableDeltas(from: deltas)
         }
     #endif
 
-    public func coalescedPublishableDeltas(from deltas: [FileSystemDelta]) -> [FileSystemDelta] {
+    func coalescedPublishableDeltas(from deltas: [FileSystemDelta]) -> [FileSystemDelta] {
         FileSystemDeltaPreparation.coalesce(deltas, inRoot: canonicalRootPath)
     }
 
     // MARK: - FSEvent Setup
 
     #if canImport(CoreServices)
-    public func startFSEventStream() {
-        guard fseventStreamRef == nil else { return }
+        func startFSEventStream() {
+            guard fseventStreamRef == nil else { return }
 
-        watcherIngressMailbox.startAccepting()
-        selfPointer = Unmanaged.passRetained(self).toOpaque()
+            watcherIngressMailbox.startAccepting()
+            selfPointer = Unmanaged.passRetained(self).toOpaque()
 
-        var streamContext = FSEventStreamContext(
-            version: 0,
-            info: selfPointer,
-            retain: nil,
-            release: nil,
-            copyDescription: nil
-        )
+            var streamContext = FSEventStreamContext(
+                version: 0,
+                info: selfPointer,
+                retain: nil,
+                release: nil,
+                copyDescription: nil
+            )
 
-        let flags = FSEventStreamCreateFlags(
-            kFSEventStreamCreateFlagUseCFTypes
-                | kFSEventStreamCreateFlagFileEvents
-                | kFSEventStreamCreateFlagNoDefer
-        )
+            let flags = FSEventStreamCreateFlags(
+                kFSEventStreamCreateFlagUseCFTypes
+                    | kFSEventStreamCreateFlagFileEvents
+                    | kFSEventStreamCreateFlagNoDefer
+            )
 
-        fseventStreamRef = FSEventStreamCreate(
-            kCFAllocatorDefault,
-            Self.fseventCallback,
-            &streamContext,
-            [path] as CFArray,
-            FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
-            0,
-            flags
-        )
+            fseventStreamRef = FSEventStreamCreate(
+                kCFAllocatorDefault,
+                Self.fseventCallback,
+                &streamContext,
+                [path] as CFArray,
+                FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
+                0,
+                flags
+            )
 
-        guard let stream = fseventStreamRef else {
-            // Release the retained self if creation failed to avoid leaks
-            if let ptr = selfPointer {
-                Unmanaged<FileSystemService>.fromOpaque(ptr).release()
-                selfPointer = nil
-            }
-            print("Failed to create FSEventStream for \(path)")
-            return
-        }
-
-        FSEventStreamSetDispatchQueue(stream, .main)
-        if !FSEventStreamStart(stream) {
-            // Clean up to avoid leaks
-            FSEventStreamInvalidate(stream)
-            FSEventStreamRelease(stream)
-            fseventStreamRef = nil
-            if let ptr = selfPointer {
-                Unmanaged<FileSystemService>.fromOpaque(ptr).release()
-                selfPointer = nil
-            }
-            print("Failed to start FSEventStream for \(path)")
-            return
-        }
-        fileSystemDebugLog("FSEventStream started for path: \(path)")
-    }
-
-    public func stopFSEventStream() {
-        if let stream = fseventStreamRef {
-            FSEventStreamStop(stream)
-            FSEventStreamFlushSync(stream)
-            FSEventStreamInvalidate(stream)
-            FSEventStreamRelease(stream)
-            fseventStreamRef = nil
-
-            if let ptr = selfPointer {
-                Unmanaged<FileSystemService>.fromOpaque(ptr).release()
-                selfPointer = nil
+            guard let stream = fseventStreamRef else {
+                // Release the retained self if creation failed to avoid leaks
+                if let ptr = selfPointer {
+                    Unmanaged<FileSystemService>.fromOpaque(ptr).release()
+                    selfPointer = nil
+                }
+                print("Failed to create FSEventStream for \(path)")
+                return
             }
 
-            fileSystemDebugLog("FSEventStream stopped for path: \(path)")
-        } else {
-            fileSystemDebugLog("stream could not be stopped")
+            FSEventStreamSetDispatchQueue(stream, .main)
+            if !FSEventStreamStart(stream) {
+                // Clean up to avoid leaks
+                FSEventStreamInvalidate(stream)
+                FSEventStreamRelease(stream)
+                fseventStreamRef = nil
+                if let ptr = selfPointer {
+                    Unmanaged<FileSystemService>.fromOpaque(ptr).release()
+                    selfPointer = nil
+                }
+                print("Failed to start FSEventStream for \(path)")
+                return
+            }
+            fileSystemDebugLog("FSEventStream started for path: \(path)")
         }
 
-        resetWatcherIngressState()
-    }
+        func stopFSEventStream() {
+            if let stream = fseventStreamRef {
+                FSEventStreamStop(stream)
+                FSEventStreamFlushSync(stream)
+                FSEventStreamInvalidate(stream)
+                FSEventStreamRelease(stream)
+                fseventStreamRef = nil
+
+                if let ptr = selfPointer {
+                    Unmanaged<FileSystemService>.fromOpaque(ptr).release()
+                    selfPointer = nil
+                }
+
+                fileSystemDebugLog("FSEventStream stopped for path: \(path)")
+            } else {
+                fileSystemDebugLog("stream could not be stopped")
+            }
+
+            resetWatcherIngressState()
+        }
     #else
-        public func startFSEventStream() {
+        func startFSEventStream() {
             fileSystemDebugLog("FSEventStream unavailable on this platform for path: \(path)")
         }
 
-        public func stopFSEventStream() {
+        func stopFSEventStream() {
             resetWatcherIngressState()
         }
     #endif
 
-    nonisolated static func deepCopySwiftString(_ source: String) -> String {
+    internal nonisolated static func deepCopySwiftString(_ source: String) -> String {
         String(decoding: Array(source.utf8), as: UTF8.self)
     }
 
-    nonisolated static func deepCopyEventPath(_ source: CFString) -> String? {
+    internal nonisolated static func deepCopyEventPath(_ source: CFString) -> String? {
         let length = CFStringGetLength(source)
         if length == 0 { return "" }
 
@@ -338,7 +338,7 @@ extension FileSystemService {
         return String(utf16CodeUnits: utf16Buffer, count: utf16Buffer.count)
     }
 
-    nonisolated static func buildOwnedFSEventPayload(
+    internal nonisolated static func buildOwnedFSEventPayload(
         numEvents: Int,
         eventPaths: UnsafeMutableRawPointer,
         eventFlags: UnsafePointer<FSEventStreamEventFlags>,
@@ -383,74 +383,74 @@ extension FileSystemService {
         return FSEventCallbackPayload(entries: entries)
     }
 
-    /// The static callback that FSEvents uses to report changes. We hand off to Task to enter the actor context.
+    // The static callback that FSEvents uses to report changes. We hand off to Task to enter the actor context.
     #if canImport(CoreServices)
-    public static let fseventCallback: FSEventStreamCallback = {
-        _, context, numEvents, eventPaths, eventFlags, eventIds in
-        // Context must be valid
-        guard let context else { return }
-        let service = Unmanaged<FileSystemService>.fromOpaque(context).takeUnretainedValue()
+        static let fseventCallback: FSEventStreamCallback = {
+            _, context, numEvents, eventPaths, eventFlags, eventIds in
+            // Context must be valid
+            guard let context else { return }
+            let service = Unmanaged<FileSystemService>.fromOpaque(context).takeUnretainedValue()
 
-        let count = Int(numEvents)
-        guard count > 0 else { return }
+            let count = Int(numEvents)
+            guard count > 0 else { return }
 
-        // Although these are non-optional in the API, guard against unexpected null pointers defensively
-        if Int(bitPattern: eventPaths) == 0 { return }
-        if Int(bitPattern: eventFlags) == 0 { return }
-        if Int(bitPattern: eventIds) == 0 { return }
+            // Although these are non-optional in the API, guard against unexpected null pointers defensively
+            if Int(bitPattern: eventPaths) == 0 { return }
+            if Int(bitPattern: eventFlags) == 0 { return }
+            if Int(bitPattern: eventIds) == 0 { return }
 
-        guard let payload = buildOwnedFSEventPayload(
-            numEvents: count,
-            eventPaths: eventPaths,
-            eventFlags: eventFlags,
-            eventIds: eventIds
-        ) else { return }
+            guard let payload = buildOwnedFSEventPayload(
+                numEvents: count,
+                eventPaths: eventPaths,
+                eventFlags: eventFlags,
+                eventIds: eventIds
+            ) else { return }
 
-        #if DEBUG
-            if payload.count != count {
-                print("DEBUG: FSEvents vector length mismatch. numEvents=\(count), payloadCount=\(payload.count)")
-            }
-
-            // Log raw FSEvents as they arrive
-            if enableDebugLogging {
-                print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-                print("🔔 RAW FSEVENTS CALLBACK: \(payload.count) events")
-                for (index, entry) in payload.entries.enumerated() {
-                    print("  [\(index)] path: \(entry.path)")
-                    print("       flags: \(formatFSEventFlags(entry.flags))")
-                    print("       eventId: \(entry.id)")
+            #if DEBUG
+                if payload.count != count {
+                    print("DEBUG: FSEvents vector length mismatch. numEvents=\(count), payloadCount=\(payload.count)")
                 }
-                print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-            }
-        #endif
 
-        let lifecycleCorrelation = EditFlowPerf.makeLifecycleCorrelationIfActive()
-        let acceptedWatermark = service.watcherIngressMailbox.accept(
-            payload,
-            lifecycleCorrelation: lifecycleCorrelation
-        ) { [weak service] in
-            await service?.drainAcceptedWatcherIngressMailbox()
-        }
-        guard let acceptedWatermark else { return }
-        EditFlowPerf.lifecycleEvent(
-            EditFlowPerf.Lifecycle.FileSystem.callbackAccepted,
-            correlation: lifecycleCorrelation,
-            EditFlowPerf.Dimensions(
-                sourceItemCount: payload.count,
-                rootToken: service.diagnosticRootToken.uuidString,
-                ingressSequence: acceptedWatermark.rawValue
+                // Log raw FSEvents as they arrive
+                if enableDebugLogging {
+                    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                    print("🔔 RAW FSEVENTS CALLBACK: \(payload.count) events")
+                    for (index, entry) in payload.entries.enumerated() {
+                        print("  [\(index)] path: \(entry.path)")
+                        print("       flags: \(formatFSEventFlags(entry.flags))")
+                        print("       eventId: \(entry.id)")
+                    }
+                    print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                }
+            #endif
+
+            let lifecycleCorrelation = EditFlowPerf.makeLifecycleCorrelationIfActive()
+            let acceptedWatermark = service.watcherIngressMailbox.accept(
+                payload,
+                lifecycleCorrelation: lifecycleCorrelation
+            ) { [weak service] in
+                await service?.drainAcceptedWatcherIngressMailbox()
+            }
+            guard let acceptedWatermark else { return }
+            EditFlowPerf.lifecycleEvent(
+                EditFlowPerf.Lifecycle.FileSystem.callbackAccepted,
+                correlation: lifecycleCorrelation,
+                EditFlowPerf.Dimensions(
+                    sourceItemCount: payload.count,
+                    rootToken: service.diagnosticRootToken.uuidString,
+                    ingressSequence: acceptedWatermark.rawValue
+                )
             )
-        )
-    }
+        }
     #endif
 
     // MARK: - Core event coalescing & handling
 
-    public func drainAcceptedWatcherIngressMailbox() async {
+    func drainAcceptedWatcherIngressMailbox() async {
         drainAcceptedWatcherIngressMailboxPayloads()
     }
 
-    public func drainAcceptedWatcherIngressMailboxPayloads(
+    func drainAcceptedWatcherIngressMailboxPayloads(
         through target: FileSystemWatcherIngressMailbox.Watermark? = nil
     ) {
         while let payload = watcherIngressMailbox.takeNextAcceptedPayload(through: target) {
@@ -458,7 +458,7 @@ extension FileSystemService {
         }
     }
 
-    public func enqueueAcceptedWatcherPayload(_ payload: FileSystemWatcherIngressMailbox.AcceptedPayload) {
+    func enqueueAcceptedWatcherPayload(_ payload: FileSystemWatcherIngressMailbox.AcceptedPayload) {
         EditFlowPerf.lifecycleEvent(
             EditFlowPerf.Lifecycle.FileSystem.serviceEnqueueEntered,
             correlation: payload.lifecycleCorrelation,
@@ -483,7 +483,7 @@ extension FileSystemService {
         scheduleCoalescingIfNeeded()
     }
 
-    public func enqueueFSEventEntries(
+    func enqueueFSEventEntries(
         _ entries: [FSEventCallbackEntry],
         acceptedHighWatermark: FileSystemWatcherIngressMailbox.Watermark? = nil
     ) {
@@ -521,7 +521,7 @@ extension FileSystemService {
         }
     }
 
-    public func scheduleCoalescingIfNeeded() {
+    func scheduleCoalescingIfNeeded() {
         guard coalescingTask == nil, !pendingFSEvents.isEmpty else { return }
         coalescingTask = Task { [weak self] in
             do {
@@ -534,20 +534,20 @@ extension FileSystemService {
         }
     }
 
-    public func scheduledCoalescingDelayDidFinish() {
+    func scheduledCoalescingDelayDidFinish() {
         coalescingTask = nil
         if !startProcessingPendingWatcherBatchIfNeeded(), !pendingFSEvents.isEmpty {
             scheduleCoalescingIfNeeded()
         }
     }
 
-    public func cancelScheduledCoalescingDelay() {
+    func cancelScheduledCoalescingDelay() {
         coalescingTask?.cancel()
         coalescingTask = nil
     }
 
     @discardableResult
-    public func startProcessingPendingWatcherBatchIfNeeded() -> Bool {
+    func startProcessingPendingWatcherBatchIfNeeded() -> Bool {
         guard watcherBatchProcessingTask == nil else { return true }
         let batch = takePendingFSEventsForProcessing()
         guard !batch.isEmpty || batch.watcherAcceptedHighWatermark != nil else { return false }
@@ -561,7 +561,7 @@ extension FileSystemService {
         return true
     }
 
-    public func processWatcherBatch(_ batch: PendingFSEventBatch, token: UInt64) async {
+    func processWatcherBatch(_ batch: PendingFSEventBatch, token: UInt64) async {
         #if DEBUG
             if let watcherBatchWillProcessHandler {
                 await watcherBatchWillProcessHandler()
@@ -575,7 +575,7 @@ extension FileSystemService {
         watcherBatchProcessingDidFinish(token: token)
     }
 
-    public func watcherBatchProcessingDidFinish(token: UInt64) {
+    func watcherBatchProcessingDidFinish(token: UInt64) {
         guard watcherBatchProcessingToken == token else { return }
         watcherBatchProcessingTask = nil
         watcherBatchProcessingToken = nil
@@ -584,7 +584,7 @@ extension FileSystemService {
         }
     }
 
-    public func collapsePendingEventsToRootRescan(
+    func collapsePendingEventsToRootRescan(
         upTo eventID: FSEventStreamEventId,
         acceptedHighWatermark: FileSystemWatcherIngressMailbox.Watermark? = nil
     ) {
@@ -598,7 +598,7 @@ extension FileSystemService {
         hasPendingOverflowRescan = true
     }
 
-    public func takePendingFSEventsForProcessing() -> PendingFSEventBatch {
+    func takePendingFSEventsForProcessing() -> PendingFSEventBatch {
         let batch = PendingFSEventBatch(
             events: pendingFSEvents,
             watcherAcceptedHighWatermark: pendingWatcherAcceptedHighWatermark,
@@ -612,7 +612,7 @@ extension FileSystemService {
         return batch
     }
 
-    public func ignoreChangeDirs(
+    func ignoreChangeDirs(
         in events: [(String, FSEventStreamEventFlags, FSEventStreamEventId)]
     ) -> Set<String> {
         var dirs = Set<String>()
@@ -624,7 +624,7 @@ extension FileSystemService {
         return dirs
     }
 
-    public func resetWatcherIngressState() {
+    func resetWatcherIngressState() {
         watcherIngressMailbox.stopAcceptingAndDiscardPending()
         watcherIngressGeneration &+= 1
         cancelScheduledCoalescingDelay()
@@ -640,7 +640,7 @@ extension FileSystemService {
         fileEventCountSinceLastScan.removeAll(keepingCapacity: false)
     }
 
-    public func watcherBatchBelongsToCurrentIngressGeneration(_ batch: PendingFSEventBatch) -> Bool {
+    func watcherBatchBelongsToCurrentIngressGeneration(_ batch: PendingFSEventBatch) -> Bool {
         guard let generation = batch.watcherIngressGeneration else { return true }
         return generation == watcherIngressGeneration
     }
@@ -679,7 +679,7 @@ extension FileSystemService {
     #endif
 
     /// Parsed representation of FSEvents flags for cleaner event handling
-    public struct ParsedEvent {
+    struct ParsedEvent {
         let isDir: Bool
         let isFile: Bool
 
@@ -701,7 +701,7 @@ extension FileSystemService {
     }
 
     /// Parse FSEventStreamEventFlags into a structured representation
-    public static func parseEventFlags(
+    static func parseEventFlags(
         _ flags: FSEventStreamEventFlags,
         isDirFallback: Bool
     ) -> ParsedEvent {
@@ -734,7 +734,7 @@ extension FileSystemService {
     // MARK: - Temp File Detection for Atomic Saves
 
     /// Common temp file suffixes used by editors for atomic saves
-    public static let tempNameSuffixes: [String] = [
+    static let tempNameSuffixes: [String] = [
         "~", // vim backup
         ".tmp", ".temp",
         ".swp", ".swo", ".swx", // vim swap
@@ -743,14 +743,14 @@ extension FileSystemService {
     ]
 
     /// Common temp file prefixes used by editors
-    public static let tempNamePrefixes: [String] = [
+    static let tempNamePrefixes: [String] = [
         ".#", // Emacs
         "._", // macOS resource fork
         "~$" // MS Office
     ]
 
     /// Check if a path looks like a temporary file used for atomic saves
-    public static func isTempSaveName(_ relPath: String) -> Bool {
+    static func isTempSaveName(_ relPath: String) -> Bool {
         let name = (relPath as NSString).lastPathComponent.lowercased()
 
         for suffix in tempNameSuffixes where name.hasSuffix(suffix) {
@@ -770,19 +770,19 @@ extension FileSystemService {
 
     /// Get current time for safety-net interval tracking
     @inline(__always)
-    public func currentTime() -> TimeInterval {
+    func currentTime() -> TimeInterval {
         CFAbsoluteTimeGetCurrent()
     }
 
     /// Record that a folder was just verified via directory scan
-    public func recordFolderVerified(_ folder: String) {
+    func recordFolderVerified(_ folder: String) {
         lastVerifiedAtByFolder[folder] = currentTime()
         fileEventCountSinceLastScan[folder] = 0
     }
 
     /// Check if a folder should receive a safety-net scan based on event count and time
     /// Returns true if we should schedule a scan
-    public func shouldScheduleSafetyNetScan(for parent: String) -> Bool {
+    func shouldScheduleSafetyNetScan(for parent: String) -> Bool {
         guard !parent.isEmpty else { return false }
 
         // Increment event count
@@ -799,7 +799,7 @@ extension FileSystemService {
         return stale || highChurn
     }
 
-    public func handleBatchedEvents(
+    func handleBatchedEvents(
         _ batch: PendingFSEventBatch,
         testMode: Bool = false
     ) async -> [FileSystemDelta]? {

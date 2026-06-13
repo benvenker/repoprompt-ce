@@ -1,6 +1,6 @@
 import Foundation
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 enum DiffApplicationError: Error {
     case lineMismatch(expected: String, actual: String, line: Int)

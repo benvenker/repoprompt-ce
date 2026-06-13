@@ -5,8 +5,8 @@
 //  Created by Eric Provencher on 2024-10-30.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct TrashButton: View {
     let action: () -> Void

@@ -5,7 +5,7 @@ public enum FileManagerError: Error, LocalizedError {
     case failedToLoadFile(Error)
     case fileSystemServiceNotFound
     case failedToLoadContent
-    // Richer, contextual variant used by MCP tools and FS ops.
+    /// Richer, contextual variant used by MCP tools and FS ops.
     case fileSystemServiceNotFoundWithContext(String)
 
     public var errorDescription: String? {

@@ -1,10 +1,10 @@
 import Foundation
 
-extension FileSystemService {
+public extension FileSystemService {
     // MARK: - Parallel scanning support
 
     /// Result of scanning a single folder (Sendable for cross-task usage)
-    public struct ScanResult {
+    struct ScanResult {
         let folderRel: String
         let children: [String: Bool] // relPath -> isDirectory
         let ignoreFiles: (hasGitignore: Bool, hasRepoIgnore: Bool, hasCursorignore: Bool)
@@ -12,7 +12,7 @@ extension FileSystemService {
 
     /// Heavy I/O operation that runs outside the actor for parallelism.
     /// Uses POSIX opendir/readdir for better performance than FileManager.contentsOfDirectory.
-    public static func enumerateOneLevel(
+    static func enumerateOneLevel(
         absFolder: String,
         relFolder: String,
         skipSymlinks: Bool,
@@ -74,7 +74,7 @@ extension FileSystemService {
 
     /// Scan multiple folders in parallel for better I/O performance.
     /// Uses configurable caps to prevent CPU saturation.
-    public func scanFoldersInParallel(_ folders: Set<String>) async throws -> [FileSystemDelta] {
+    func scanFoldersInParallel(_ folders: Set<String>) async throws -> [FileSystemDelta] {
         guard !folders.isEmpty else { return [] }
 
         // In test mode, always use serial scanning to avoid thread safety issues with SpyFS
@@ -216,7 +216,7 @@ extension FileSystemService {
 
     // MARK: - Single-level scanning & removal
 
-    public func scanOneLevelAndDiff(_ folderRelPath: String) async throws -> [FileSystemDelta] {
+    func scanOneLevelAndDiff(_ folderRelPath: String) async throws -> [FileSystemDelta] {
         let fm = fm // Cache for multiple calls in this method
         let absFolder = fullPath(forRelativePath: folderRelPath)
         var isDir: ObjCBool = false
@@ -352,7 +352,7 @@ extension FileSystemService {
     }
 
     /// Recursively enumerates everything in a newly discovered folder, creating .fileAdded / .folderAdded deltas.
-    public func scanSubtreeForNewFolder(_ folderRelPath: String) async throws -> [FileSystemDelta] {
+    func scanSubtreeForNewFolder(_ folderRelPath: String) async throws -> [FileSystemDelta] {
         let absFolder = fullPath(forRelativePath: folderRelPath)
         let subtreeItems = try await gatherPathsUsingEnumerator(
             rootURL: URL(fileURLWithPath: absFolder),
@@ -384,7 +384,7 @@ extension FileSystemService {
     }
 
     /// Removes an entire subtree for a given folder from visitedPaths. Returns .fileRemoved / .folderRemoved deltas.
-    public func removeSubtree(for topRelPath: String) -> [FileSystemDelta] {
+    func removeSubtree(for topRelPath: String) -> [FileSystemDelta] {
         let oldSet = visitedPaths.filter {
             $0 == topRelPath || $0.hasPrefix(topRelPath + "/")
         }
@@ -404,7 +404,7 @@ extension FileSystemService {
         return deltas
     }
 
-    public func loadContentsInChunks(
+    func loadContentsInChunks(
         of folderURL: URL,
         chunkSize: Int = 200
     ) -> AsyncThrowingStream<LoadContentsEvent, Error> {
@@ -458,7 +458,7 @@ extension FileSystemService {
     }
 
     /// Load the entire tree (recursively) as an AsyncThrowingStream of items, respecting skipSymlinks & ignore rules.
-    public func loadContents(of folder: URL) -> AsyncThrowingStream<(any FileSystemItem, [String]), Error> {
+    func loadContents(of folder: URL) -> AsyncThrowingStream<(any FileSystemItem, [String]), Error> {
         AsyncThrowingStream { continuation in
             let streamingTask = Task {
                 do {
@@ -507,7 +507,7 @@ extension FileSystemService {
         }
     }
 
-    public final class DirChain: @unchecked Sendable {
+    final class DirChain: @unchecked Sendable {
         let id: DirID
         let parent: DirChain?
 
@@ -526,7 +526,7 @@ extension FileSystemService {
         }
     }
 
-    public struct DirectoryContext {
+    struct DirectoryContext {
         let absPath: String
         let relPath: String
         let hierarchy: Int
@@ -534,14 +534,14 @@ extension FileSystemService {
         let chain: DirChain?
     }
 
-    public struct DirectoryChunkResult {
+    struct DirectoryChunkResult {
         let folders: [FSItemDTO]
         let files: [FSItemDTO]
         let subdirs: [DirectoryContext]
         let ignoreCacheDelta: [IgnoreCacheStore.PathKey: Bool]
     }
 
-    public static func buildDirectoryChunk(
+    static func buildDirectoryChunk(
         service: FileSystemService,
         context: DirectoryContext,
         scanResult: DirectoryScanResult,
@@ -684,7 +684,7 @@ extension FileSystemService {
     }
 
     @inline(__always)
-    public static func joinRootAndRelative(root: String, relative: String) -> String {
+    static func joinRootAndRelative(root: String, relative: String) -> String {
         guard !relative.isEmpty else { return root }
         if root.isEmpty {
             return relative
@@ -695,7 +695,7 @@ extension FileSystemService {
         return root + "/" + relative
     }
 
-    public func walkPosixRecursivelyEmitChunks(
+    func walkPosixRecursivelyEmitChunks(
         baseURL: URL,
         parentRules: IgnoreRules,
         chunkSize: Int,
@@ -966,13 +966,13 @@ extension FileSystemService {
         }
     #endif
 
-    public func folderURLRootPath(_ folderURL: URL) -> String {
+    func folderURLRootPath(_ folderURL: URL) -> String {
         folderURL.standardizedFileURL.path
     }
 
     // MARK: - Internal enumeration & helpers
 
-    public func gatherPathsUsingEnumerator(
+    func gatherPathsUsingEnumerator(
         rootURL: URL,
         skipSymlinks: Bool,
         baseRelativePath: String
@@ -1125,13 +1125,13 @@ extension FileSystemService {
         return results
     }
 
-    public static func joinRelativePaths(base: String, child: String) -> String {
+    static func joinRelativePaths(base: String, child: String) -> String {
         if base.isEmpty { return child }
         if child.isEmpty { return base }
         return base + "/" + child
     }
 
-    public func getCoreCount() -> Int {
+    func getCoreCount() -> Int {
         ProcessInfo.processInfo.activeProcessorCount
     }
 }

@@ -5,8 +5,8 @@
 //  Updated to coalesce and defer geometry reporting to prevent infinite layout loops.
 
 import AppKit
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct AnchorGeometryView: NSViewRepresentable {
     typealias UpdateCallback = (_ frameInWindow: NSRect, _ window: NSWindow?) -> Void

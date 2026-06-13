@@ -4,7 +4,9 @@ import RepoPromptContextCore
 
 struct HeadlessToolFailure: Error, LocalizedError {
     let message: String
-    var errorDescription: String? { message }
+    var errorDescription: String? {
+        message
+    }
 }
 
 struct HeadlessSelectionReply: Codable, Equatable {
@@ -69,15 +71,19 @@ enum HeadlessJSON {
         return encoder
     }()
 
-    static func string<T: Encodable>(_ value: T) throws -> String {
-        String(data: try encoder.encode(value), encoding: .utf8) ?? "{}"
+    static func string(_ value: some Encodable) throws -> String {
+        try String(data: encoder.encode(value), encoding: .utf8) ?? "{}"
     }
 }
 
 extension MCP.Value {
-    var stringArray: [String]? { arrayValue?.compactMap(\.stringValue) }
+    var stringArray: [String]? {
+        arrayValue?.compactMap(\.stringValue)
+    }
 
-    var stringObject: [String: MCP.Value]? { objectValue }
+    var stringObject: [String: MCP.Value]? {
+        objectValue
+    }
 
     func intCoerced() -> Int? {
         intValue ?? stringValue.flatMap(Int.init)
@@ -94,7 +100,7 @@ extension MCP.Value {
     }
 }
 
-extension Array where Element == String {
+extension [String] {
     func nonEmptyTrimmed() -> [String] {
         compactMap { value in
             let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)

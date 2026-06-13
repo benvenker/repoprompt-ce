@@ -2,8 +2,8 @@ import Combine
 import CryptoKit
 import Foundation
 import MCP
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct AgentContextUsage: Codable, Equatable {
     var modelContextWindow: Int?

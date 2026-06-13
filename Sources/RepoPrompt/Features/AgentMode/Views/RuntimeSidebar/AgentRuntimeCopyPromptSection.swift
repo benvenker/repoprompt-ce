@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct AgentRuntimeCopyPromptSection: View {
     @ObservedObject var promptManager: PromptViewModel

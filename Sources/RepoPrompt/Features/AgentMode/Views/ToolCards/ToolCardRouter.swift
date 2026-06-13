@@ -1,7 +1,7 @@
 import Foundation
+import RepoPromptContextCore
 import RepoPromptShared
 import SwiftUI
-import RepoPromptContextCore
 
 func normalizedToolCardName(_ name: String?) -> String? {
     guard let raw = name?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else { return nil }

@@ -1,6 +1,6 @@
 import AppKit
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// A lightweight NSView that observes its enclosing scroll view's NSClipView
 /// and reports scroll offset changes through a callback.

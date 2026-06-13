@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct OpenRouterSettingsView: View {
     @ObservedObject var viewModel: APISettingsViewModel

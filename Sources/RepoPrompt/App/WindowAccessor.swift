@@ -6,8 +6,8 @@
 //
 
 import AppKit
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct WindowAccessor: NSViewRepresentable {
     let callback: (NSWindow?) -> Void

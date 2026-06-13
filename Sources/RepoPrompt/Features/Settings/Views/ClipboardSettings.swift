@@ -1,7 +1,7 @@
 // File: RepoPrompt/Views/Settings/ClipboardSettings.swift
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct ClipboardSettingsView: View {
     @ObservedObject var promptViewModel: PromptViewModel

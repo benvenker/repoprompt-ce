@@ -5,8 +5,8 @@
 //  Created by Eric Provencher on 2025-05-16.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct ChatSettingsView: View {
     @ObservedObject var promptViewModel: PromptViewModel

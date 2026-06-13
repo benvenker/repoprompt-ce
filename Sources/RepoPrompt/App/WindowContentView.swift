@@ -5,8 +5,8 @@
 //  Created by Eric Provencher on 2025-03-24.
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// This view holds exactly one @StateObject WindowState, meaning
 /// each new Window/Scene gets its own WindowState.

@@ -29,8 +29,8 @@
 //  - Components:  /RepoPrompt/Views/Settings/AgentPermissionSettingsComponents.swift
 //
 
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 /// Settings page that shows top-level CLI provider permissions and the sub-agent
 /// sandbox override policy, split into two in-pane scopes. The page does NOT claim to

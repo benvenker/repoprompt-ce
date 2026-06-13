@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct PresetPickerView: View {
     @StateObject var workspaceManager: WorkspaceManagerViewModel

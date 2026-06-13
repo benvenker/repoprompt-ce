@@ -1,5 +1,5 @@
-import SwiftUI
 import RepoPromptContextCore
+import SwiftUI
 
 struct SecureStorageRepairBanner: View {
     let openRepair: () -> Void
