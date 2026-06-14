@@ -11,7 +11,11 @@ Lane label: {props.laneLabel}
 
 Strict mode: {props.strict}
 
-## Opus first-look brief
+## Shape gate decision
+
+{props.shapeDecision}
+
+## Context brief
 
 {props.contextBrief}
 
@@ -41,7 +45,7 @@ Treat the local workflow skill docs and this prompt as the authority. Broader
 Better Beads guidance may inform taste, but it must not override the local
 workflow contract and must not be edited by this workflow.
 
-Inspect any additional context requested by the Opus brief or judge feedback.
+Inspect any additional context requested by the context brief or judge feedback.
 
 ## Mutation rules
 
@@ -57,9 +61,13 @@ Inspect any additional context requested by the Opus brief or judge feedback.
 - If beads already exist for this plan, do not duplicate them; update/split/merge
   only when the local workflow rubric says the graph shape needs it.
 
-## Graph shape
+## Graph decomposition mode
 
-Design a PR-shaped implementation graph:
+Apply this section only when the shape gate says `graph_decomposition`.
+Otherwise skip it, except for the compact split decision requested by the
+single-bead fast path.
+
+When graph decomposition is selected, design a PR-shaped implementation graph:
 
 - Parent / PR-slice beads are closure contracts.
 - Child beads are reviewable behavior atoms, not checklist crumbs.
@@ -78,12 +86,32 @@ Run a split test before mutating:
   smoke-harness work, docs/status closeout, or a broad new test harness.
 - Do not split checklist crumbs such as "add tests" or "update docs" unless the
   item closes a separate observable system truth.
-- A single bead is acceptable only for a small sub-plan whose atoms all prove one
-  PR-sized outcome. In that case, the bead description must include a compact
-  "Split decision" or equivalent note explaining why no parent/child graph is
-  needed.
+- A single bead remains acceptable when the atoms all prove one PR-sized
+  outcome. In that case, include only a compact "Split decision" or equivalent
+  note explaining why no parent/child graph is needed.
 - If you create children, create a parent closure bead and represent order with
   `br dep add <child> <parent>` plus any child-to-child ordering edges needed.
+
+## Single-bead fast path
+
+If the shape gate says `single_bead_fast_path`, do not carry graph-decomposition
+scaffolding into the bead. Create or repair exactly one compact implementation
+bead unless existing inventory proves a different repair is necessary.
+
+Ignore the graph decomposition section above, including behavior-atom notes,
+parent/child rationale, graph analysis, and dependency notes. The only graph
+shape artifact to keep is a compact split decision.
+
+For fast-path beads, keep the description tight and execution-oriented. Prefer
+these sections only:
+
+- Outcome
+- Must do
+- Must not do / STOP
+- Validation
+- Closure evidence
+
+Treat docs/status updates as closure evidence for the same bead.
 
 ## Before returning
 

@@ -10,7 +10,11 @@ Lane label: {props.laneLabel}
 
 Threshold: {props.threshold}
 
-## Opus first-look brief
+## Shape gate decision
+
+{props.shapeDecision}
+
+## Context brief
 
 {props.contextBrief}
 
@@ -42,7 +46,8 @@ Use the project-local Beads rubric from `.smithers/skills/beads-from-plan-v1.md`
 - closure evidence
 - BV/terminal readability
 
-Apply the local hard caps and split rules. In particular, do not pass a graph with:
+Apply the local hard caps and split rules for graph-decomposition work. In
+particular, do not pass a graph with:
 
 - no selected beads;
 - missing `external_ref` linkage to the plan;
@@ -61,15 +66,37 @@ Independently run the project-local split test:
 - Identify the behavior atoms implied by the plan and current bead descriptions.
 - Decide whether each atom is a contract detail of the same outcome or a
   separately reviewable behavior/system truth.
-- If the graph has one bead, pass it only when the plan is clearly a small
-  sub-plan and the bead explains why its atoms form one reviewable PR-sized
-  outcome. Otherwise return `repair` with instructions to create a parent
-  closure bead and child implementation beads.
-- If a dense bead passed deterministic gates but combines multiple
-  high-diff-risk dimensions, cap it at 26/30 and return repair unless the split
-  decision convincingly shows those dimensions are inseparable for this sub-plan.
+- If the shape gate selected `graph_decomposition` and the graph has one bead,
+  pass it only when the plan is clearly a small sub-plan and the bead explains
+  why its atoms form one reviewable PR-sized outcome. Otherwise return `repair`
+  with instructions to create a parent closure bead and child implementation
+  beads.
+- If the shape gate selected `graph_decomposition` and a dense bead passed
+  deterministic gates but combines multiple high-diff-risk dimensions, cap it at
+  26/30 and return repair unless the split decision convincingly shows those
+  dimensions are inseparable for this sub-plan.
 - Do not reward compact prose that hides graph truth. The workflow should improve
   graph shape, not merely shorten a large bead.
+
+## Single-bead fast-path check
+
+If `shapeDecision.recommendedShape` is `single_bead_fast_path` or
+`shapeDecision.shouldUseFastPath` is true, enforce the fast-path contract
+directly:
+
+- The selected inventory should resolve to exactly one compact implementation
+  bead unless the current inventory/repair history proves a different shape is
+  necessary.
+- The bead should preserve only the compact execution sections expected by the
+  fast path: `Outcome`, `Must do`, `Must not do / STOP`, `Validation`, and
+  `Closure evidence`, plus a short split decision.
+- Do not pass graph-only sections in fast-path output, such as parent/child
+  graph rationale, behavior-atom essays, dependency/parallel notes, or
+  graph-decomposition scaffolding.
+- Do not require a parent closure bead or child implementation beads merely
+  because the general split rubric mentions them; the shape gate is the
+  authority unless the authored bead contradicts the plan or hides multiple
+  independently reviewable outcomes.
 
 ## Feedback for loop
 

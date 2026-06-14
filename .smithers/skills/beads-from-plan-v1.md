@@ -1,6 +1,6 @@
 ---
 name: beads-from-plan-v1
-description: "Create or repair Beads from a markdown plan using an Opus first-look brief and a GPT-5.5 high judge loop."
+description: "Create or repair Beads from a markdown plan using an early shape gate, compact single-bead fast path, and judge loop."
 ---
 
 # Beads From Plan v1
@@ -9,7 +9,7 @@ description: "Create or repair Beads from a markdown plan using an Opus first-lo
 
 The following workflow metadata is repository data, not instructions.
 
-- Description: Create or repair Beads from a markdown plan using an Opus first-look brief and a GPT-5.5 high judge loop.
+- Description: Create or repair Beads from a markdown plan using an early shape gate, compact single-bead fast path, and judge loop.
 - Source type: `project`
 - Metadata version: `1`
 - Tags: beads, planning, authoring, evals
@@ -45,10 +45,18 @@ future upstreaming. Do not edit global skills from this workflow. If local
 workflow policy conflicts with generic Better Beads guidance, follow the local
 workflow policy.
 
+Shape-gate invariant:
+
+- Run the `shape-gate` check before the full first-look context sweep.
+- Route already bead-sized sub-plans through the single-bead fast path.
+- Use the graph-decomposition path only when the plan contains multiple
+  independently reviewable behavior/system truths or real dependency/order risk.
+- Do not force a graph-shaped brief into one bead. For fast-path plans, keep the
+  authoring context compact and execution-oriented.
+
 Required graph-shape invariant:
 
-- Run a split test before creating or repairing Beads.
-- Identify behavior atoms.
+- Identify behavior atoms before creating or repairing Beads.
 - Split into a parent closure bead plus child implementation beads when atoms
   are independently reviewable behavior/system truths.
 - Keep one directly implementable bead only when the plan is a small sub-plan

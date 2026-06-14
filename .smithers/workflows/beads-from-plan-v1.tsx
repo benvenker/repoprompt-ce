@@ -1,7 +1,7 @@
 // smithers-source: project
 // smithers-metadata-version: 1
 // smithers-display-name: Beads From Plan v1
-// smithers-description: Create or repair Beads from a markdown plan using an Opus first-look brief and a GPT-5.5 high judge loop.
+// smithers-description: Create or repair Beads from a markdown plan using an early shape gate, compact single-bead fast path, and judge loop.
 // smithers-tags: beads,planning,authoring,evals
 /** @jsxImportSource smithers-orchestrator */
 import { createSmithers } from "smithers-orchestrator";
@@ -9,7 +9,9 @@ import { createScorer } from "smithers-orchestrator/scorers";
 import { z } from "zod/v4";
 import { Codex55HighAgent } from "../agents/codex";
 import { ClaudeCodeOpusAgent } from "../agents/claude-code";
+import ShapeGatePrompt from "../prompts/beads-from-plan-v1-shape-gate.mdx";
 import ContextPrompt from "../prompts/beads-from-plan-v1-context.mdx";
+import SingleBeadContextPrompt from "../prompts/beads-from-plan-v1-single-context.mdx";
 import AuthorPrompt from "../prompts/beads-from-plan-v1-author.mdx";
 import JudgePrompt from "../prompts/beads-from-plan-v1-judge.mdx";
 import FinalPrompt from "../prompts/beads-from-plan-v1-final.mdx";
@@ -65,6 +67,21 @@ const contextBriefSchema = z.looseObject({
   validationPlan: z.array(z.string()).default([]),
   risks: z.array(z.string()).default([]),
   authoringInstructions: z.string().default(""),
+});
+
+const shapeDecisionSchema = z.looseObject({
+  planPath: z.string(),
+  laneLabel: z.string(),
+  recommendedShape: z.enum(["single_bead_fast_path", "graph_decomposition"]).default("graph_decomposition"),
+  shouldUseFastPath: z.boolean().default(false),
+  confidence: z.number().min(0).max(1).default(0.5),
+  rationale: z.string().default(""),
+  behaviorAtoms: z.array(z.string()).default([]),
+  independentOutcomes: z.array(z.string()).default([]),
+  overlappingEditRisk: z.boolean().default(false),
+  descriptionBudgetWords: z.number().int().min(300).max(2200).default(900),
+  requiredContextSweep: z.array(z.string()).default([]),
+  authoringGuidance: z.string().default(""),
 });
 
 const authoringSchema = z.looseObject({
@@ -155,6 +172,7 @@ const inputSchema = z.object({
 const { Workflow, Task, Sequence, Loop, smithers, outputs } = createSmithers({
   input: inputSchema,
   inventory: inventorySchema,
+  shapeDecision: shapeDecisionSchema,
   contextBrief: contextBriefSchema,
   authoring: authoringSchema,
   validation: validationSchema,
@@ -422,7 +440,10 @@ function decide(judge: any, input: z.infer<typeof inputSchema>) {
 
 export default smithers((ctx) => {
   const initialInventory = ctx.outputMaybe("inventory", { nodeId: "initial-inventory", iteration: 0 });
-  const contextBrief = ctx.outputMaybe("contextBrief", { nodeId: "opus-first-look", iteration: 0 });
+  const shapeDecision = ctx.outputMaybe("shapeDecision", { nodeId: "shape-gate", iteration: 0 });
+  const singleBeadContext = ctx.outputMaybe("contextBrief", { nodeId: "single-bead-context", iteration: 0 });
+  const graphContext = ctx.outputMaybe("contextBrief", { nodeId: "opus-first-look", iteration: 0 });
+  const contextBrief = singleBeadContext ?? graphContext;
   const validations = ctx.outputs.validation ?? [];
   const authoringResults = ctx.outputs.authoring ?? [];
   const judges = ctx.outputs.judge ?? [];
@@ -446,6 +467,10 @@ export default smithers((ctx) => {
     : {};
   const done = Boolean(lastDecision?.passed === true);
   const maxRoundsReached = decisions.length >= (ctx.input.rounds ?? 4);
+  const useSingleBeadFastPath = Boolean(
+    shapeDecision?.shouldUseFastPath === true
+      || shapeDecision?.recommendedShape === "single_bead_fast_path"
+  );
 
   return (
     <Workflow name="beads-from-plan-v1">
@@ -454,20 +479,58 @@ export default smithers((ctx) => {
           {async () => buildInventory(ctx.input)}
         </Task>
 
-        <Task
-          id="opus-first-look"
-          output={outputs.contextBrief}
-          agent={opusFirstLookAgents}
-          timeoutMs={1_200_000}
-          heartbeatTimeoutMs={240_000}
-          retries={1}
-        >
-          <ContextPrompt
-            planPath={ctx.input.planPath}
-            laneLabel={ctx.input.laneLabel}
-            userContext={ctx.input.userContext}
-          />
-        </Task>
+        {initialInventory ? (
+          <Task
+            id="shape-gate"
+            output={outputs.shapeDecision}
+            agent={gpt55HighAgents}
+            timeoutMs={600_000}
+            heartbeatTimeoutMs={180_000}
+            retries={1}
+          >
+            <ShapeGatePrompt
+              planPath={ctx.input.planPath}
+              laneLabel={ctx.input.laneLabel}
+              userContext={ctx.input.userContext}
+              currentInventory={JSON.stringify(initialInventory, null, 2)}
+            />
+          </Task>
+        ) : null}
+
+        {shapeDecision && useSingleBeadFastPath ? (
+          <Task
+            id="single-bead-context"
+            output={outputs.contextBrief}
+            agent={gpt55HighAgents}
+            timeoutMs={600_000}
+            heartbeatTimeoutMs={180_000}
+            retries={1}
+          >
+            <SingleBeadContextPrompt
+              planPath={ctx.input.planPath}
+              laneLabel={ctx.input.laneLabel}
+              userContext={ctx.input.userContext}
+              shapeDecision={JSON.stringify(shapeDecision, null, 2)}
+            />
+          </Task>
+        ) : null}
+
+        {shapeDecision && !useSingleBeadFastPath ? (
+          <Task
+            id="opus-first-look"
+            output={outputs.contextBrief}
+            agent={opusFirstLookAgents}
+            timeoutMs={1_200_000}
+            heartbeatTimeoutMs={240_000}
+            retries={1}
+          >
+            <ContextPrompt
+              planPath={ctx.input.planPath}
+              laneLabel={ctx.input.laneLabel}
+              userContext={ctx.input.userContext}
+            />
+          </Task>
+        ) : null}
 
         {contextBrief ? (
           <Loop id="author:judge-loop" until={done} maxIterations={ctx.input.rounds ?? 4} onMaxReached="return-last">
@@ -484,6 +547,7 @@ export default smithers((ctx) => {
                   planPath={ctx.input.planPath}
                   laneLabel={ctx.input.laneLabel}
                   strict={ctx.input.strict ? "true" : "false"}
+                  shapeDecision={JSON.stringify(shapeDecision ?? {}, null, 2)}
                   contextBrief={JSON.stringify(contextBrief, null, 2)}
                   currentInventory={JSON.stringify(currentInventory ?? {}, null, 2)}
                   previousFeedback={JSON.stringify(previousFeedback, null, 2)}
@@ -511,6 +575,7 @@ export default smithers((ctx) => {
                     planPath={ctx.input.planPath}
                     laneLabel={ctx.input.laneLabel}
                     threshold={judgeThreshold(ctx.input)}
+                    shapeDecision={JSON.stringify(shapeDecision ?? {}, null, 2)}
                     contextBrief={JSON.stringify(contextBrief, null, 2)}
                     authoringResults={JSON.stringify([...authoringResults, deps.author], null, 2)}
                     validation={JSON.stringify(deps.validation, null, 2)}

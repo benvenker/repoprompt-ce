@@ -1,0 +1,81 @@
+# Decide whether this plan needs graph decomposition
+
+You are the early shape gate for a Smithers workflow that turns a markdown plan
+into Beads.
+
+## Inputs
+
+Plan path: {props.planPath}
+
+Lane label: {props.laneLabel}
+
+Extra user context:
+
+{props.userContext}
+
+## Current selected inventory
+
+{props.currentInventory}
+
+## Job
+
+Read the plan end to end and decide whether this plan should enter the
+single-bead fast path or the graph-decomposition path.
+
+This is deliberately earlier and smaller than the full context sweep. Do not
+inspect broad code context unless the plan itself is ambiguous. Prefer the plan,
+`AGENTS.md`, and `.smithers/skills/beads-from-plan-v1.md`.
+
+## Shape Rules
+
+Choose `single_bead_fast_path` when:
+
+- the plan is already a small implementation sub-plan;
+- all behavior atoms prove one reviewable PR-sized outcome;
+- splitting would create overlapping edits in the same files or fake checklist
+  children;
+- docs/status/test updates are closure evidence for the same deliverable;
+- there is no separately reviewable parent/child graph truth.
+
+Choose `graph_decomposition` when:
+
+- the plan contains multiple independently reviewable behavior/system truths;
+- a parent closure bead plus child implementation beads would reduce real
+  review risk;
+- the plan spans high-diff-risk dimensions such as service behavior, runtime
+  wiring, response-shape preservation, lifecycle/process management, broad test
+  harness work, and docs/status closeout;
+- one bead would become a mega-bead or hide dependency order.
+
+## Output Guidance
+
+For `single_bead_fast_path`, keep `descriptionBudgetWords` low: usually
+700-1100. The later author should create a compact bead with only:
+
+- Outcome
+- Must do
+- Must not do / STOP
+- Validation
+- Closure evidence
+
+For `graph_decomposition`, explain the independently reviewable atoms and any
+dependency/order concerns.
+
+## Output Contract
+
+Return:
+
+- `planPath`
+- `laneLabel`
+- `recommendedShape`: `single_bead_fast_path` or `graph_decomposition`
+- `shouldUseFastPath`
+- `confidence`
+- `rationale`
+- `behaviorAtoms`
+- `independentOutcomes`
+- `overlappingEditRisk`
+- `descriptionBudgetWords`
+- `requiredContextSweep`
+- `authoringGuidance`
+
+Return only the structured output requested by the workflow schema.

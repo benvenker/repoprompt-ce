@@ -1,0 +1,77 @@
+# Build a compact context brief for one implementation bead
+
+You are the single-bead fast-path context step for a Smithers workflow that
+turns a markdown plan into Better Beads.
+
+## Inputs
+
+Plan path: {props.planPath}
+
+Lane label: {props.laneLabel}
+
+Extra user context:
+
+{props.userContext}
+
+## Shape gate decision
+
+{props.shapeDecision}
+
+## Job
+
+Read the plan end to end and inspect only the minimum repository context needed
+to let a medium-strength implementation agent execute one bead without
+wandering.
+
+This is not the graph-decomposition path. Do not expand the bead into a
+parent/child design. Do not produce a long behavior-atom essay. Confirm the
+single-bead decision, then preserve only the sharp implementation facts.
+
+## Required Reading
+
+- `AGENTS.md`
+- {props.planPath}
+- `.smithers/skills/beads-from-plan-v1.md`
+
+Read `.smithers/skills/beads-polish-v3.md` only if you need a local quality
+threshold detail.
+
+## Context Budget
+
+Keep the brief compact:
+
+- `finalDecisions`: at most 6 bullets.
+- `contextSweep`: at most 5 bullets.
+- `anchors`: at most 8 bullets.
+- `validationPlan`: at most 8 commands/checks.
+- `risks`: at most 5 bullets.
+- `authoringInstructions`: explicitly require one compact bead and a short
+  split decision.
+
+For the authoring agent, recommend a bead body with only:
+
+- Outcome
+- Must do
+- Must not do / STOP
+- Validation
+- Closure evidence
+
+Avoid long background, repeated rationale, and graph-specific sections such as
+dependency/parallel notes unless they are genuinely needed for the single bead.
+
+## Output Contract
+
+Return the same structured brief fields used by the graph path:
+
+- `planPath`
+- `laneLabel`
+- `planSummary`
+- `finalDecisions`
+- `proposedGraphShape`
+- `contextSweep`
+- `anchors`
+- `validationPlan`
+- `risks`
+- `authoringInstructions`
+
+Return only the structured output requested by the workflow schema.
