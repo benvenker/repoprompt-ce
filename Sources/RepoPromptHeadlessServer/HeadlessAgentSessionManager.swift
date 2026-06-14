@@ -18,13 +18,13 @@ actor HeadlessAgentSessionManager {
         let promptPath: String
         let mcpConfigPath: String
         let startedAt: Date
-        let process: Process
         let stdoutPipe: Pipe
         let stderrPipe: Pipe
 
         var updatedAt: Date
         var status: HeadlessAgentRunStatus
         var processID: Int32?
+        var reaperTask: Task<Void, Never>?
         var exitCode: Int32?
         var cancellationRequested: Bool
         var stdout: String
@@ -41,7 +41,6 @@ actor HeadlessAgentSessionManager {
             tempDirectory: URL,
             promptPath: String,
             mcpConfigPath: String,
-            process: Process,
             stdoutPipe: Pipe,
             stderrPipe: Pipe,
             now: Date
@@ -54,13 +53,13 @@ actor HeadlessAgentSessionManager {
             self.tempDirectory = tempDirectory
             self.promptPath = promptPath
             self.mcpConfigPath = mcpConfigPath
-            self.process = process
             self.stdoutPipe = stdoutPipe
             self.stderrPipe = stderrPipe
             startedAt = now
             updatedAt = now
             status = .running
             processID = nil
+            reaperTask = nil
             exitCode = nil
             cancellationRequested = false
             stdout = ""
@@ -129,7 +128,7 @@ actor HeadlessAgentSessionManager {
     func shutdown() async {
         for record in sessions.values where !record.status.isTerminal {
             record.cancellationRequested = true
-            terminate(record.process)
+            terminate(processID: record.processID)
         }
         listener?.stop()
         listener = nil
@@ -161,20 +160,8 @@ actor HeadlessAgentSessionManager {
             tempDirectory: tempDirectory
         )
 
-        let process = Process()
-        if launch.argv[0].contains("/") {
-            process.executableURL = URL(fileURLWithPath: launch.argv[0])
-            process.arguments = Array(launch.argv.dropFirst())
-        } else {
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-            process.arguments = launch.argv
-        }
-        process.environment = launch.environment
-
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
-        process.standardOutput = stdoutPipe
-        process.standardError = stderrPipe
 
         let now = Date()
         let record = SessionRecord(
@@ -186,7 +173,6 @@ actor HeadlessAgentSessionManager {
             tempDirectory: tempDirectory,
             promptPath: launch.promptPath,
             mcpConfigPath: launch.mcpConfigPath,
-            process: process,
             stdoutPipe: stdoutPipe,
             stderrPipe: stderrPipe,
             now: now
@@ -203,18 +189,27 @@ actor HeadlessAgentSessionManager {
             guard !data.isEmpty else { return }
             Task { await self.appendOutput(sessionID: sessionID, stream: .stderr, data: data) }
         }
-        process.terminationHandler = { [sessionID] process in
-            Task { await self.completeSession(sessionID: sessionID, exitCode: process.terminationStatus) }
-        }
 
         do {
-            try process.run()
-            setProcessGroup(for: process)
-            record.processID = process.processIdentifier
+            let spawned = try HeadlessProcessGroupLauncher.spawn(
+                argv: launch.argv,
+                environment: launch.environment,
+                stdoutWriteFD: stdoutPipe.fileHandleForWriting.fileDescriptor,
+                stderrWriteFD: stderrPipe.fileHandleForWriting.fileDescriptor
+            )
+            stdoutPipe.fileHandleForWriting.closeFile()
+            stderrPipe.fileHandleForWriting.closeFile()
+            record.processID = spawned.pid
+            record.reaperTask = Task.detached { [sessionID] in
+                let exitCode = HeadlessProcessGroupLauncher.reapExitCode(pid: spawned.pid)
+                await self.completeSession(sessionID: sessionID, exitCode: exitCode)
+            }
             record.updatedAt = Date()
         } catch {
             stdoutPipe.fileHandleForReading.readabilityHandler = nil
             stderrPipe.fileHandleForReading.readabilityHandler = nil
+            stdoutPipe.fileHandleForWriting.closeFile()
+            stderrPipe.fileHandleForWriting.closeFile()
             sessions[sessionID] = nil
             try? FileManager.default.removeItem(at: tempDirectory)
             throw error
@@ -251,7 +246,7 @@ actor HeadlessAgentSessionManager {
         record.cancellationRequested = true
         record.status = .cancelled
         record.updatedAt = Date()
-        terminate(record.process)
+        terminate(processID: record.processID)
         return snapshot(for: record)
     }
 
@@ -308,7 +303,7 @@ actor HeadlessAgentSessionManager {
             record.cancellationRequested = true
             record.status = .cancelled
             record.updatedAt = Date()
-            terminate(record.process)
+            terminate(processID: record.processID)
         }
         return HeadlessAgentStopSessionReply(stopRequested: true, session: summary(for: record))
     }
@@ -558,29 +553,17 @@ actor HeadlessAgentSessionManager {
         )
     }
 
-    private func terminate(_ process: Process) {
+    private func terminate(processID: Int32?) {
         #if canImport(Darwin) || canImport(Glibc)
-            if process.processIdentifier > 0 {
-                kill(-process.processIdentifier, SIGTERM)
+            guard let processID, processID > 0 else { return }
+            kill(-processID, SIGTERM)
+            kill(processID, SIGTERM)
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                guard kill(processID, 0) == 0 else { return }
+                kill(-processID, SIGKILL)
+                kill(processID, SIGKILL)
             }
-        #endif
-        process.terminate()
-        Task {
-            try? await Task.sleep(for: .seconds(2))
-            if process.isRunning {
-                #if canImport(Darwin) || canImport(Glibc)
-                    if process.processIdentifier > 0 {
-                        kill(-process.processIdentifier, SIGKILL)
-                        kill(process.processIdentifier, SIGKILL)
-                    }
-                #endif
-            }
-        }
-    }
-
-    private func setProcessGroup(for process: Process) {
-        #if canImport(Darwin) || canImport(Glibc)
-            setpgid(process.processIdentifier, process.processIdentifier)
         #endif
     }
 }
