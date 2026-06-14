@@ -9,13 +9,15 @@ import { createSmithers } from "smithers-orchestrator";
 import { z } from "zod/v4";
 import { agents } from "../agents";
 
+const DEFAULT_BEAD_IDS = [
+  "repoprompt-ce-fable-008-cancelling-state-9mo",
+  "repoprompt-ce-fable-008-termination-cleanup-i27",
+  "repoprompt-ce-fable-008-context-builder-spawn-x9u",
+  "repoprompt-ce-fable-008-drift-check-2p6",
+];
+
 const inputSchema = z.object({
-  beadIds: z.array(z.string()).default([
-    "repoprompt-ce-fable-008-cancelling-state-9mo",
-    "repoprompt-ce-fable-008-termination-cleanup-i27",
-    "repoprompt-ce-fable-008-context-builder-spawn-x9u",
-    "repoprompt-ce-fable-008-drift-check-2p6",
-  ]),
+  beadIds: z.array(z.string()).default(DEFAULT_BEAD_IDS),
   implementMaxIterations: z.number().int().min(1).max(8).default(4),
   childMaxConcurrency: z.number().int().min(1).max(8).default(4),
   requireCleanTree: z.boolean().default(true),
@@ -81,6 +83,24 @@ type BeadIssue = {
   issue_type?: string;
 };
 
+type LaneInput = {
+  beadIds: string[];
+  implementMaxIterations: number;
+  childMaxConcurrency: number;
+  requireCleanTree: boolean;
+  allowNoVerifyForKnownHostToolGap: boolean;
+};
+
+function normalizeInput(input: z.infer<typeof inputSchema>): LaneInput {
+  return {
+    beadIds: Array.isArray(input.beadIds) && input.beadIds.length > 0 ? input.beadIds : DEFAULT_BEAD_IDS,
+    implementMaxIterations: typeof input.implementMaxIterations === "number" ? input.implementMaxIterations : 4,
+    childMaxConcurrency: typeof input.childMaxConcurrency === "number" ? input.childMaxConcurrency : 4,
+    requireCleanTree: input.requireCleanTree !== false,
+    allowNoVerifyForKnownHostToolGap: input.allowNoVerifyForKnownHostToolGap === true,
+  };
+}
+
 function tail(text: string, max = 6000): string {
   return text.length <= max ? text : text.slice(text.length - max);
 }
@@ -128,7 +148,7 @@ function cycleCount(value: unknown): number {
   return 0;
 }
 
-function selectFrontier(input: z.infer<typeof inputSchema>) {
+function selectFrontier(input: LaneInput) {
   const status = requireOk(run("git", ["status", "--short", "--branch"])).stdout.trim();
   const dirtyLines = status
     .split("\n")
@@ -185,7 +205,7 @@ function selectFrontier(input: z.infer<typeof inputSchema>) {
   };
 }
 
-function buildImplementPrompt(beadId: string, input: z.infer<typeof inputSchema>): string {
+function buildImplementPrompt(beadId: string, input: LaneInput): string {
   const noVerifyPolicy = input.allowNoVerifyForKnownHostToolGap
     ? "If commit preflight fails only because native host tools such as swift are missing, and Docker Swift validation plus staged secret scanning have passed for the same tree, this workflow authorizes --no-verify for that known host-tool gap. Report the gap in the finalizer output."
     : "If commit preflight fails because a host tool is missing, stop and report it; do not use --no-verify.";
@@ -215,7 +235,7 @@ ${noVerifyPolicy}
 Return the normal implement workflow JSON summary when the bead implementation is ready for finalization.`;
 }
 
-function runImplementWorkflow(beadId: string, input: z.infer<typeof inputSchema>) {
+function runImplementWorkflow(beadId: string, input: LaneInput) {
   const childInput = {
     prompt: buildImplementPrompt(beadId, input),
     maxIterations: input.implementMaxIterations,
@@ -248,7 +268,7 @@ function runImplementWorkflow(beadId: string, input: z.infer<typeof inputSchema>
 function finalizePrompt(
   beadId: string,
   childRun: z.infer<typeof childRunSchema>,
-  input: z.infer<typeof inputSchema>,
+  input: LaneInput,
 ): string {
   const noVerifyPolicy = input.allowNoVerifyForKnownHostToolGap
     ? "You may use --no-verify only when the repo preflight fails solely because native host tools such as swift are missing and you have clean Docker Swift validation/guardrail evidence plus staged Gitleaks evidence for the exact staged tree."
@@ -282,6 +302,7 @@ Return JSON matching the schema with commit ids, whether the bead was closed, va
 }
 
 export default smithers((ctx) => {
+  const input = normalizeInput(ctx.input);
   const frontiers = ctx.outputs.frontier ?? [];
   const childRuns = ctx.outputs.childRun ?? [];
   const finalizers = ctx.outputs.finalize ?? [];
@@ -305,16 +326,16 @@ export default smithers((ctx) => {
   return (
     <Workflow name="fable-008-lane">
       <Sequence>
-        <Loop id="fable-008:loop" until={done} maxIterations={(ctx.input.beadIds?.length ?? 4) + 1} onMaxReached="fail">
+        <Loop id="fable-008:loop" until={done} maxIterations={input.beadIds.length + 1} onMaxReached="fail">
           <Sequence>
             <Task id="frontier" output={outputs.frontier}>
-              {() => selectFrontier(ctx.input)}
+              {() => selectFrontier(input)}
             </Task>
             <Branch
               if={needsChild}
               then={
                 <Task id="run-implement" output={outputs.childRun} timeoutMs={14_400_000} heartbeatTimeoutMs={900_000}>
-                  {() => runImplementWorkflow(beadId ?? "", ctx.input)}
+                  {() => runImplementWorkflow(beadId ?? "", input)}
                 </Task>
               }
               else={null}
@@ -323,7 +344,7 @@ export default smithers((ctx) => {
               if={needsFinalize}
               then={needsFinalize && latestChild ? (
                 <Task id="finalize" output={outputs.finalize} agent={agents.smartTool} timeoutMs={3_600_000} heartbeatTimeoutMs={900_000}>
-                  {finalizePrompt(beadId ?? "", latestChild, ctx.input)}
+                  {finalizePrompt(beadId ?? "", latestChild, input)}
                 </Task>
               ) : null}
               else={null}
