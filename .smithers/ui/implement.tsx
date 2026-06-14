@@ -323,7 +323,7 @@ function App() {
           {activeRun ? (
             <span className={"badge " + statusClass(activeRun.status)} data-testid="implement-status">{activeRun.status ?? "idle"}</span>
           ) : null}
-          <span className="iteration" data-testid="implement-iteration">Loop · up to 3 iterations</span>
+          <span className="iteration" data-testid="implement-iteration">Looped validation + review</span>
         </div>
         <div className="toolbar">
           <input
@@ -455,8 +455,8 @@ function App() {
           ) : (
             <div className="empty" data-testid="implement-empty">
               <div className="empty-lead">
-                Implement a code change with automated validation and code review. The workflow will iterate up to 3 times
-                if validation or reviews fail, incorporating feedback each round.
+                Implement a code change with automated validation and code review. The workflow can iterate when validation
+                or reviews fail, incorporating feedback each round before returning a final result.
               </div>
               <div>{activeRunId ? "Waiting for the first task to run…" : "No run yet."}</div>
               <button className="button primary" data-testid="implement-launch-empty" onClick={() => void launch()} disabled={busy}>

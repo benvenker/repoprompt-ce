@@ -122,6 +122,49 @@ make dev-swift-build PRODUCT=rpce-headless
 .build/debug/rpce-headless dump --root "$PWD"
 ```
 
+### Linux / VPS Swift
+
+On Linux hosts, especially `ben-netcup-v2`, do not assume Swift is unavailable
+just because `swift` is not on `PATH`. This VPS may use Docker Swift instead of
+a native host toolchain. Check both before deciding where work must run:
+
+```bash
+command -v swift || true
+docker images --format '{{.Repository}}:{{.Tag}}' | grep '^swift:' || true
+docker run --rm swift:6.2.4-noble swift --version
+```
+
+The known-good Linux image for Fable/headless work is `swift:6.2.4-noble`.
+Use it for Linux validation when native `swift` is missing:
+
+```bash
+docker run --rm -v "$PWD":/src -w /src swift:6.2.4-noble \
+  swift build --product rpce-headless --scratch-path .build-linux
+python3 Sources/RepoPromptHeadlessServer/Scripts/mcp_smoke.py \
+  .build-linux/debug/rpce-headless "$PWD"
+```
+
+Reuse `.build-linux` as the shared Linux SwiftPM scratch path for agent
+builds, tests, and smokes in this worktree. Do not create ad hoc sibling
+scratch paths such as `.build-linux-review` just to revalidate a diff; rerun
+the same Docker command with `--scratch-path .build-linux` so SwiftPM can reuse
+the warm checkout/build cache. Smithers review/validate agents should first
+read this file, inspect the exact diff, and reuse existing Docker build
+evidence for the same tree when it is already available. If independent
+validation is still required, use `.build-linux`, not a fresh scratch path.
+
+Focused Linux tests can use the same container/scratch path:
+
+```bash
+docker run --rm -v "$PWD":/src -w /src swift:6.2.4-noble \
+  swift test --filter <TestName> --scratch-path .build-linux
+```
+
+`make dev-swift-build`, `make guardrails`, and the contribution preflight may
+still require native host tools such as `swift`, SwiftFormat, SwiftLint, or
+`gitleaks`. If they fail on Linux because those host tools are missing, report
+the host-tool gap separately from Docker Swift build/smoke evidence.
+
 Stdio `serve` exposes the full headless tool set, including `oracle_send`, `context_builder`, `agent_run`, and `agent_manage`. Socket mode is discovery-restricted:
 
 ```bash

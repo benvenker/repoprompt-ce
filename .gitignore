@@ -1,6 +1,7 @@
 # Swift Package Manager / build artifacts
 .build/
 .build-linux/
+.build-linux*/
 .swiftpm/
 Package.resolved.backup
 

@@ -12,6 +12,8 @@ import { reviewOutputSchema } from "../components/Review";
 
 const inputSchema = z.object({
   prompt: z.string().default("Implement the requested change."),
+  maxIterations: z.number().int().min(1).max(8).default(4),
+  onMaxReached: z.enum(["fail", "return-last"]).default("fail"),
 });
 
 const { Workflow, smithers } = createSmithers({
@@ -57,7 +59,8 @@ export default smithers((ctx) => {
         reviewAgents={agents.smart}
         feedback={feedback}
         done={done}
-        maxIterations={3}
+        maxIterations={ctx.input.maxIterations}
+        onMaxReached={ctx.input.onMaxReached}
       />
     </Workflow>
   );

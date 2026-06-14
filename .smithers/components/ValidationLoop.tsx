@@ -26,6 +26,7 @@ export type ValidationLoopProps = {
   feedback?: string | null;
   done?: boolean;
   maxIterations?: number;
+  onMaxReached?: "fail" | "return-last";
 };
 
 export function ValidationLoop({
@@ -37,10 +38,11 @@ export function ValidationLoop({
   feedback,
   done = false,
   maxIterations = 3,
+  onMaxReached = "return-last",
 }: ValidationLoopProps) {
   const promptText = typeof prompt === "string" ? prompt : JSON.stringify(prompt ?? null);
   return (
-    <Loop id={`${idPrefix}:loop`} until={done} maxIterations={maxIterations} onMaxReached="return-last">
+    <Loop id={`${idPrefix}:loop`} until={done} maxIterations={maxIterations} onMaxReached={onMaxReached}>
       <Sequence>
         <Task id={`${idPrefix}:implement`} output={implementOutputSchema} agent={implementAgents} timeoutMs={1_800_000} heartbeatTimeoutMs={600_000}>
           <ImplementPrompt prompt={feedback
