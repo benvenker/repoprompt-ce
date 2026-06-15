@@ -1,0 +1,24 @@
+# Execute Knowledge-Work Plan
+
+Carry out this non-code plan in the current repository context. Read AGENTS.md
+first and follow the repository guidance that applies to documents, analysis,
+and validation.
+
+Treat the plan as immutable. Do not rewrite its body to track progress.
+
+Operator note:
+{props.operatorPrompt || "(none)"}
+
+Execution manifest:
+
+```json
+{JSON.stringify(props.manifest, null, 2)}
+```
+
+Produce the requested artifact or analysis. If the correct output is a repository
+file, write only the intended file. If the correct output is a structured result,
+return it without creating unnecessary files. Record validation evidence and any
+questions that could not be resolved from the repository.
+
+REQUIRED OUTPUT:
+{props.schema}

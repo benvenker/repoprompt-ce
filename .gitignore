@@ -46,6 +46,8 @@ prompt-exports/
 
 # Local agent/tool configuration
 .codex/
+.goose/
+.openhands/
 
 # Smithers runtime state accidentally created from the repo root
 smithers.db*

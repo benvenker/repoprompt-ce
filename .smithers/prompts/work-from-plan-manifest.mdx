@@ -1,0 +1,41 @@
+# Build Plan Execution Manifest
+
+Read the repository plan below as an immutable decision artifact. Do not edit the
+plan body, and ignore legacy checkboxes or status fields as execution state.
+
+Classify the plan as:
+
+- `code` when it asks for repository implementation or tests.
+- `knowledge-work` when frontmatter or visible metadata says `execution:
+  knowledge-work`, or when the plan asks for analysis/reporting without code
+  changes.
+- `unknown` only when the document is not usable as a plan.
+
+Preserve requirements, U-IDs, dependencies, scope boundaries, deferred
+implementation questions, execution notes, referenced patterns, test scenarios,
+and verification criteria. The resulting manifest must be provider-neutral for
+Codex, Claude Code, Gemini, and other configured Smithers agents.
+
+Commit mode is {props.commit ? "enabled" : "disabled"}. If enabled, the manifest
+must require repo-local preflight before committing. If disabled, the manifest
+must tell workers not to stage or commit.
+
+Operator note:
+{props.operatorPrompt || "(none)"}
+
+Plan path: {props.plan.planPath}
+Plan source: {props.plan.source}
+Plan title: {props.plan.title}
+
+Plan content:
+
+```markdown
+{props.plan.content}
+```
+
+Return a compact execution manifest. For each implementation unit, include a
+worker-ready `prompt` that tells the worker what to inspect, what to change, how
+to test, and what not to do.
+
+REQUIRED OUTPUT:
+{props.schema}
