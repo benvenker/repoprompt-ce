@@ -38,10 +38,6 @@ docs/references/
 docs/reviews/
 docs/investigations/*
 !docs/investigations/test-coverage-value-audit-ledger-2026-05-29.md
-docs/plans/*
-!docs/plans/test-coverage-value-audit-2026-05-29.md
-!docs/plans/fable/
-!docs/plans/fable/**
 prompt-exports/
 
 # Local agent/tool configuration

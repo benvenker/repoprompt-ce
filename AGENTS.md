@@ -190,6 +190,18 @@ Stdio `serve` exposes the full headless tool set, including `oracle_send`, `cont
 
 Discovery sockets expose only selection, prompt, tree, search, structure, workspace context, and file reads. They intentionally block oracle, context builder, and process-backed agent tools.
 
+Manual headless MCP restart and smoke testing must leave no orphaned
+`rpce-headless serve --root "$PWD"` processes. Prefer test harness teardown
+(`finally`, `trap`, or explicit stdin close plus `wait`) over commit hooks; hooks
+run too late and can kill unrelated side-chat MCP sessions. Before handoff after
+manual process testing, verify and clean up only matching processes for this
+worktree:
+
+```bash
+pgrep -a -f "rpce-headless serve --root $PWD" || true
+pkill -TERM -f "rpce-headless serve --root $PWD" || true
+```
+
 Oracle-backed headless tools read `RPCE_ORACLE_API_KEY` or `OPENROUTER_API_KEY`; `RPCE_ORACLE_BASE_URL` defaults to OpenRouter and `RPCE_ORACLE_MODEL` defaults to `openrouter/auto`. Use `Sources/RepoPromptHeadlessServer/README.md` for smoke harnesses, Linux artifacts, service setup, and v1 limitations.
 
 ## Smithers
