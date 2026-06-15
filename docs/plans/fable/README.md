@@ -22,7 +22,7 @@ your row when done. Background evidence (file:line) lives in
 | 004  | Linux port of ContextCore + server | P1 | M | 001, 002, 003 | DONE (VPS Ubuntu 24.04 Docker `swift:6.2.4-noble` build + smoke passed) |
 | 005  | Headless `oracle_send` via OpenRouter/custom endpoint | P2 | M | 003 (Linux gate: 004) | DONE (macOS build/mock/smoke passed; Linux gate now open via 004) |
 | 006  | Headless `context_builder` w/ pluggable discovery agent | P2 | L | 003 (optional: 005; Linux: 004) | DONE (macOS/offline fake-agent path passed; Linux gate now open via 004) |
-| 007  | Authenticated full-tool socket mode (`--expose-all-tools`) | P1 | M | — | TODO |
+| 007  | Authenticated full-tool socket mode (`--expose-all-tools`) | P1 | M | — | DONE (2026-06-15: VPS Docker `swift:6.2.4-noble` build passed; `socket_auth_smoke.py` printed `SOCKET AUTH SMOKE OK`; `mcp_smoke.py` printed `ALL OK`; `mcp_agent_smoke.py` printed `AGENT MCP SMOKE OK`) |
 | 008  | Truthful cancellation + owned process groups for agent sessions | P1 | M-L | — | TODO |
 | 009  | Gate context-builder oracle follow-up on successful discovery | P2 | S | — | DONE (implemented; focused build and fake-agent smokes passed) |
 | 010  | Real schema tests (drop source-scraping; `required:["op"]`) | P2 | S-M | — (coordinate w/ 008) | TODO |

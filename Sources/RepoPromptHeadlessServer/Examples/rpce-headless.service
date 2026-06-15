@@ -14,6 +14,9 @@ RuntimeDirectoryMode=0700
 StateDirectory=rpce-headless
 CacheDirectory=rpce-headless
 UMask=0077
+# Full-tool socket (agent_run/agent_manage/context_builder/oracle_send over
+# the socket; requires RPCE_SOCKET_AUTH_TOKEN in the EnvironmentFile):
+#ExecStart=/usr/local/bin/rpce-headless serve --root /srv/repoprompt-ce --socket /run/rpce-headless/rpce.sock --expose-all-tools
 ExecStart=/usr/local/bin/rpce-headless serve --root /srv/repoprompt-ce --socket /run/rpce-headless/rpce.sock
 Restart=on-failure
 RestartSec=2

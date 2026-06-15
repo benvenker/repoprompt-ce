@@ -3,14 +3,20 @@ import Foundation
 do {
     let command = try HeadlessCLI.parse(Array(CommandLine.arguments.dropFirst()))
     switch command {
-    case let .serve(roots, socketPath):
+    case let .serve(roots, socketPath, exposeAllTools):
         let host = try await HeadlessWorkspaceHost(rootPaths: roots)
         let server = HeadlessMCPServer(host: host)
         if let socketPath {
+            let socketAccess = try HeadlessSocketAccess(exposeAllTools: exposeAllTools)
             let listener = HeadlessUnixSocketListener(path: socketPath)
             try listener.start { fd in
                 do {
-                    try await HeadlessMCPServer(host: host).runSocketConnection(fd: fd)
+                    switch socketAccess {
+                    case .restricted:
+                        try await HeadlessMCPServer(host: host).runSocketConnection(fd: fd)
+                    case let .fullTools(authToken):
+                        try await HeadlessMCPServer(host: host).runFullAccessSocketConnection(fd: fd, expectedToken: authToken)
+                    }
                 } catch {
                     fputs("rpce-headless socket connection: \(error.localizedDescription)\n", stderr)
                 }
@@ -25,8 +31,8 @@ do {
         let host = try await HeadlessWorkspaceHost(rootPaths: roots)
         let summary = await host.dumpSummary()
         print(summary)
-    case let .connect(socketPath):
-        try await ConnectBridge.run(socketPath: socketPath)
+    case let .connect(socketPath, auth):
+        try await ConnectBridge.run(socketPath: socketPath, auth: auth)
     case let .contextBuild(options):
         let exitCode = try await ContextBuildCommand(options: options).run()
         Foundation.exit(exitCode)
@@ -41,9 +47,9 @@ do {
 
 enum HeadlessCLI {
     enum Command {
-        case serve(roots: [String], socketPath: String?)
+        case serve(roots: [String], socketPath: String?, exposeAllTools: Bool)
         case dump(roots: [String])
-        case connect(socketPath: String)
+        case connect(socketPath: String, auth: Bool)
         case contextBuild(ContextBuildOptions)
     }
 
@@ -58,6 +64,7 @@ enum HeadlessCLI {
 
         if subcommand == "connect" {
             var socketPath: String?
+            var auth = false
             var index = 1
             while index < args.count {
                 switch args[index] {
@@ -66,12 +73,15 @@ enum HeadlessCLI {
                     guard valueIndex < args.count else { throw usage("--socket requires a path") }
                     socketPath = args[valueIndex]
                     index += 2
+                case "--auth":
+                    auth = true
+                    index += 1
                 default:
                     throw usage("Unknown argument: \(args[index])")
                 }
             }
             guard let socketPath else { throw usage("connect requires --socket <path>") }
-            return .connect(socketPath: socketPath)
+            return .connect(socketPath: socketPath, auth: auth)
         }
 
         if subcommand == "context-build" {
@@ -80,6 +90,7 @@ enum HeadlessCLI {
 
         var roots: [String] = []
         var socketPath: String?
+        var exposeAllTools = false
         var index = 1
         while index < args.count {
             let arg = args[index]
@@ -95,12 +106,17 @@ enum HeadlessCLI {
                 guard valueIndex < args.count else { throw usage("--socket requires a path") }
                 socketPath = args[valueIndex]
                 index += 2
+            case "--expose-all-tools":
+                guard subcommand == "serve" else { throw usage("--expose-all-tools is only valid for serve") }
+                exposeAllTools = true
+                index += 1
             default:
                 throw usage("Unknown argument: \(arg)")
             }
         }
         guard !roots.isEmpty else { throw usage("At least one --root is required") }
-        return subcommand == "serve" ? .serve(roots: roots, socketPath: socketPath) : .dump(roots: roots)
+        guard !exposeAllTools || socketPath != nil else { throw usage("--expose-all-tools requires --socket") }
+        return subcommand == "serve" ? .serve(roots: roots, socketPath: socketPath, exposeAllTools: exposeAllTools) : .dump(roots: roots)
     }
 
     private static func parseContextBuild(_ args: [String]) throws -> ContextBuildOptions {
@@ -202,10 +218,32 @@ enum HeadlessCLI {
     private static func usage(_ detail: String? = nil) -> ExitError {
         var lines: [String] = []
         if let detail { lines.append("Error: \(detail)") }
-        lines.append("Usage: rpce-headless serve --root <path> [--root <path> ...] [--socket <path>]")
-        lines.append("       rpce-headless connect --socket <path>")
+        lines.append("Usage: rpce-headless serve --root <path> [--root <path> ...] [--socket <path> [--expose-all-tools]]")
+        lines.append("       rpce-headless connect --socket <path> [--auth]")
         lines.append("       rpce-headless context-build --root <path> --instructions <text> [--agent <name>] [--dry-run]")
         lines.append("       rpce-headless dump --root <path> [--root <path> ...]")
         return ExitError(code: 64, message: lines.joined(separator: "\n"))
+    }
+}
+
+private enum HeadlessSocketAccess {
+    case restricted
+    case fullTools(authToken: String)
+
+    init(exposeAllTools: Bool) throws {
+        guard exposeAllTools else {
+            self = .restricted
+            return
+        }
+
+        let token = ProcessInfo.processInfo.environment["RPCE_SOCKET_AUTH_TOKEN"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let token, token.count >= 16 else {
+            throw HeadlessCLI.ExitError(
+                code: 64,
+                message: "--expose-all-tools requires RPCE_SOCKET_AUTH_TOKEN (at least 16 characters) in the environment"
+            )
+        }
+        self = .fullTools(authToken: token)
     }
 }
