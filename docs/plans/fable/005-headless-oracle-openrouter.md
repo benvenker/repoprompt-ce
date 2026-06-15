@@ -249,8 +249,8 @@ library — it is expected to just work. → `ORACLE OK` in container.
 - [x] `oracle_mock_test.py` prints `ORACLE OK`
 - [x] Missing-key call returns `isError: true`, server keeps serving
 - [x] `mcp_smoke.py` still prints `ALL OK`
-- [ ] If plan 004 DONE: mock test prints `ORACLE OK` in the Linux container
-  — skipped; blocked by plan 004 / Docker plan-001 gate
+- [ ] Mock test prints `ORACLE OK` in the Linux container — unblocked by
+  plan 004 (DONE) since 2026-06-12; container run still pending.
 - [x] `grep -rn "sk-or-\|Bearer " Sources/ | grep -v "Bearer \\\\("` shows no hardcoded keys (manual eyeball; grep exclusion pattern needed manual equivalent because the literal pattern is invalid for local grep)
 - [x] `plans/README.md` updated
 

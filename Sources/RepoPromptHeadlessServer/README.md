@@ -65,9 +65,10 @@ systemctl enable --now rpce-headless
 Edit `/etc/rpce-headless/rpce-headless.env` before enabling oracle-backed
 tools. The example service exposes a local Unix socket at
 `/run/rpce-headless/rpce.sock` for discovery agents. That socket is
-discovery-restricted and does not expose `oracle_send`; configure MCP clients
-that need `oracle_send` to launch `rpce-headless serve --root ...` over stdio,
-or use the `context-build --response-type question|plan` CLI path.
+discovery-restricted by default and does not expose `oracle_send`,
+`context_builder`, `agent_run`, or `agent_manage`. Use stdio for the full
+toolset, or run the socket with `--expose-all-tools` and
+`RPCE_SOCKET_AUTH_TOKEN` for an authenticated full-tool socket.
 
 ## Run
 
@@ -77,7 +78,8 @@ or use the `context-build --response-type question|plan` CLI path.
 
 Stdout is reserved for newline-delimited JSON-RPC. Diagnostics go to stderr.
 This stdio mode is intended for MCP clients that launch the process directly;
-it exposes all tools, including `oracle_send` and `context_builder`.
+it exposes all tools, including `oracle_send`, `context_builder`, `agent_run`,
+and `agent_manage`.
 
 Socket serving for discovery agents:
 
@@ -96,11 +98,24 @@ All socket connections are discovery-restricted to:
 - `file_search`
 - `read_file`
 
-Stdio serving remains unrestricted and includes `oracle_send` and `context_builder`.
+Stdio serving remains unrestricted and includes `oracle_send`,
+`context_builder`, `agent_run`, and `agent_manage`.
 
 The socket mode is intended for a local daemon plus discovery agents on the
-same host. It does not expose `oracle_send` or `context_builder`; use stdio mode or
-`context-build --response-type question|plan|review` for oracle-backed answers.
+same host. By default it does not expose `oracle_send`, `context_builder`,
+`agent_run`, or `agent_manage`; use stdio mode or
+`context-build --response-type question|plan|review` for oracle-backed
+answers.
+
+For a full-tool socket, pass `--expose-all-tools` and set
+`RPCE_SOCKET_AUTH_TOKEN`. Clients must authenticate before JSON-RPC with one
+newline-delimited preamble:
+
+```json
+{"rpce_auth":{"token":"<token>"}}
+```
+
+The `connect` bridge also accepts `--auth <token>`.
 
 A diagnostic catalog summary is also available:
 
@@ -127,9 +142,9 @@ make dev-headless-linux-artifact
 ```
 
 The artifact path builds a release `rpce-headless` binary with a static Swift
-stdlib, runs the MCP smoke harness, and writes a tarball, checksum, and manifest
-under `dist/`. It is intentionally separate from the macOS app release,
-notarization, Sparkle, and appcast tooling.
+stdlib, runs the MCP/socket/agent/context-builder smoke harnesses, and writes
+a tarball, checksum, and manifest under `dist/`. It is intentionally separate
+from the macOS app release, notarization, Sparkle, and appcast tooling.
 
 The official `swift:6.2.4-noble` image does not include `make`; install it in
 the container or invoke `./Scripts/package_headless_linux.sh` directly.
@@ -163,6 +178,12 @@ MCP `context_builder` configuration is resolved from the process environment:
 
 MCP `response_type:"clarify"` is offline and only harvests context. `question`, `plan`, and `review` use the oracle after discovery and therefore require oracle API configuration. `export_response:true` is explicitly unsupported by headless v1 and returns a tool error.
 
+CLI and MCP names differ slightly: CLI `--response-type selection` maps to
+MCP `response_type:"clarify"`. CLI defaults are development-oriented
+(`--agent fake`, token budget 118,500), while MCP defaults are environment
+driven (`claude`, 160k for clarify, 120k otherwise). `question`, `plan`, and
+`review` invoke the oracle only after successful, non-empty discovery.
+
 Dry-run rendering:
 
 ```bash
@@ -179,6 +200,25 @@ python3 Sources/RepoPromptHeadlessServer/Scripts/context_builder_mcp_fake_agent_
 Expected success output: `CONTEXT_BUILD OK`.
 
 Pi note: Pi has no built-in MCP hookup in this target. Use the `pi-mcp-adapter` extension with the generated MCP config shape (`command: rpce-headless`, `args: ["connect", "--socket", "<path>"]`). The example `"pi"` agent entry is an operational starting point and remains UNVERIFIED.
+
+## Headless agent runner
+
+`agent_run` and `agent_manage` expose a process-backed subset of headless
+agent control. They are not app Agent Mode: there is no steering, responding,
+worktree management, or app window state. `agent_run` supports
+`start`, `poll`, `wait`, and `cancel`; `agent_manage` supports `list_agents`,
+`list_sessions`, `get_log`, `stop_session`, and `cleanup_sessions`.
+
+The same `Examples/agents.json` template format drives both `agent_run` and
+the context builder. Runtime configuration comes from:
+
+- `RPCE_AGENT_CONFIG` (default `~/.config/rpce-headless/agents.json`)
+- `RPCE_AGENT_RUN_DEFAULT_AGENT` (default `claude`)
+- `RPCE_AGENT_SOCKET_DIRECTORY` (default temporary directory)
+- `RPCE_AGENT_OUTPUT_CAPTURE_LIMIT_BYTES` (default `1000000`)
+
+Call `cleanup_sessions` after terminal runs to reclaim temporary session
+directories. Automatic retention sweeping is deferred from headless v1.
 
 ## Oracle / OpenRouter
 
@@ -209,8 +249,27 @@ Continuations with `chat_id` default to no new context unless
 - `manage_selection`
 - `workspace_context`
 - `prompt`
-- `oracle_send` (stdio only)
-- `context_builder` (stdio only)
+- `agent_run` (stdio / authenticated full-tool socket)
+- `agent_manage` (stdio / authenticated full-tool socket)
+- `oracle_send` (stdio / authenticated full-tool socket)
+- `context_builder` (stdio / authenticated full-tool socket)
+
+## Security notes
+
+Stdio has no MCP-level authentication because the client launches the process
+directly. Socket authentication exists only for `serve --socket
+--expose-all-tools` with `RPCE_SOCKET_AUTH_TOKEN`; never expose the socket or
+a stdio bridge over TCP without adding real authentication and TLS. Any local
+process running as the service user can connect to the socket, so use this on
+single-tenant hosts.
+
+The example `Examples/agents.json` Claude template uses
+`--permission-mode bypassPermissions`. That is a convenience default for
+trusted local automation: spawned agents can take arbitrary host actions as
+the service user. Review it before VPS deployment, or remove the flag,
+sandbox the service user further, and restrict the systemd unit. To rotate the
+full-tool socket token, edit the EnvironmentFile and restart
+`rpce-headless`.
 
 ## v1 semantics and deferred work
 

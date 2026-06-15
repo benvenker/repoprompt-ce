@@ -25,12 +25,20 @@ your row when done. Background evidence (file:line) lives in
 | 007  | Authenticated full-tool socket mode (`--expose-all-tools`) | P1 | M | — | DONE (2026-06-15: VPS Docker `swift:6.2.4-noble` build passed; `socket_auth_smoke.py` printed `SOCKET AUTH SMOKE OK`; `mcp_smoke.py` printed `ALL OK`; `mcp_agent_smoke.py` printed `AGENT MCP SMOKE OK`) |
 | 008  | Truthful cancellation + owned process groups for agent sessions | P1 | M-L | — | DONE (2026-06-15: VPS Docker `swift:6.2.4-noble` build passed; agent/context smokes printed `AGENT MCP SMOKE OK`, `CONTEXT_BUILDER_MCP OK`, and `CONTEXT_BUILD OK`; focused schema test blocked by Linux macOS-only target graph) |
 | 009  | Gate context-builder oracle follow-up on successful discovery | P2 | S | — | DONE (implemented; focused build and fake-agent smokes passed) |
-| 010  | Real schema tests (drop source-scraping; `required:["op"]`) | P2 | S-M | — (coordinate w/ 008) | TODO |
-| 011  | Behavioral lifecycle smokes + wire smokes into validation | P2 | M | 008 | TODO |
-| 012  | Headless docs/config/plan-index hygiene | P3 | S | 007 (soft: 009, 011) | TODO |
+| 010  | Real schema tests (drop source-scraping; `required:["op"]`) | P2 | S-M | — (coordinate w/ 008) | DONE (compiled schema assertions landed; Linux build/smokes passed; macOS XCTest execution still host-gated) |
+| 011  | Behavioral lifecycle smokes + wire smokes into validation | P2 | M | 008 | DONE (lifecycle smoke landed and passed in Docker; uncovered/fixed cancellation descendant cleanup) |
+| 012  | Headless docs/config/plan-index hygiene | P3 | S | 007 (soft: 009, 011) | DONE (README/env/index updated for full-tool sockets, agent runner, and validation status) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) |
 REJECTED (one-line rationale).
+
+## Shipped outside plans
+
+- 2026-06-12 — headless `agent_run`/`agent_manage` MCP tools shipped without
+  a plan row. The process-backed subset includes `start`, `poll`, `wait`,
+  `cancel`, `list_agents`, `list_sessions`, `get_log`, `stop_session`, and
+  `cleanup_sessions`; validation is covered by `HeadlessAgentToolSchemaTests`
+  and `mcp_agent_smoke.py`. Hardening was tracked in plans 008, 010, and 011.
 
 ## Dependency notes
 

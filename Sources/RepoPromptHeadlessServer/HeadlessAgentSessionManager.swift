@@ -366,6 +366,9 @@ actor HeadlessAgentSessionManager {
         guard let record = sessions[sessionID] else { return }
         drainPipe(record.stdoutPipe, sessionID: sessionID, stream: .stdout)
         drainPipe(record.stderrPipe, sessionID: sessionID, stream: .stderr)
+        if record.status == .cancelling, let processID = record.processID {
+            forceTerminateProcessTree(processID: processID)
+        }
         record.escalationTask?.cancel()
         record.escalationTask = nil
         closeReadHandles(for: record)
@@ -595,10 +598,16 @@ actor HeadlessAgentSessionManager {
             kill(processID, SIGTERM)
             record.escalationTask = Task {
                 try? await Task.sleep(for: .seconds(2))
-                guard kill(processID, 0) == 0 else { return }
-                kill(-processID, SIGKILL)
-                kill(processID, SIGKILL)
+                forceTerminateProcessTree(processID: processID)
             }
+        #endif
+    }
+
+    private func forceTerminateProcessTree(processID: pid_t) {
+        #if canImport(Darwin) || canImport(Glibc)
+            guard processID > 0 else { return }
+            kill(-processID, SIGKILL)
+            kill(processID, SIGKILL)
         #endif
     }
 }

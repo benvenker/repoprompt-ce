@@ -111,7 +111,7 @@ enum HeadlessToolSchemas {
                 "detach": boolean("For op=start, return immediately after launching instead of waiting"),
                 "timeout": integer("Timeout in seconds for start/wait; 0 behaves like poll"),
                 "session_id": string("Headless session id for poll, wait, or cancel")
-            ]),
+            ], required: ["op"]),
             annotations: .init(readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true)
         ),
         Tool(
@@ -124,7 +124,7 @@ enum HeadlessToolSchemas {
                 "state": string("Optional state filter for list_sessions", enumValues: ["running", "cancelling", "completed", "failed", "cancelled"]),
                 "limit": integer("Maximum sessions or log turns to return"),
                 "offset": integer("Log turn offset for get_log")
-            ]),
+            ], required: ["op"]),
             annotations: .init(readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true)
         ),
         Tool(

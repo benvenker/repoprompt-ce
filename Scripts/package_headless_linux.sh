@@ -52,6 +52,15 @@ swift build \
 
 printf '==> Running headless MCP smoke\n'
 python3 "$ROOT_DIR/Sources/RepoPromptHeadlessServer/Scripts/mcp_smoke.py" "$BINARY" "$ROOT_DIR"
+printf '==> Running headless socket auth smoke\n'
+python3 "$ROOT_DIR/Sources/RepoPromptHeadlessServer/Scripts/socket_auth_smoke.py" "$BINARY" "$ROOT_DIR"
+printf '==> Running headless agent MCP smoke\n'
+python3 "$ROOT_DIR/Sources/RepoPromptHeadlessServer/Scripts/mcp_agent_smoke.py" "$BINARY"
+printf '==> Running headless agent lifecycle smoke\n'
+python3 "$ROOT_DIR/Sources/RepoPromptHeadlessServer/Scripts/mcp_agent_lifecycle_smoke.py" "$BINARY"
+printf '==> Running context builder smokes\n'
+python3 "$ROOT_DIR/Sources/RepoPromptHeadlessServer/Scripts/context_build_fake_agent_test.py" "$BINARY" "$ROOT_DIR"
+python3 "$ROOT_DIR/Sources/RepoPromptHeadlessServer/Scripts/context_builder_mcp_fake_agent_test.py" "$BINARY" "$ROOT_DIR"
 
 printf '==> Staging %s\n' "$ARTIFACT_NAME"
 rm -rf "$STAGE_DIR" "$TARBALL" "$SHA_FILE" "$MANIFEST"

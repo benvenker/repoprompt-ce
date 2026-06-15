@@ -152,7 +152,7 @@ let package = Package(
         .binaryTarget(name: "Sparkle", path: "Vendor/Sparkle/Sparkle.xcframework"),
         .testTarget(
             name: "RepoPromptTests",
-            dependencies: ["RepoPrompt", "RepoPromptContextCore", "RepoPromptMCP", "RepoPromptShared"],
+            dependencies: ["RepoPrompt", "RepoPromptContextCore", "RepoPromptHeadlessServer", "RepoPromptMCP", "RepoPromptShared"],
             path: "Tests/RepoPromptTests",
             resources: [
                 .copy("CodeMap/Fixtures"),

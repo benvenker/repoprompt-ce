@@ -74,11 +74,18 @@ enum HeadlessProcessGroupLauncher {
         var defaultSignals = sigset_t()
         sigemptyset(&defaultSignals)
         sigaddset(&defaultSignals, SIGPIPE)
+        var signalMask = sigset_t()
+        sigemptyset(&signalMask)
 
         try checkSpawnAttribute(
             command: command,
             operation: "setsigdefault",
             result: posix_spawnattr_setsigdefault(&attributes, &defaultSignals)
+        )
+        try checkSpawnAttribute(
+            command: command,
+            operation: "setsigmask",
+            result: posix_spawnattr_setsigmask(&attributes, &signalMask)
         )
         try checkSpawnAttribute(
             command: command,
@@ -92,7 +99,7 @@ enum HeadlessProcessGroupLauncher {
             operation: "getflags",
             result: posix_spawnattr_getflags(&attributes, &flags)
         )
-        var configuredFlags = flags | Int16(POSIX_SPAWN_SETPGROUP) | Int16(POSIX_SPAWN_SETSIGDEF)
+        var configuredFlags = flags | Int16(POSIX_SPAWN_SETPGROUP) | Int16(POSIX_SPAWN_SETSIGDEF) | Int16(POSIX_SPAWN_SETSIGMASK)
         #if canImport(Darwin)
             configuredFlags |= Int16(POSIX_SPAWN_CLOEXEC_DEFAULT)
         #endif
