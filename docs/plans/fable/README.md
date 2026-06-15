@@ -23,7 +23,7 @@ your row when done. Background evidence (file:line) lives in
 | 005  | Headless `oracle_send` via OpenRouter/custom endpoint | P2 | M | 003 (Linux gate: 004) | DONE (macOS build/mock/smoke passed; Linux gate now open via 004) |
 | 006  | Headless `context_builder` w/ pluggable discovery agent | P2 | L | 003 (optional: 005; Linux: 004) | DONE (macOS/offline fake-agent path passed; Linux gate now open via 004) |
 | 007  | Authenticated full-tool socket mode (`--expose-all-tools`) | P1 | M | — | DONE (2026-06-15: VPS Docker `swift:6.2.4-noble` build passed; `socket_auth_smoke.py` printed `SOCKET AUTH SMOKE OK`; `mcp_smoke.py` printed `ALL OK`; `mcp_agent_smoke.py` printed `AGENT MCP SMOKE OK`) |
-| 008  | Truthful cancellation + owned process groups for agent sessions | P1 | M-L | — | TODO |
+| 008  | Truthful cancellation + owned process groups for agent sessions | P1 | M-L | — | DONE (2026-06-15: VPS Docker `swift:6.2.4-noble` build passed; agent/context smokes printed `AGENT MCP SMOKE OK`, `CONTEXT_BUILDER_MCP OK`, and `CONTEXT_BUILD OK`; focused schema test blocked by Linux macOS-only target graph) |
 | 009  | Gate context-builder oracle follow-up on successful discovery | P2 | S | — | DONE (implemented; focused build and fake-agent smokes passed) |
 | 010  | Real schema tests (drop source-scraping; `required:["op"]`) | P2 | S-M | — (coordinate w/ 008) | TODO |
 | 011  | Behavioral lifecycle smokes + wire smokes into validation | P2 | M | 008 | TODO |

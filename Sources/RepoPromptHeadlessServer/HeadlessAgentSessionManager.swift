@@ -25,6 +25,7 @@ actor HeadlessAgentSessionManager {
         var status: HeadlessAgentRunStatus
         var processID: Int32?
         var reaperTask: Task<Void, Never>?
+        var escalationTask: Task<Void, Never>?
         var exitCode: Int32?
         var cancellationRequested: Bool
         var stdout: String
@@ -60,6 +61,7 @@ actor HeadlessAgentSessionManager {
             status = .running
             processID = nil
             reaperTask = nil
+            escalationTask = nil
             exitCode = nil
             cancellationRequested = false
             stdout = ""
@@ -127,8 +129,8 @@ actor HeadlessAgentSessionManager {
 
     func shutdown() async {
         for record in sessions.values where !record.status.isTerminal {
-            record.cancellationRequested = true
-            terminate(processID: record.processID)
+            requestCancellation(for: record)
+            terminate(record: record)
         }
         listener?.stop()
         listener = nil
@@ -243,10 +245,8 @@ actor HeadlessAgentSessionManager {
         guard !record.status.isTerminal else {
             throw HeadlessToolFailure(message: "Headless agent session '\(sessionID)' is already \(record.status.rawValue).")
         }
-        record.cancellationRequested = true
-        record.status = .cancelled
-        record.updatedAt = Date()
-        terminate(processID: record.processID)
+        requestCancellation(for: record)
+        terminate(record: record)
         return snapshot(for: record)
     }
 
@@ -300,10 +300,8 @@ actor HeadlessAgentSessionManager {
             throw HeadlessToolFailure(message: "Unknown headless agent session '\(sessionID)'.")
         }
         if !record.status.isTerminal {
-            record.cancellationRequested = true
-            record.status = .cancelled
-            record.updatedAt = Date()
-            terminate(processID: record.processID)
+            requestCancellation(for: record)
+            terminate(record: record)
         }
         return HeadlessAgentStopSessionReply(stopRequested: true, session: summary(for: record))
     }
@@ -324,8 +322,7 @@ actor HeadlessAgentSessionManager {
                 skipped.append(.init(sessionID: sessionID, reason: "skipped_active"))
                 continue
             }
-            record.stdoutPipe.fileHandleForReading.readabilityHandler = nil
-            record.stderrPipe.fileHandleForReading.readabilityHandler = nil
+            closeReadHandles(for: record)
             sessions[sessionID] = nil
             try? FileManager.default.removeItem(at: record.tempDirectory)
             deleted.append(.init(sessionID: sessionID, reason: nil))
@@ -369,13 +366,32 @@ actor HeadlessAgentSessionManager {
         guard let record = sessions[sessionID] else { return }
         drainPipe(record.stdoutPipe, sessionID: sessionID, stream: .stdout)
         drainPipe(record.stderrPipe, sessionID: sessionID, stream: .stderr)
-        record.stdoutPipe.fileHandleForReading.readabilityHandler = nil
-        record.stderrPipe.fileHandleForReading.readabilityHandler = nil
+        record.escalationTask?.cancel()
+        record.escalationTask = nil
+        closeReadHandles(for: record)
         record.exitCode = exitCode
-        if record.status == .running {
+        switch record.status {
+        case .running:
             record.status = exitCode == 0 ? .completed : .failed
+        case .cancelling:
+            record.status = .cancelled
+        case .completed, .failed, .cancelled, .expired:
+            break
         }
         record.updatedAt = Date()
+    }
+
+    private func requestCancellation(for record: SessionRecord) {
+        record.cancellationRequested = true
+        record.status = .cancelling
+        record.updatedAt = Date()
+    }
+
+    private func closeReadHandles(for record: SessionRecord) {
+        record.stdoutPipe.fileHandleForReading.readabilityHandler = nil
+        record.stderrPipe.fileHandleForReading.readabilityHandler = nil
+        try? record.stdoutPipe.fileHandleForReading.close()
+        try? record.stderrPipe.fileHandleForReading.close()
     }
 
     private func drainPipe(_ pipe: Pipe, sessionID: String, stream: OutputStreamKind) {
@@ -397,9 +413,24 @@ actor HeadlessAgentSessionManager {
             output += text
             return
         }
-        let prefix = text.prefix(allowed)
-        output += String(prefix)
+        // Malformed child bytes may already be replacement scalars; keep the stored string within the byte budget.
+        output += utf8Prefix(text, byteLimit: allowed)
         truncated = true
+    }
+
+    private func utf8Prefix(_ text: String, byteLimit: Int) -> String {
+        guard byteLimit > 0 else { return "" }
+        var result = String()
+        result.reserveCapacity(min(text.count, byteLimit))
+        var usedBytes = 0
+        for scalar in text.unicodeScalars {
+            let scalarText = String(scalar)
+            let byteCount = scalarText.utf8.count
+            guard usedBytes + byteCount <= byteLimit else { break }
+            result.unicodeScalars.append(scalar)
+            usedBytes += byteCount
+        }
+        return result
     }
 
     private func ensureSocketServer() throws -> String {
@@ -468,7 +499,7 @@ actor HeadlessAgentSessionManager {
             lastModified: timestamp(record.updatedAt),
             itemCount: 1,
             state: record.status.rawValue,
-            isLive: record.status == .running,
+            isLive: !record.status.isTerminal,
             agent: .init(id: "headless", model: record.modelID),
             isMCPOriginated: true
         )
@@ -478,6 +509,8 @@ actor HeadlessAgentSessionManager {
         switch record.status {
         case .running:
             "Headless agent process is running."
+        case .cancelling:
+            "Headless agent process is cancelling."
         case .completed:
             "Headless agent process completed with exit code \(record.exitCode ?? 0)."
         case .failed:
@@ -553,12 +586,14 @@ actor HeadlessAgentSessionManager {
         )
     }
 
-    private func terminate(processID: Int32?) {
+    private func terminate(record: SessionRecord) {
         #if canImport(Darwin) || canImport(Glibc)
+            guard record.escalationTask == nil else { return }
+            let processID = record.processID
             guard let processID, processID > 0 else { return }
             kill(-processID, SIGTERM)
             kill(processID, SIGTERM)
-            Task {
+            record.escalationTask = Task {
                 try? await Task.sleep(for: .seconds(2))
                 guard kill(processID, 0) == 0 else { return }
                 kill(-processID, SIGKILL)

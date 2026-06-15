@@ -121,7 +121,7 @@ enum HeadlessToolSchemas {
                 "op": string(operationDescription, enumValues: ["list_agents", "list_sessions", "get_log", "stop_session", "cleanup_sessions"]),
                 "session_id": string("Headless session id for get_log or stop_session"),
                 "session_ids": array(string("Headless session id"), "Session ids for cleanup_sessions"),
-                "state": string("Optional state filter for list_sessions", enumValues: ["running", "completed", "failed", "cancelled"]),
+                "state": string("Optional state filter for list_sessions", enumValues: ["running", "cancelling", "completed", "failed", "cancelled"]),
                 "limit": integer("Maximum sessions or log turns to return"),
                 "offset": integer("Log turn offset for get_log")
             ]),

@@ -292,46 +292,52 @@ actor HeadlessContextBuilderService {
     }
 
     private func runAgent(_ launch: RenderedAgentLaunch, timeoutSeconds: Int) async throws -> Int32 {
-        let process = Process()
-        if launch.argv[0].contains("/") {
-            process.executableURL = URL(fileURLWithPath: launch.argv[0])
-            process.arguments = Array(launch.argv.dropFirst())
-        } else {
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-            process.arguments = launch.argv
-        }
-        process.environment = launch.environment
-
         let stdout = Pipe()
         let stderrPipe = Pipe()
-        process.standardOutput = stdout
-        process.standardError = stderrPipe
         prefixPipe(stdout, label: "agent|")
         prefixPipe(stderrPipe, label: "agent|")
 
-        try process.run()
-        setpgid(process.processIdentifier, process.processIdentifier)
+        let spawned: HeadlessProcessGroupLauncher.SpawnedProcess
+        do {
+            spawned = try HeadlessProcessGroupLauncher.spawn(
+                argv: launch.argv,
+                environment: launch.environment,
+                stdoutWriteFD: stdout.fileHandleForWriting.fileDescriptor,
+                stderrWriteFD: stderrPipe.fileHandleForWriting.fileDescriptor
+            )
+            stdout.fileHandleForWriting.closeFile()
+            stderrPipe.fileHandleForWriting.closeFile()
+        } catch {
+            stdout.fileHandleForReading.readabilityHandler = nil
+            stderrPipe.fileHandleForReading.readabilityHandler = nil
+            stdout.fileHandleForWriting.closeFile()
+            stderrPipe.fileHandleForWriting.closeFile()
+            try? stdout.fileHandleForReading.close()
+            try? stderrPipe.fileHandleForReading.close()
+            throw error
+        }
 
         let timeoutTask = Task {
             try? await Task.sleep(for: .seconds(max(1, timeoutSeconds)))
-            if process.isRunning {
-                kill(-process.processIdentifier, SIGTERM)
-                process.terminate()
-                try? await Task.sleep(for: .seconds(2))
-                if process.isRunning {
-                    kill(-process.processIdentifier, SIGKILL)
-                    kill(process.processIdentifier, SIGKILL)
-                }
+            guard kill(spawned.pid, 0) == 0 else { return }
+            kill(-spawned.pid, SIGTERM)
+            kill(spawned.pid, SIGTERM)
+            try? await Task.sleep(for: .seconds(2))
+            if kill(spawned.pid, 0) == 0 {
+                kill(-spawned.pid, SIGKILL)
+                kill(spawned.pid, SIGKILL)
             }
         }
 
-        await Task.detached {
-            process.waitUntilExit()
+        let exitCode = await Task.detached {
+            HeadlessProcessGroupLauncher.reapExitCode(pid: spawned.pid)
         }.value
         timeoutTask.cancel()
         stdout.fileHandleForReading.readabilityHandler = nil
         stderrPipe.fileHandleForReading.readabilityHandler = nil
-        return process.terminationStatus
+        try? stdout.fileHandleForReading.close()
+        try? stderrPipe.fileHandleForReading.close()
+        return exitCode
     }
 
     private func prefixPipe(_ pipe: Pipe, label: String) {

@@ -18,13 +18,19 @@ struct HeadlessAgentRuntimeConfiguration {
 
 enum HeadlessAgentRunStatus: String, Codable {
     case running
+    case cancelling
     case completed
     case failed
     case cancelled
     case expired
 
     var isTerminal: Bool {
-        self != .running
+        switch self {
+        case .running, .cancelling:
+            false
+        case .completed, .failed, .cancelled, .expired:
+            true
+        }
     }
 }
 
