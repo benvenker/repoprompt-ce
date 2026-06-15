@@ -151,7 +151,7 @@ the container or invoke `./Scripts/package_headless_linux.sh` directly.
 
 ## Headless context builder
 
-`context-build` starts an in-process restricted Unix socket server, renders a Discover prompt, launches an operator-configured discovery agent, then harvests the resulting selection and prompt. The unrestricted stdio MCP server exposes the same orchestration as the `context_builder` tool; discovery-restricted sockets intentionally do not expose `context_builder` or `oracle_send`.
+`context-build` starts an in-process restricted Unix socket server, renders a Discover prompt, launches an operator-configured discovery agent, then harvests the resulting selection and prompt. The unrestricted stdio MCP server exposes the same orchestration as the `context_builder` tool; discovery-restricted sockets intentionally do not expose `context_builder`, `oracle_send`, `agent_run`, or `agent_manage`.
 
 ```bash
 .build/debug/rpce-headless context-build \
@@ -177,6 +177,71 @@ MCP `context_builder` configuration is resolved from the process environment:
 - `RPCE_CONTEXT_BUILDER_SOCKET_PATH`
 
 MCP `response_type:"clarify"` is offline and only harvests context. `question`, `plan`, and `review` use the oracle after discovery and therefore require oracle API configuration. `export_response:true` is explicitly unsupported by headless v1 and returns a tool error.
+
+MCP callers have two `context_builder` modes:
+
+- Omit `op` for the synchronous compatibility path. This preserves the original one-shot result shape and is appropriate for short deterministic calls:
+
+```json
+{"instructions":"Map the MCP server entry points","response_type":"clarify"}
+```
+
+- Use the async lifecycle for real configured agents such as Codex, Claude Code, Gemini, or another CLI that can consume the generated MCP config. Keep normal discovery budgets in the 120k-160k range; do not shrink context just to fit a client tool-call deadline.
+
+```json
+{"op":"start","instructions":"Map the MCP server entry points","response_type":"clarify","token_budget":160000}
+```
+
+The start call returns a compact snapshot with `context_id` and
+`run_status:"running"`. Poll or wait on that id without reading
+`workspace_context` as a side channel:
+
+```json
+{"op":"poll","context_id":"<context_id>"}
+{"op":"wait","context_id":"<context_id>","timeout":30}
+```
+
+`timeout_seconds` belongs to discovery. Set it on `op:"start"` or in
+`RPCE_CONTEXT_BUILDER_TIMEOUT_SECONDS` to cap the spawned discovery-agent
+lifetime; an overlong agent fails the run, terminates the process group, and
+clears the single-flight active slot. The `timeout` field on `op:"wait"` is
+only the client polling deadline; `timeout_seconds` is ignored by `op:"wait"`
+and cannot stand in for `timeout`. If that wait expires, the reply includes
+`_meta.wait_result:"timed_out"` and the run can still be `running`.
+
+When `run_status` is terminal, fetch the retained result explicitly:
+
+```json
+{"op":"get_result","context_id":"<context_id>"}
+```
+
+`get_result` returns the same context-builder fields as one-shot mode:
+`status`, `prompt`, `selection`, `file_count`, `total_tokens`,
+`token_budget`, `response_type`, and any oracle `plan` or `review`. For
+failed runs, inspect the snapshot `run_status`, `error`, and optional
+`diagnostics`. Failed async runs include diagnostics even when the discovery
+agent is quiet: `stdout` and `stderr` are empty, `output_empty` is `true`, and
+timeout/process metadata remains available. When the agent does write output,
+diagnostics contain bounded discovery-agent stdout/stderr and truncation flags;
+the same child output is still forwarded to server stderr with an `agent|`
+prefix. Treat these fields as supplementary discovery-agent output, not as
+structured tool-call telemetry.
+
+Use `cancel` for active runs that should terminate the spawned discovery-agent
+process group. Call `cleanup` after completed, failed, cancelled, or expired
+runs to release the retained record and temporary directory. Cleanup skips
+active runs and reports unknown or already-cleaned contexts as `not_found`:
+
+```json
+{"op":"cancel","context_id":"<context_id>"}
+{"op":"cleanup","context_id":"<context_id>"}
+```
+
+Headless v1 keeps Context Builder single-flight because selection and prompt
+state are shared by the loaded workspace. A second `op:"start"` while another
+run is active returns a clear busy error instead of sharing state silently.
+Fake agents in this repository are deterministic smoke-test fixtures only;
+operators should use their real configured discovery agent.
 
 CLI and MCP names differ slightly: CLI `--response-type selection` maps to
 MCP `response_type:"clarify"`. CLI defaults are development-oriented
@@ -216,9 +281,18 @@ the context builder. Runtime configuration comes from:
 - `RPCE_AGENT_RUN_DEFAULT_AGENT` (default `claude`)
 - `RPCE_AGENT_SOCKET_DIRECTORY` (default temporary directory)
 - `RPCE_AGENT_OUTPUT_CAPTURE_LIMIT_BYTES` (default `1000000`)
+- `RPCE_CONTEXT_BUILDER_OUTPUT_CAPTURE_LIMIT_BYTES` (falls back to `RPCE_AGENT_OUTPUT_CAPTURE_LIMIT_BYTES`)
 
 Call `cleanup_sessions` after terminal runs to reclaim temporary session
 directories. Automatic retention sweeping is deferred from headless v1.
+
+`agent_manage get_log` returns a synthetic XML transcript for the session:
+prompt, captured stdout, and captured stderr, including truncation attributes.
+It does not return a structured MCP tool-call list. Agent text that claims a
+tool was used can be useful evidence, but it is not an authoritative audit
+trail. Capturing Claude `--output-format stream-json --verbose` events would
+require launcher, config, schema, and retention work and is deferred from this
+fix.
 
 ## Oracle / OpenRouter
 

@@ -105,10 +105,12 @@ struct HeadlessMCPServer {
             try await server.start(transport: transport)
             await server.waitUntilCompleted()
         } catch {
+            await contextBuilderService.shutdown()
             await agentSessionManager?.shutdown()
             await oracleService.shutdown()
             throw error
         }
+        await contextBuilderService.shutdown()
         await agentSessionManager?.shutdown()
         await oracleService.shutdown()
     }
@@ -163,9 +165,7 @@ struct HeadlessMCPServer {
         case "oracle_send":
             return try await OracleSendTool.call(arguments: arguments, service: oracleService)
         case "context_builder":
-            let request = try HeadlessContextBuilderService.requestFromMCP(arguments: arguments)
-            let execution = try await contextBuilderService.run(request: request, oracleService: oracleService)
-            return try jsonTextResult(execution.mcpResult)
+            return try await contextBuilderService.execute(arguments: arguments, oracleService: oracleService)
         case "agent_run":
             guard let agentSessionManager else {
                 throw HeadlessToolFailure(message: "agent_run is unavailable on discovery-restricted socket connections.")

@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 FAKE_AGENT = r'''
@@ -16,8 +17,12 @@ FAKE_AGENT = r'''
 import itertools, json, os, subprocess, sys
 
 sentinel = "RPCE_AGENT_SMOKE_SENTINEL"
+stdout_sentinel = "RPCE_AGENT_STDOUT_SENTINEL"
+stderr_sentinel = "RPCE_AGENT_STDERR_SENTINEL"
 prompt = os.environ.get("RPCE_DISCOVER_PROMPT", "")
 print(f"{sentinel}:{prompt}", flush=True)
+print(f"{stdout_sentinel}:{prompt}", flush=True)
+print(f"{stderr_sentinel}:{prompt}", file=sys.stderr, flush=True)
 
 config_path = sys.argv[1]
 with open(config_path) as f:
@@ -234,6 +239,55 @@ def log_text(harness, sid):
     return json.dumps(payload)
 
 
+def assert_get_log_contract(harness, sid, message):
+    payload = tool_payload(harness, "agent_manage", {"op": "get_log", "session_id": sid})
+    assert payload.get("session_id") == sid, payload
+    assert payload.get("name"), payload
+    assert payload.get("turn_offset") == 0, payload
+    assert payload.get("turn_limit") == 20, payload
+    assert payload.get("returned_turn_count") == 1, payload
+    assert payload.get("total_turns") == 1, payload
+
+    unexpected_top_level = {
+        "stdout",
+        "stderr",
+        "tool_calls",
+        "toolCalls",
+        "mcp_tool_calls",
+        "mcpToolCalls",
+        "structured_events",
+        "structuredEvents",
+    }
+    assert not (unexpected_top_level & set(payload)), payload
+
+    transcript = payload.get("transcript_xml")
+    assert transcript, payload
+    root = ET.fromstring(transcript)
+    assert root.tag == "headless_agent_session", transcript
+    assert root.get("id") == sid, transcript
+    assert root.findtext("prompt") == message, transcript
+    stdout = root.find("stdout")
+    stderr = root.find("stderr")
+    assert stdout is not None, transcript
+    assert stderr is not None, transcript
+    assert stdout.get("truncated") in {"true", "false"}, transcript
+    assert stderr.get("truncated") in {"true", "false"}, transcript
+    assert f"RPCE_AGENT_STDOUT_SENTINEL:{message}" in (stdout.text or ""), transcript
+    assert f"RPCE_AGENT_STDERR_SENTINEL:{message}" in (stderr.text or ""), transcript
+
+    limited = tool_payload(harness, "agent_manage", {"op": "get_log", "session_id": sid, "limit": 0})
+    assert limited.get("session_id") == sid, limited
+    assert limited.get("turn_limit") == 0, limited
+    assert limited.get("returned_turn_count") == 0, limited
+    assert limited.get("total_turns") == 1, limited
+    assert limited.get("transcript_xml") == "", limited
+    assert not (unexpected_top_level & set(limited)), limited
+
+    result, text = harness.call("agent_manage", {"op": "get_log", "session_id": f"{sid}-unknown"})
+    assert result.get("isError"), text
+    assert "Unknown headless agent session" in text, text
+
+
 def wait_for_log_pattern(harness, sid, pattern, description):
     regex = re.compile(pattern)
 
@@ -294,6 +348,7 @@ def run_fast_scenarios(binary, root, fake_agent, agent_config):
         assert waited.get("status") == "completed", waited
         assert "RPCE_AGENT_SMOKE_SENTINEL" in json.dumps(waited), waited
         assert message in json.dumps(waited), waited
+        assert_get_log_contract(harness, sid, message)
 
         print("lifecycle: missing binary", flush=True)
         result, text = harness.call("agent_run", {"op": "start", "model_id": "missing", "message": "missing binary", "detach": True})

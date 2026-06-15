@@ -129,14 +129,17 @@ enum HeadlessToolSchemas {
         ),
         Tool(
             name: "context_builder",
-            description: "Headless Context Builder orchestration. Launches a configured discovery agent over a restricted local MCP socket, harvests the selected context and handoff prompt, and optionally asks the oracle for question/plan/review responses. export_response is currently unsupported in headless v1.",
+            description: "Headless Context Builder orchestration. With no op, runs the existing synchronous one-shot flow. Async lifecycle ops start, poll, wait, get_result, cancel, and cleanup let real discovery agents outlive one MCP call. Discovery-restricted sockets do not expose this tool. export_response is currently unsupported in headless v1.",
             inputSchema: object([
+                "op": string("Optional lifecycle operation. Omit for synchronous compatibility mode.", enumValues: ["start", "poll", "wait", "get_result", "cancel", "cleanup"]),
+                "context_id": string("Context Builder run id for poll, wait, get_result, cancel, or cleanup"),
                 "instructions": string("Discovery instructions for the Context Builder agent"),
                 "response_type": string("clarify returns context only; question/plan/review ask the oracle after discovery", enumValues: ["clarify", "question", "plan", "review"]),
                 "export_response": boolean("Unsupported in headless v1; true returns a clear tool error"),
                 "token_budget": integer("Optional token budget override"),
-                "timeout_seconds": integer("Optional discovery agent timeout override")
-            ], required: ["instructions"]),
+                "timeout_seconds": integer("Optional discovery agent timeout override for one-shot/start"),
+                "timeout": integer("Timeout in seconds for op=wait; 0 behaves like poll")
+            ]),
             annotations: .init(readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true)
         ),
         Tool(
