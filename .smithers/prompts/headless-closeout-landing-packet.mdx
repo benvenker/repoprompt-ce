@@ -1,0 +1,35 @@
+Produce the final landing packet for this closeout run.
+
+Summarize:
+- whether no actionable P0/P1/P2 findings remain,
+- what findings were resolved,
+- validation evidence,
+- residual P3/nit risks,
+- exact intended files,
+- whether anything remains blocked,
+- confirmation that no files were staged and no commit was made,
+- whether the tree is ready for the integrator to stage and run commit preflight.
+
+Scope packet:
+{JSON.stringify(props.scope, null, 2)}
+
+Normalized review history:
+{JSON.stringify(props.normalizedReviews, null, 2)}
+
+Current normalized review:
+{JSON.stringify(props.currentNormalized, null, 2)}
+
+Validation history:
+{JSON.stringify(props.validations, null, 2)}
+
+Latest validation:
+{JSON.stringify(props.latestValidation, null, 2)}
+
+Done flag:
+{String(props.done)}
+
+Operator note:
+{props.operatorPrompt}
+
+REQUIRED OUTPUT:
+{props.schema}

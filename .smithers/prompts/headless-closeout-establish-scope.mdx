@@ -1,0 +1,20 @@
+Establish the closeout scope for the RepoPrompt CE headless work.
+
+Read `AGENTS.md`, the closeout plan, both source plans, the CE code review skill, and current git status. Do not edit files, stage files, commit, launch the visible app, or mutate the repository.
+
+Closeout plan:
+{props.closeoutPlanPath}
+
+Source plans:
+{JSON.stringify(props.sourcePlanPaths, null, 2)}
+
+CE code review skill:
+{props.ceCodeReviewSkill}
+
+Operator note:
+{props.operatorPrompt}
+
+Return the intended closeout scope, likely touched files, and any AGENTS.md approval-gated actions that would require human approval.
+
+REQUIRED OUTPUT:
+{props.schema}

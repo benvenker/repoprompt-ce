@@ -1,0 +1,20 @@
+Plan the smallest safe fix pass for the current blocking findings.
+
+Use only the actionable P0/P1/P2 findings in the normalized review. Do not expand scope to P3/nits unless they are inseparable from a blocker fix. Do not edit files in this task.
+
+Before the next task edits, it must use Agent Mail reservations for every target file.
+
+Scope packet:
+{JSON.stringify(props.scope, null, 2)}
+
+Source plans:
+{JSON.stringify(props.sourcePlanPaths, null, 2)}
+
+Current normalized review:
+{JSON.stringify(props.normalizedReview, null, 2)}
+
+Operator note:
+{props.operatorPrompt}
+
+REQUIRED OUTPUT:
+{props.schema}

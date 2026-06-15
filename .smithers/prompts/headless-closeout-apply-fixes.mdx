@@ -1,0 +1,26 @@
+Apply only the scoped blocker fixes.
+
+You must read and follow `/home/ben/.codex/skills/agent-mail/SKILL.md` before editing. Reserve every target file before edits and release reservations after edits. If reservations cannot be acquired, stop and report the conflict instead of editing.
+
+Rules:
+- Fix only the current actionable P0/P1/P2 findings.
+- Do not stage files.
+- Do not commit.
+- Do not launch or relaunch the visible app.
+- Use `apply_patch` for manual edits.
+- Release Agent Mail reservations before returning, even if no edits are made.
+
+Scope packet:
+{JSON.stringify(props.scope, null, 2)}
+
+Normalized review:
+{JSON.stringify(props.normalizedReview, null, 2)}
+
+Fix plan:
+{JSON.stringify(props.fixPlan, null, 2)}
+
+Operator note:
+{props.operatorPrompt}
+
+REQUIRED OUTPUT:
+{props.schema}

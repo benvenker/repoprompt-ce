@@ -1,0 +1,25 @@
+Run bounded validation for the headless closeout.
+
+Read `AGENTS.md` before running commands. Prefer the headless Linux Docker guidance and reuse `.build-linux`.
+
+For `headless-linux-docker-bounded`, run the smallest validation that proves the current closeout state:
+- Docker Swift build for `rpce-headless` using `swift:6.2.4-noble` and `--scratch-path .build-linux`.
+- Headless smoke scripts that are relevant to the changed files and current closeout plan.
+- `git diff --check` for the intended files.
+
+Report host-tool gaps separately from Docker product validation. Do not stage, commit, push, or launch the visible app.
+
+Validation profile:
+{props.validationProfile}
+
+Scope packet:
+{JSON.stringify(props.scope, null, 2)}
+
+Latest fix:
+{JSON.stringify(props.latestFix, null, 2)}
+
+Operator note:
+{props.operatorPrompt}
+
+REQUIRED OUTPUT:
+{props.schema}

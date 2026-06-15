@@ -1,0 +1,26 @@
+Run the Compound Engineering code review contract for this closeout.
+
+Read the CE code review skill at:
+{props.ceCodeReviewSkill}
+
+Use it as the review prompt and run it in report-only machine mode with these arguments:
+
+mode:agent plan:{props.closeoutPlanPath} grouping:auto
+
+Important constraints:
+- Do not edit, stage, commit, push, switch branches, or launch the app.
+- Return JSON/report-only review evidence.
+- Keep the final JSON compact enough for Smithers to parse. Do not embed the full CE transcript, full diff, full artifact contents, or a nested duplicate of the same review.
+- Set `rawReview` to null unless the CE review failed to parse; if needed, keep it under 1000 characters.
+- Set `reviewResult` to a compact object with only status, verdict, artifact_path, coverage/requirement summary, residual_risks, testing_gaps, and other short scalar/array fields.
+- Preserve findings in `findings` and actionable P0/P1/P2 findings in `actionableFindings`. Include P3/nit findings only in `findings`.
+- If the CE review cannot produce parseable JSON, set `parseable` false and explain why in `malformedReason`.
+
+Scope packet:
+{JSON.stringify(props.scope, null, 2)}
+
+Operator note:
+{props.operatorPrompt}
+
+REQUIRED OUTPUT:
+{props.schema}
