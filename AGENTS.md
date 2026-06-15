@@ -135,14 +135,30 @@ docker run --rm swift:6.2.4-noble swift --version
 ```
 
 The known-good Linux image for Fable/headless work is `swift:6.2.4-noble`.
-Use it for Linux validation when native `swift` is missing:
+Use the existing Docker-built `rpce-headless` binary under `.build-linux` before
+trying a new host-side build or smoke path. The host often lacks Swift runtime
+libraries even when the Docker build is healthy.
+
+Build or refresh the shared binary with:
 
 ```bash
 docker run --rm -v "$PWD":/src -w /src swift:6.2.4-noble \
   swift build --product rpce-headless --scratch-path .build-linux
-python3 Sources/RepoPromptHeadlessServer/Scripts/mcp_smoke.py \
-  .build-linux/debug/rpce-headless "$PWD"
 ```
+
+Run headless smokes against that binary from inside Docker:
+
+```bash
+docker run --rm -v "$PWD":/src -w /src swift:6.2.4-noble \
+  bash -lc 'apt-get update >/dev/null && apt-get install -y python3 >/dev/null && \
+    python3 Sources/RepoPromptHeadlessServer/Scripts/mcp_smoke.py \
+      .build-linux/debug/rpce-headless "$PWD"'
+```
+
+Do not run `.build-linux/debug/rpce-headless` directly on the host unless the
+host has matching Swift runtime libraries. Prefer running smoke scripts inside
+the same `swift:6.2.4-noble` container, or use a small wrapper that execs the
+binary inside that container when a smoke expects a local executable path.
 
 Reuse `.build-linux` as the shared Linux SwiftPM scratch path for agent
 builds, tests, and smokes in this worktree. Do not create ad hoc sibling
