@@ -190,7 +190,33 @@ bun run gateway
 
 The gateway binds to `http://127.0.0.1:7331` by default; override with `HOST` and `PORT`. Workflow UIs are registered from `.smithers/gateway.ts`. Repo validation commands for Smithers are configured in `.smithers/smithers.config.ts` as `make dev-lint` and `make dev-test`.
 
-Smithers has two skill surfaces in this repo. Global agent skills, such as `~/.agents/skills/smithers-*`, teach the current coding agent how to operate Smithers. Repo-local workflow skills under `.smithers/skills` document this repository's current `.smithers/workflows` pack for future agents. Treat the scaffolded Smithers default workflows as user-owned local source after init: edit them in place, prefer local workflows over global defaults when names collide, and regenerate repo-local workflow skills when workflow shape or metadata changes:
+Use official Smithers docs and CLI output as the source of truth for operating Smithers: `https://smithers.sh/introduction`, `https://smithers.sh/how-it-works`, `https://smithers.sh/llms.txt`, `https://smithers.sh/llms-full.txt`, local `.smithers/node_modules/.bin/smithers docs`, and local `.smithers/node_modules/.bin/smithers docs-full`. Repo-local workflow skills under `.smithers/skills` document this repository's current `.smithers/workflows` pack for future agents. Treat the scaffolded Smithers default workflows as user-owned local source after init: edit them in place, prefer local workflows when names collide, and regenerate repo-local workflow skills when workflow shape or metadata changes:
+
+When a task is multi-step, parallel, retryable, or benefits from independent validation, prefer running the appropriate Smithers workflow instead of ad hoc background subagents. Operate the run yourself: launch it, inspect it, watch node outputs, and integrate the result. Useful operator commands:
+
+```bash
+.smithers/node_modules/.bin/smithers inspect <run-id> --watch
+.smithers/node_modules/.bin/smithers chat <run-id> --tail 40
+.smithers/node_modules/.bin/smithers events <run-id> --group-by node --since 10m
+.smithers/node_modules/.bin/smithers node <node-id> --run-id <run-id> --attempts
+.smithers/node_modules/.bin/smithers output <run-id> <node-id> --pretty
+```
+
+Use `smithers graph <workflow.tsx>` before running to check the initial shape. For conditional workflows, use `smithers graph <workflow.tsx> --run-id <run-id>` after state exists; that renders with run context and can show later-frame nodes that a dry graph cannot. All Smithers commands support `--help`; prefer narrow `logs --tail`, `chat --tail`, `events --node/--type`, and `node --attempts/--tools` over watching noisy foreground stdout.
+
+Keep authoring and validation separate. Seeded workflows such as `create-workflow` can scaffold or revise workflow source, but they are not the validation authority. After any Smithers workflow change, validate the generated or edited workflow with native Smithers commands and repo typecheck:
+
+```bash
+cd .smithers
+bun run typecheck
+bun run workflow:list
+cd ..
+.smithers/node_modules/.bin/smithers workflow inspect <workflow-id>
+.smithers/node_modules/.bin/smithers workflow doctor <workflow-id>
+.smithers/node_modules/.bin/smithers graph .smithers/workflows/<workflow-id>.tsx
+```
+
+When one of those commands reports a problem, fix from that output. Do not debug a generated workflow by treating the seeded `create-workflow` implementation as the source of truth unless the native validation failure specifically points there.
 
 ```bash
 cd .smithers
