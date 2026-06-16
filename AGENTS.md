@@ -139,6 +139,18 @@ Use the existing Docker-built `rpce-headless` binary under `.build-linux` before
 trying a new host-side build or smoke path. The host often lacks Swift runtime
 libraries even when the Docker build is healthy.
 
+For this Linux machine's Codex MCP binary, use the static artifact installer
+instead of copying `.build-linux/debug/rpce-headless` over the host binary:
+
+```bash
+make headless-linux-install-local
+pkill -TERM -f "rpce-headless serve --root $PWD" || true
+```
+
+The installer builds the release artifact in Docker with
+`--static-swift-stdlib`, backs up `${RPCE_HEADLESS_INSTALL_BIN:-$HOME/.local/bin/rpce-headless}`,
+installs the staged binary, and runs host-level MCP/agent smokes.
+
 Build or refresh the shared binary with:
 
 ```bash

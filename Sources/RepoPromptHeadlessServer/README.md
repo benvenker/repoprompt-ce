@@ -51,6 +51,16 @@ install -m 0755 .build-linux/release/rpce-headless /usr/local/bin/rpce-headless
 where the binary is copied. Omit it only when the target host already provides
 the matching Swift runtime libraries.
 
+For the local Codex MCP binary on this Linux machine, prefer the repo helper:
+
+```bash
+make headless-linux-install-local
+```
+
+It builds the same static Linux artifact in Docker, backs up the existing
+`${RPCE_HEADLESS_INSTALL_BIN:-$HOME/.local/bin/rpce-headless}`, installs the
+new binary, and verifies the installed host path with MCP/agent smokes.
+
 Create a service user and install the example env/unit files:
 
 ```bash
