@@ -86,6 +86,10 @@ toolset, or run the socket with `--expose-all-tools` and
 .build/debug/rpce-headless serve --root /path/to/repo
 ```
 
+If `--root` is omitted, `serve` and `dump` load the current working directory.
+That is the preferred shape for global MCP client config so each chat/workspace
+gets its own repository instead of a hard-coded root.
+
 Stdout is reserved for newline-delimited JSON-RPC. Diagnostics go to stderr.
 This stdio mode is intended for MCP clients that launch the process directly;
 it exposes all tools, including `oracle_send`, `context_builder`, `agent_run`,

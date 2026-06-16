@@ -122,6 +122,11 @@ make dev-swift-build PRODUCT=rpce-headless
 .build/debug/rpce-headless dump --root "$PWD"
 ```
 
+For Codex global MCP configuration, prefer launching `rpce-headless serve`
+without `--root` so the server loads the chat/workspace current directory.
+Hard-coding `--root /data/projects/repoprompt-ce` in global config makes
+unrelated repos silently receive the wrong headless workspace.
+
 ### Linux / VPS Swift
 
 On Linux hosts, especially `ben-netcup-v2`, do not assume Swift is unavailable
@@ -150,6 +155,14 @@ pkill -TERM -f "rpce-headless serve --root $PWD" || true
 The installer builds the release artifact in Docker with
 `--static-swift-stdlib`, backs up `${RPCE_HEADLESS_INSTALL_BIN:-$HOME/.local/bin/rpce-headless}`,
 installs the staged binary, and runs host-level MCP/agent smokes.
+After installing on this machine, the global Codex MCP config should use:
+
+```toml
+[mcp_servers.rpce-headless]
+command = "/home/ben/.local/bin/rpce-headless"
+args = ["serve"]
+enabled = true
+```
 
 Build or refresh the shared binary with:
 

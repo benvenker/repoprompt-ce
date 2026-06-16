@@ -118,7 +118,9 @@ enum HeadlessCLI {
                 throw usage("Unknown argument: \(arg)")
             }
         }
-        guard !roots.isEmpty else { throw usage("At least one --root is required") }
+        if roots.isEmpty {
+            try roots.append(resolveRoot(FileManager.default.currentDirectoryPath))
+        }
         guard !exposeAllTools || socketPath != nil else { throw usage("--expose-all-tools requires --socket") }
         return subcommand == "serve" ? .serve(roots: roots, socketPath: socketPath, exposeAllTools: exposeAllTools) : .dump(roots: roots)
     }
@@ -222,10 +224,10 @@ enum HeadlessCLI {
     private static func usage(_ detail: String? = nil) -> ExitError {
         var lines: [String] = []
         if let detail { lines.append("Error: \(detail)") }
-        lines.append("Usage: rpce-headless serve --root <path> [--root <path> ...] [--socket <path> [--expose-all-tools]]")
+        lines.append("Usage: rpce-headless serve [--root <path> ...] [--socket <path> [--expose-all-tools]]")
         lines.append("       rpce-headless connect --socket <path> [--auth]")
         lines.append("       rpce-headless context-build --root <path> --instructions <text> [--agent <name>] [--dry-run]")
-        lines.append("       rpce-headless dump --root <path> [--root <path> ...]")
+        lines.append("       rpce-headless dump [--root <path> ...]")
         return ExitError(code: 64, message: lines.joined(separator: "\n"))
     }
 }
