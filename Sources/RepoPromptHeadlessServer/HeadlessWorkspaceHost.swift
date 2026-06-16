@@ -20,14 +20,29 @@ actor HeadlessWorkspaceHost {
     }
 
     func dumpSummary() async -> String {
+        let reply = await dumpSummaryReply()
+        return "roots=\(reply.rootCount) folders=\(reply.folderCount) files=\(reply.fileCount) generation=\(reply.generation)"
+    }
+
+    func dumpSummaryReply() async -> HeadlessDumpSummaryReply {
         let diagnostics = await store.catalogDiagnostics(rootScope: .allLoaded)
+        let roots = await loadedRoots()
+        return HeadlessDumpSummaryReply(
+            loadedRoots: roots,
+            rootCount: roots.count,
+            folderCount: diagnostics.folderCount,
+            fileCount: diagnostics.fileCount,
+            generation: diagnostics.generation
+        )
+    }
+
+    func loadedRoots() async -> [String] {
         let roots = await store.rootRefs(scope: .allLoaded)
-        return "roots=\(roots.count) folders=\(diagnostics.folderCount) files=\(diagnostics.fileCount) generation=\(diagnostics.generation)"
+        return roots.map(\.fullPath).sorted()
     }
 
     func rootsText() async -> String {
-        let roots = await store.rootRefs(scope: .allLoaded)
-        return roots.map(\.fullPath).joined(separator: "\n")
+        (await loadedRoots()).joined(separator: "\n")
     }
 
     func readFile(path: String, startLine: Int?, limit: Int?) async throws -> String {
@@ -118,7 +133,11 @@ actor HeadlessWorkspaceHost {
             guard let api = snapshots[file.id]?.fileAPI else { return nil }
             return api.getFullAPIDescription(displayPath: file.standardizedRelativePath)
         }
-        if blocks.isEmpty { return "No code structure available for requested files." }
+        if blocks.isEmpty {
+            let requested = (paths ?? selection.selectedPaths + selection.autoCodemapPaths).joined(separator: ", ")
+            let scopeHint = requested.isEmpty ? "the selected files" : requested
+            return "No code structure available for requested files (\(scopeHint)). Fall back to `file_search` for symbols or terms, then use `read_file` on the matching paths."
+        }
         return blocks.joined(separator: "\n\n")
     }
 
@@ -229,6 +248,7 @@ actor HeadlessWorkspaceHost {
         return HeadlessWorkspaceContextReply(
             context: context,
             prompt: promptText,
+            loadedRoots: await loadedRoots(),
             selectedFiles: selection.selectedPaths,
             codemapFiles: selection.autoCodemapPaths,
             totalTokens: accounting.tokenResult.totalTokenCount,

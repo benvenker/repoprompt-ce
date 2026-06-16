@@ -50,6 +50,8 @@ swift build \
 
 [[ -x "$BINARY" ]] || fail "expected executable not found: $BINARY"
 
+printf '==> Running headless CLI contract smoke\n'
+python3 "$ROOT_DIR/Sources/RepoPromptHeadlessServer/Scripts/cli_contract_smoke.py" "$BINARY" "$ROOT_DIR"
 printf '==> Running headless MCP smoke\n'
 python3 "$ROOT_DIR/Sources/RepoPromptHeadlessServer/Scripts/mcp_smoke.py" "$BINARY" "$ROOT_DIR"
 printf '==> Running headless socket auth smoke\n'

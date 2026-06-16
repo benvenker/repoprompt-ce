@@ -124,6 +124,9 @@ struct HeadlessMCPServer {
         agentSessionManager: HeadlessAgentSessionManager?
     ) async throws -> CallTool.Result {
         switch name {
+        case "headless_capabilities":
+            let reply = HeadlessCapabilities.make(loadedRoots: await host.loadedRoots())
+            return try jsonTextResult(reply)
         case "read_file":
             guard let path = arguments["path"]?.stringValue else { throw HeadlessToolFailure(message: "missing path") }
             let text = try await host.readFile(

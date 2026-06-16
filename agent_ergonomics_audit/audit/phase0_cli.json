@@ -1,0 +1,13 @@
+{
+  "target_path": "/data/projects/repoprompt-ce",
+  "discovered_at": "2026-06-16T20:01:34Z",
+  "languages": [],
+  "binaries": [],
+  "env_var_prefix": "",
+  "existing_surfaces": {
+    "robot_mode": false,
+    "capabilities": false,
+    "robot_docs": false
+  },
+  "recommended_mode": "full"
+}

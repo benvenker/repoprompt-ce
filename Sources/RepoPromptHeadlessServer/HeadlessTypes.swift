@@ -30,6 +30,7 @@ struct HeadlessSelectionReply: Codable, Equatable {
 struct HeadlessWorkspaceContextReply: Codable, Equatable {
     let context: String
     let prompt: String
+    let loadedRoots: [String]
     let selectedFiles: [String]
     let codemapFiles: [String]
     let totalTokens: Int
@@ -41,6 +42,7 @@ struct HeadlessWorkspaceContextReply: Codable, Equatable {
     enum CodingKeys: String, CodingKey {
         case context
         case prompt
+        case loadedRoots = "loaded_roots"
         case selectedFiles = "selected_files"
         case codemapFiles = "codemap_files"
         case totalTokens = "total_tokens"
@@ -48,6 +50,22 @@ struct HeadlessWorkspaceContextReply: Codable, Equatable {
         case fileTreeTokens = "file_tree_tokens"
         case missingPaths = "missing_paths"
         case invalidPaths = "invalid_paths"
+    }
+}
+
+struct HeadlessDumpSummaryReply: Codable, Equatable {
+    let loadedRoots: [String]
+    let rootCount: Int
+    let folderCount: Int
+    let fileCount: Int
+    let generation: UInt64
+
+    enum CodingKeys: String, CodingKey {
+        case loadedRoots = "loaded_roots"
+        case rootCount = "root_count"
+        case folderCount = "folder_count"
+        case fileCount = "file_count"
+        case generation
     }
 }
 

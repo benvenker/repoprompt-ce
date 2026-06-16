@@ -90,6 +90,22 @@ If `--root` is omitted, `serve` and `dump` load the current working directory.
 That is the preferred shape for global MCP client config so each chat/workspace
 gets its own repository instead of a hard-coded root.
 
+Agent-facing self-documentation is available in-tool:
+
+```bash
+.build/debug/rpce-headless --help
+.build/debug/rpce-headless capabilities --json
+.build/debug/rpce-headless robot-docs guide
+.build/debug/rpce-headless dump --json
+```
+
+`capabilities --json` is the stable machine-readable contract: version, exit
+codes, root semantics, stdio vs socket exposure, recommended onboarding
+workflow, Context Builder examples, agent runner examples, oracle opt-in
+guidance, fake-agent caveat, and smoke commands. The MCP tool
+`headless_capabilities` returns the same contract for the currently loaded
+workspace, including `loaded_roots`.
+
 Stdout is reserved for newline-delimited JSON-RPC. Diagnostics go to stderr.
 This stdio mode is intended for MCP clients that launch the process directly;
 it exposes all tools, including `oracle_send`, `context_builder`, `agent_run`,
@@ -104,6 +120,7 @@ Socket serving for discovery agents:
 
 All socket connections are discovery-restricted to:
 
+- `headless_capabilities`
 - `manage_selection`
 - `prompt`
 - `workspace_context`
@@ -129,7 +146,8 @@ newline-delimited preamble:
 {"rpce_auth":{"token":"<token>"}}
 ```
 
-The `connect` bridge also accepts `--auth <token>`.
+The `connect` bridge also accepts `--auth`; it reads the token from
+`RPCE_SOCKET_AUTH_TOKEN`.
 
 A diagnostic catalog summary is also available:
 
@@ -290,6 +308,22 @@ worktree management, or app window state. `agent_run` supports
 `start`, `poll`, `wait`, and `cancel`; `agent_manage` supports `list_agents`,
 `list_sessions`, `get_log`, `stop_session`, and `cleanup_sessions`.
 
+The preferred read-only subagent pattern is:
+
+1. Confirm the workspace with `headless_capabilities` or
+   `workspace_context` structured `loaded_roots`.
+2. Call `agent_manage` with `op:"list_agents"`.
+3. Choose an available real configured agent; avoid the `fake` smoke fixture
+   outside automated tests.
+4. Start a bounded read-only `agent_run` task, usually detached.
+5. `wait` or `poll`, then call `agent_manage get_log` for evidence.
+6. Call `agent_manage cleanup_sessions` for terminal sessions.
+
+Use `context_builder` as the higher-level curated discovery path when the
+main agent needs filtered multi-file synthesis before answering. Keep
+`oracle_send` explicit/on-demand because it asks an external model rather
+than reading repo evidence directly.
+
 The same `Examples/agents.json` template format drives both `agent_run` and
 the context builder. Runtime configuration comes from:
 
@@ -342,6 +376,7 @@ Continuations with `chat_id` default to no new context unless
 
 ## Tools
 
+- `headless_capabilities`
 - `read_file`
 - `get_file_tree`
 - `file_search`

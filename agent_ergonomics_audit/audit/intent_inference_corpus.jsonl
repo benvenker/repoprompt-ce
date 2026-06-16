@@ -1,0 +1,3 @@
+{"corpus_id":"cli-help-001","pass":2,"generator":"applied-pass","category":"first_try_help","invocation":"rpce-headless --help","expected_outcome":"inferred-and-acted","observed_outcome":"inferred-and-acted","evidence":"CLI CONTRACT OK"}
+{"corpus_id":"cli-help-002","pass":2,"generator":"applied-pass","category":"first_try_subcommand_help","invocation":"rpce-headless context-build --help","expected_outcome":"inferred-and-acted","observed_outcome":"inferred-and-acted","evidence":"CLI CONTRACT OK"}
+{"corpus_id":"cli-typo-001","pass":2,"generator":"applied-pass","category":"flag_typo","invocation":"rpce-headless dump --jsno","expected_outcome":"useful-hint","observed_outcome":"useful-hint","evidence":"CLI CONTRACT OK; stderr contains Did you mean `--json`?"}

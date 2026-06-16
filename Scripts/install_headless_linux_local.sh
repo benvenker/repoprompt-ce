@@ -55,6 +55,7 @@ install -m 0755 "$STAGED_BIN" "$INSTALL_BIN"
 sha256sum "$INSTALL_BIN"
 
 printf '==> Verifying installed host binary\n'
+python3 "$ROOT_DIR/Sources/RepoPromptHeadlessServer/Scripts/cli_contract_smoke.py" "$INSTALL_BIN" "$ROOT_DIR"
 python3 "$ROOT_DIR/Sources/RepoPromptHeadlessServer/Scripts/mcp_smoke.py" "$INSTALL_BIN" "$ROOT_DIR"
 python3 "$ROOT_DIR/Sources/RepoPromptHeadlessServer/Scripts/mcp_agent_smoke.py" "$INSTALL_BIN" "$ROOT_DIR"
 

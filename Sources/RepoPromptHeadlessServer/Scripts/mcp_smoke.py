@@ -27,7 +27,7 @@ init = rpc("initialize", {"protocolVersion":"2024-11-05","capabilities":{},
                           "clientInfo":{"name":"harness","version":"0"}})
 notify("notifications/initialized")
 tools = {t["name"] for t in rpc("tools/list")["tools"]}
-expected = {"read_file","get_file_tree","file_search","get_code_structure",
+expected = {"headless_capabilities","read_file","get_file_tree","file_search","get_code_structure",
             "manage_selection","workspace_context","prompt","oracle_send","context_builder"}
 assert expected <= tools, f"missing: {expected - tools}"
 print("INIT OK", sorted(tools))
@@ -37,6 +37,9 @@ if phase != "init" and "all" in (phase,):
         text = "".join(c.get("text","") for c in r.get("content",[]))
         assert not r.get("isError"), f"{name} errored: {text[:400]}"
         return text
+    capabilities = json.loads(call("headless_capabilities", {}))
+    assert root in capabilities["loaded_roots"], capabilities
+    assert any("context_builder" in step for step in capabilities["recommended_workflow"]), capabilities
     assert "Package.swift" in call("get_file_tree", {"mode":"full", "path": root, "max_depth": 1})
     assert "RepoPromptContextCore" in call("file_search", {"pattern":"RepoPromptContextCore","max_results":5})
     assert "swift-tools-version" in call("read_file", {"path":"Package.swift","start_line":1,"limit":3})

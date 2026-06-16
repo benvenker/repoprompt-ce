@@ -46,6 +46,7 @@ def notify(method, params=None):
 rpc("initialize", {"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"fake-agent-runner","version":"0"}})
 notify("notifications/initialized")
 tools = {t["name"] for t in rpc("tools/list")["tools"]}
+assert "headless_capabilities" in tools, tools
 assert "agent_run" not in tools, tools
 assert "agent_manage" not in tools, tools
 assert "agent_explore" not in tools, tools
@@ -256,7 +257,7 @@ def main():
             rpc("initialize", {"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"agent-smoke-harness","version":"0"}})
             notify("notifications/initialized")
             tools = {t["name"] for t in rpc("tools/list")["tools"]}
-            expected = {"agent_run", "agent_manage"}
+            expected = {"headless_capabilities", "agent_run", "agent_manage"}
             assert expected <= tools, f"missing: {expected - tools}; tools={sorted(tools)}"
             assert "agent_explore" not in tools, tools
 

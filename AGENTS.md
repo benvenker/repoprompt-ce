@@ -127,6 +127,22 @@ without `--root` so the server loads the chat/workspace current directory.
 Hard-coding `--root /data/projects/repoprompt-ce` in global config makes
 unrelated repos silently receive the wrong headless workspace.
 
+Agents should discover the loaded headless contract from the tool itself:
+
+```bash
+rpce-headless capabilities --json
+rpce-headless robot-docs guide
+rpce-headless dump --json
+```
+
+The full stdio MCP surface also exposes `headless_capabilities`; call it first
+to verify `loaded_roots`, stdio/socket exposure, Context Builder examples,
+agent runner examples, oracle guidance, and smoke commands. For architecture
+onboarding, `context_builder` and bounded read-only `agent_run` subagents are
+preferred tools, not last resorts. Use `agent_manage list_agents` before
+`agent_run`, choose an available real configured agent, inspect logs, and clean
+up terminal sessions. Keep `oracle_send` opt-in/on-demand.
+
 ### Linux / VPS Swift
 
 On Linux hosts, especially `ben-netcup-v2`, do not assume Swift is unavailable

@@ -6,6 +6,7 @@ import XCTest
 final class HeadlessAgentToolSchemaTests: XCTestCase {
     func testFullHeadlessToolsAdvertiseAgentRunAndManageButDiscoveryToolsDoNot() throws {
         let expectedFullToolNames: Set<String> = [
+            "headless_capabilities",
             "read_file",
             "get_file_tree",
             "file_search",
@@ -21,7 +22,7 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
         let fullToolNames = Set(HeadlessToolSchemas.tools.map(\.name))
 
         XCTAssertEqual(fullToolNames, expectedFullToolNames)
-        XCTAssertEqual(fullToolNames.count, 11)
+        XCTAssertEqual(fullToolNames.count, 12)
 
         XCTAssertTrue(fullToolNames.contains("agent_run"), "Full headless MCP tools should advertise agent_run.")
         XCTAssertTrue(fullToolNames.contains("agent_manage"), "Full headless MCP tools should advertise agent_manage.")
@@ -29,10 +30,37 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
 
         let discoveryToolNames = Set(HeadlessToolSchemas.discoveryTools.map(\.name))
         XCTAssertEqual(discoveryToolNames, HeadlessToolSchemas.discoveryToolNames)
+        XCTAssertTrue(discoveryToolNames.contains("headless_capabilities"), "Discovery-restricted sockets should expose the read-only capabilities contract.")
         XCTAssertFalse(discoveryToolNames.contains("agent_run"), "Discovery-restricted headless sockets must not expose agent_run.")
         XCTAssertFalse(discoveryToolNames.contains("agent_manage"), "Discovery-restricted headless sockets must not expose agent_manage.")
         XCTAssertFalse(discoveryToolNames.contains("context_builder"), "Discovery-restricted headless sockets must not expose context_builder.")
         XCTAssertFalse(discoveryToolNames.contains("agent_explore"), "Discovery-restricted headless sockets must not expose agent_explore.")
+    }
+
+    func testHeadlessCapabilitiesMirrorToolExposure() throws {
+        let capabilities = HeadlessCapabilities.make(loadedRoots: ["/tmp/example"])
+        XCTAssertEqual(capabilities.loadedRoots, ["/tmp/example"])
+
+        let stdio = try XCTUnwrap(capabilities.transports.first { $0.name == "stdio" })
+        XCTAssertEqual(stdio.exposure, "full")
+        XCTAssertEqual(stdio.tools, HeadlessToolSchemas.tools.map(\.name).sorted())
+
+        let socket = try XCTUnwrap(capabilities.transports.first { $0.name == "socket" })
+        XCTAssertEqual(socket.exposure, "discovery_restricted")
+        XCTAssertEqual(socket.tools, HeadlessToolSchemas.discoveryToolNames.sorted())
+        XCTAssertTrue(capabilities.recommendedWorkflow.contains { $0.contains("context_builder") })
+        XCTAssertTrue(capabilities.agentRun.fakeAgentCaveat.contains("FAKE_AGENT_SCRIPT"))
+        XCTAssertTrue(capabilities.exitCodes.contains { $0.code == 64 && $0.meaning.contains("usage") })
+    }
+
+    func testRobotDocsGuideNamesPreferredAgentWorkflow() {
+        let guide = HeadlessCapabilities.robotDocsGuide(loadedRoots: ["/repo"])
+        XCTAssertTrue(guide.contains("rpce-headless capabilities --json"))
+        XCTAssertTrue(guide.contains("headless_capabilities"))
+        XCTAssertTrue(guide.contains("agent_manage"))
+        XCTAssertTrue(guide.contains("agent_run"))
+        XCTAssertTrue(guide.contains("context_builder"))
+        XCTAssertTrue(guide.contains("FAKE_AGENT_SCRIPT"))
     }
 
     func testHeadlessAgentOpEnumsAreScopedToProcessBackedSubset() throws {
@@ -76,6 +104,18 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
             ["poll", "wait", "get_result", "cancel", "cleanup"]
         )
         XCTAssertFalse(HeadlessToolSchemas.discoveryToolNames.contains("context_builder"))
+    }
+
+    func testContextBuilderSchemaDescriptionsTeachAsyncLifecycle() throws {
+        let toolDescription = try tool(named: "context_builder").description
+        XCTAssertTrue(toolDescription.contains("Omit op"))
+        XCTAssertTrue(toolDescription.contains("op=start"))
+        XCTAssertTrue(toolDescription.contains("timeout_seconds"))
+
+        let timeoutSeconds = try propertySchema(named: "timeout_seconds", forToolNamed: "context_builder")
+        XCTAssertTrue((timeoutSeconds["description"] as? String)?.contains("Discovery-agent lifetime cap") == true)
+        let waitTimeout = try propertySchema(named: "timeout", forToolNamed: "context_builder")
+        XCTAssertTrue((waitTimeout["description"] as? String)?.contains("Client wait deadline") == true)
     }
 
     func testContextBuilderRequestParsingKeepsSynchronousCompatibilityMode() throws {

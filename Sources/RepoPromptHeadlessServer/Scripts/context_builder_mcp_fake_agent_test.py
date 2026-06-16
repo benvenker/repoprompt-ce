@@ -76,7 +76,7 @@ def call(name, args=None):
 rpc("initialize", {"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"fake-context-builder-agent","version":"0"}})
 notify("notifications/initialized")
 tools = {t["name"] for t in rpc("tools/list")["tools"]}
-expected = {"read_file","get_file_tree","file_search","get_code_structure","manage_selection","workspace_context","prompt"}
+expected = {"headless_capabilities","read_file","get_file_tree","file_search","get_code_structure","manage_selection","workspace_context","prompt"}
 assert expected <= tools, tools
 assert "oracle_send" not in tools, tools
 assert "context_builder" not in tools, tools
@@ -240,7 +240,7 @@ def main():
         rpc("initialize", {"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"context-builder-mcp-harness","version":"0"}})
         notify("notifications/initialized")
         tools = {t["name"] for t in rpc("tools/list")["tools"]}
-        expected = {"read_file","get_file_tree","file_search","get_code_structure","manage_selection","workspace_context","prompt","oracle_send","context_builder"}
+        expected = {"headless_capabilities","read_file","get_file_tree","file_search","get_code_structure","manage_selection","workspace_context","prompt","oracle_send","context_builder"}
         assert expected <= tools, f"missing: {expected - tools}; tools={sorted(tools)}"
 
         result, text = call("context_builder", {

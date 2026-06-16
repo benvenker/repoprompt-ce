@@ -78,6 +78,7 @@ headless-linux-install-local:
 
 # Prerequisite: make dev-swift-build PRODUCT=rpce-headless
 headless-smoke:
+	python3 Sources/RepoPromptHeadlessServer/Scripts/cli_contract_smoke.py .build/debug/rpce-headless "$(PWD)"
 	python3 Sources/RepoPromptHeadlessServer/Scripts/mcp_smoke.py .build/debug/rpce-headless "$(PWD)"
 	python3 Sources/RepoPromptHeadlessServer/Scripts/socket_auth_smoke.py .build/debug/rpce-headless "$(PWD)"
 	python3 Sources/RepoPromptHeadlessServer/Scripts/mcp_agent_smoke.py .build/debug/rpce-headless

@@ -16,6 +16,7 @@ TOKEN = "rpce-socket-auth-token-full-smoke"
 WRONG_TOKEN = "rpce-socket-auth-token-wrong-smoke"
 SHORT_TOKEN = "short-token-15x"
 DISCOVERY_TOOLS = {
+    "headless_capabilities",
     "read_file",
     "get_file_tree",
     "file_search",
