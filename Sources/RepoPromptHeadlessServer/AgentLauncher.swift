@@ -24,6 +24,12 @@ struct AgentDefinition: Codable {
     let promptVia: String?
 }
 
+struct AgentDefinitionAvailability {
+    let definition: AgentDefinition
+    let available: Bool
+    let unavailableReason: String?
+}
+
 struct RenderedAgentLaunch {
     let argv: [String]
     let environment: [String: String]
@@ -42,9 +48,12 @@ enum AgentLauncher {
         tempDirectory: URL,
         environment: [String: String] = ProcessInfo.processInfo.environment
     ) throws -> RenderedAgentLaunch {
-        let definitions = try definitions(configPath: configPath)
+        let definitions = try definitions(configPath: configPath, environment: environment)
         guard let definition = definitions[agentName] else {
             throw HeadlessCLI.ExitError(code: 64, message: "Unknown agent '\(agentName)'. Available agents: \(definitions.keys.sorted().joined(separator: ", "))")
+        }
+        if let reason = unavailableReason(for: definition, environment: environment) {
+            throw HeadlessCLI.ExitError(code: 64, message: "Agent '\(agentName)' is unavailable: \(reason)")
         }
 
         try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
@@ -91,7 +100,10 @@ enum AgentLauncher {
         )
     }
 
-    static func definitions(configPath: String?) throws -> [String: AgentDefinition] {
+    static func definitions(
+        configPath: String?,
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) throws -> [String: AgentDefinition] {
         if let configPath {
             let expanded = (configPath as NSString).expandingTildeInPath
             let data = try Data(contentsOf: URL(fileURLWithPath: expanded))
@@ -105,16 +117,34 @@ enum AgentLauncher {
             return try JSONDecoder().decode([String: AgentDefinition].self, from: data)
         }
 
-        return [
+        var definitions = [
             "claude": AgentDefinition(
                 argv: ["claude", "-p", "{PROMPT}", "--mcp-config", "{MCP_CONFIG}", "--strict-mcp-config", "--permission-mode", "bypassPermissions"],
                 promptVia: "argv"
-            ),
-            "fake": AgentDefinition(
+            )
+        ]
+        if environment.headlessTrimmed("FAKE_AGENT_SCRIPT") != nil {
+            definitions["fake"] = AgentDefinition(
                 argv: ["python3", "{FAKE_AGENT_SCRIPT}", "{MCP_CONFIG_PATH_RAW}"],
                 promptVia: "env"
             )
-        ]
+        }
+        return definitions
+    }
+
+    static func definitionAvailability(
+        configPath: String?,
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) throws -> [String: AgentDefinitionAvailability] {
+        let definitions = try definitions(configPath: configPath, environment: environment)
+        return definitions.mapValues { definition in
+            let reason = unavailableReason(for: definition, environment: environment)
+            return AgentDefinitionAvailability(
+                definition: definition,
+                available: reason == nil,
+                unavailableReason: reason
+            )
+        }
     }
 
     private static func replacePlaceholders(_ text: String, substitutions: [String: String]) throws -> String {
@@ -127,6 +157,15 @@ enum AgentLauncher {
             throw HeadlessCLI.ExitError(code: 64, message: "Missing value for agent placeholder {\(name)}")
         }
         return rendered
+    }
+
+    private static func unavailableReason(
+        for definition: AgentDefinition,
+        environment: [String: String]
+    ) -> String? {
+        let needsFakeAgent = definition.argv.contains { $0.contains("{FAKE_AGENT_SCRIPT}") }
+        guard needsFakeAgent, environment.headlessTrimmed("FAKE_AGENT_SCRIPT") == nil else { return nil }
+        return "missing value for agent placeholder {FAKE_AGENT_SCRIPT}; the fake agent is a smoke-test fixture and requires FAKE_AGENT_SCRIPT"
     }
 }
 

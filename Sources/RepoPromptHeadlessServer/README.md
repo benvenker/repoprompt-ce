@@ -166,7 +166,7 @@ Agent templates live in `Examples/agents.json`; operators can copy/edit them at 
 - `{PROMPT_FILE}`
 - `{MCP_CONFIG}`
 - `{MCP_CONFIG_PATH_RAW}`
-- `{FAKE_AGENT_SCRIPT}` (test harness only)
+- `{FAKE_AGENT_SCRIPT}` (automated smoke-test harnesses only)
 
 MCP `context_builder` configuration is resolved from the process environment:
 
@@ -240,19 +240,21 @@ active runs and reports unknown or already-cleaned contexts as `not_found`:
 Headless v1 keeps Context Builder single-flight because selection and prompt
 state are shared by the loaded workspace. A second `op:"start"` while another
 run is active returns a clear busy error instead of sharing state silently.
-Fake agents in this repository are deterministic smoke-test fixtures only;
-operators should use their real configured discovery agent.
+Fake agents in this repository are deterministic smoke-test fixtures only.
+They are not advertised by default manual/service runs; the fake template is
+available only to tests that explicitly provide `FAKE_AGENT_SCRIPT`.
+Operators should use their real configured discovery agent.
 
 CLI and MCP names differ slightly: CLI `--response-type selection` maps to
-MCP `response_type:"clarify"`. CLI defaults are development-oriented
-(`--agent fake`, token budget 118,500), while MCP defaults are environment
-driven (`claude`, 160k for clarify, 120k otherwise). `question`, `plan`, and
-`review` invoke the oracle only after successful, non-empty discovery.
+MCP `response_type:"clarify"`. CLI defaults use `claude` with a token budget
+of 118,500, while MCP defaults are environment driven (`claude`, 160k for
+clarify, 120k otherwise). `question`, `plan`, and `review` invoke the oracle
+only after successful, non-empty discovery.
 
 Dry-run rendering:
 
 ```bash
-.build/debug/rpce-headless context-build --root "$PWD" --instructions "test" --agent fake --dry-run
+.build/debug/rpce-headless context-build --root "$PWD" --instructions "test" --agent claude --dry-run
 ```
 
 Offline acceptance:
@@ -282,6 +284,16 @@ the context builder. Runtime configuration comes from:
 - `RPCE_AGENT_SOCKET_DIRECTORY` (default temporary directory)
 - `RPCE_AGENT_OUTPUT_CAPTURE_LIMIT_BYTES` (default `1000000`)
 - `RPCE_CONTEXT_BUILDER_OUTPUT_CAPTURE_LIMIT_BYTES` (falls back to `RPCE_AGENT_OUTPUT_CAPTURE_LIMIT_BYTES`)
+
+Without an operator config, the built-in manual/service agent list contains
+real agents only. The `fake` agent is reserved for automated smoke harnesses;
+it appears when `FAKE_AGENT_SCRIPT` enables the built-in smoke-test template,
+or when an explicit config names an entry that uses `{FAKE_AGENT_SCRIPT}` and
+points at the fixture script. Normal manual/service runs should leave
+`FAKE_AGENT_SCRIPT` unset and use real agents. If a copied config still
+references `{FAKE_AGENT_SCRIPT}` without that environment variable,
+`list_agents` reports the entry as unavailable and `agent_run start` rejects
+it before spawning.
 
 Call `cleanup_sessions` after terminal runs to reclaim temporary session
 directories. Automatic retention sweeping is deferred from headless v1.

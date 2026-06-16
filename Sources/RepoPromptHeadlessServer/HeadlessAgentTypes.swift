@@ -98,7 +98,15 @@ struct HeadlessAgentModelInfo: Codable {
 struct HeadlessAgentInfo: Codable {
     let name: String
     let available: Bool
+    let unavailableReason: String?
     let models: [HeadlessAgentModelInfo]
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case available
+        case unavailableReason = "unavailable_reason"
+        case models
+    }
 }
 
 struct HeadlessAgentListAgentsReply: Codable {

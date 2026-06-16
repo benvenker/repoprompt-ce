@@ -53,9 +53,13 @@ enum HeadlessCLI {
         case contextBuild(ContextBuildOptions)
     }
 
-    struct ExitError: Error {
+    struct ExitError: Error, LocalizedError {
         let code: Int32
         let message: String
+
+        var errorDescription: String? {
+            message
+        }
     }
 
     static func parse(_ args: [String]) throws -> Command {
@@ -122,7 +126,7 @@ enum HeadlessCLI {
     private static func parseContextBuild(_ args: [String]) throws -> ContextBuildOptions {
         var roots: [String] = []
         var instructions: String?
-        var agent = "fake"
+        var agent = "claude"
         var configPath: String?
         var socketPath: String?
         var tokenBudget = 118_500

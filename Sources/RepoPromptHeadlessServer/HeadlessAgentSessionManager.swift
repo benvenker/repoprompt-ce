@@ -251,11 +251,13 @@ actor HeadlessAgentSessionManager {
     }
 
     private func listAgents() throws -> HeadlessAgentListAgentsReply {
-        let definitions = try AgentLauncher.definitions(configPath: configuration.agentConfigPath)
+        let definitions = try AgentLauncher.definitionAvailability(configPath: configuration.agentConfigPath)
         let agents = definitions.keys.sorted().map { name in
-            HeadlessAgentInfo(
+            let availability = definitions[name]
+            return HeadlessAgentInfo(
                 name: name,
-                available: true,
+                available: availability?.available ?? false,
+                unavailableReason: availability?.unavailableReason,
                 models: [HeadlessAgentModelInfo(modelID: name, name: name)]
             )
         }

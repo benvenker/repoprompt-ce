@@ -81,6 +81,120 @@ def start_server(binary, root, fake_agent, agent_config):
     )
 
 
+def start_default_server(binary, root):
+    env = dict(os.environ)
+    env.pop("FAKE_AGENT_SCRIPT", None)
+    env.pop("RPCE_AGENT_CONFIG", None)
+    env.pop("RPCE_AGENT_RUN_DEFAULT_AGENT", None)
+    env["HOME"] = tempfile.mkdtemp(prefix="rpce-headless-agent-default-home-")
+    env["CFFIXED_USER_HOME"] = env["HOME"]
+    return subprocess.Popen(
+        [binary, "serve", "--root", str(root)],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env=env,
+    )
+
+
+def start_configured_server_without_fake_env(binary, root, agent_config):
+    env = dict(os.environ)
+    env.pop("FAKE_AGENT_SCRIPT", None)
+    env["RPCE_AGENT_CONFIG"] = str(agent_config)
+    env["RPCE_AGENT_RUN_DEFAULT_AGENT"] = "fake"
+    env["HOME"] = tempfile.mkdtemp(prefix="rpce-headless-agent-unavailable-home-")
+    env["CFFIXED_USER_HOME"] = env["HOME"]
+    return subprocess.Popen(
+        [binary, "serve", "--root", str(root)],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env=env,
+    )
+
+
+def mcp_client(process, client_name):
+    ids = itertools.count(1)
+
+    def rpc(method, params=None):
+        i = next(ids)
+        process.stdin.write(json.dumps({"jsonrpc": "2.0", "id": i, "method": method, "params": params or {}}) + "\n")
+        process.stdin.flush()
+        while True:
+            line = process.stdout.readline()
+            if not line:
+                err = process.stderr.read()
+                raise AssertionError(f"{client_name} server closed stdout while waiting for {method}; stderr={err}")
+            msg = json.loads(line)
+            if msg.get("id") == i:
+                assert "error" not in msg, f"{method} -> {msg['error']}"
+                return msg["result"]
+
+    def notify(method, params=None):
+        process.stdin.write(json.dumps({"jsonrpc": "2.0", "method": method, "params": params or {}}) + "\n")
+        process.stdin.flush()
+
+    def call(name, arguments=None):
+        return rpc("tools/call", {"name": name, "arguments": arguments or {}})
+
+    rpc("initialize", {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": client_name, "version": "0"}})
+    notify("notifications/initialized")
+    return call
+
+
+def result_payload(result):
+    text = "".join(c.get("text", "") for c in result.get("content", []))
+    return result.get("structuredContent") or json.loads(text), text
+
+
+def assert_default_agents_exclude_fake(binary, root):
+    p = start_default_server(binary, root)
+    try:
+        call = mcp_client(p, "agent-default-harness")
+        payload, _ = result_payload(call("agent_manage", {"op": "list_agents"}))
+        agents = {agent.get("name"): agent for agent in payload.get("agents", [])}
+        assert "claude" in agents, payload
+        assert "fake" not in agents, payload
+    finally:
+        try:
+            p.stdin.close()
+        except Exception:
+            pass
+        try:
+            p.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            p.wait(timeout=10)
+
+
+def assert_configured_fake_requires_script(binary, root, agent_config):
+    p = start_configured_server_without_fake_env(binary, root, agent_config)
+    try:
+        call = mcp_client(p, "agent-unavailable-harness")
+        payload, _ = result_payload(call("agent_manage", {"op": "list_agents"}))
+        agents = {agent.get("name"): agent for agent in payload.get("agents", [])}
+        assert "fake" in agents, payload
+        assert agents["fake"].get("available") is False, payload
+        assert "FAKE_AGENT_SCRIPT" in agents["fake"].get("unavailable_reason", ""), payload
+
+        result = call("agent_run", {"op": "start", "model_id": "fake", "message": "must not spawn", "detach": False, "timeout": 1})
+        text = "".join(c.get("text", "") for c in result.get("content", []))
+        assert result.get("isError"), text
+        assert "FAKE_AGENT_SCRIPT" in text, text
+    finally:
+        try:
+            p.stdin.close()
+        except Exception:
+            pass
+        try:
+            p.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            p.wait(timeout=10)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Smoke-test headless agent_run/agent_manage over MCP stdio.")
     parser.add_argument("binary")
@@ -93,6 +207,8 @@ def main():
         root.mkdir(parents=True, exist_ok=True)
         (root / "smoke.txt").write_text("hello headless agent smoke\n")
 
+        assert_default_agents_exclude_fake(args.binary, root)
+
         fake_agent = tmp_path / "fake_agent.py"
         write_file(fake_agent, FAKE_AGENT, 0o700)
         agent_config = tmp_path / "agents.json"
@@ -102,6 +218,8 @@ def main():
                 "promptVia": "env",
             }
         }))
+
+        assert_configured_fake_requires_script(args.binary, root, agent_config)
 
         p = start_server(args.binary, root, fake_agent, agent_config)
         ids = itertools.count(1)
@@ -146,6 +264,9 @@ def main():
             agents_payload = payload(agents_result, agents_text)
             agent_names = {agent.get("name") for agent in agents_payload.get("agents", [])}
             assert "fake" in agent_names, agents_payload
+            fake_agent_info = next(agent for agent in agents_payload.get("agents", []) if agent.get("name") == "fake")
+            assert fake_agent_info.get("available") is True, agents_payload
+            assert "unavailable_reason" not in fake_agent_info, agents_payload
 
             message = "hello from headless agent_run smoke"
             run_result, run_text = call("agent_run", {"op": "start", "model_id": "fake", "message": message, "detach": False, "timeout": 10})
