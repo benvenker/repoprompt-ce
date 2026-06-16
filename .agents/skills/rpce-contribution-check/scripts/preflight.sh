@@ -26,6 +26,7 @@ trap 'exit 143' TERM
 
 log() { printf '\n==> %s\n' "$*"; }
 fail() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
+warn() { printf 'WARNING: %s\n' "$*" >&2; }
 
 require_tool() {
   command -v "$1" >/dev/null 2>&1 || fail "missing required tool '$1'. Install it before committing or pushing."
@@ -35,6 +36,30 @@ ensure_tmp_root() {
   if [[ -z "$tmp_root" ]]; then
     tmp_root="$(mktemp -d "${TMPDIR:-/tmp}/rpce-preflight.XXXXXX")"
   fi
+}
+
+docker_swift_image="${RPCE_PREFLIGHT_SWIFT_DOCKER_IMAGE:-swift:6.2.4-noble}"
+
+docker_image_available() {
+  command -v docker >/dev/null 2>&1 && docker image inspect "$1" >/dev/null 2>&1
+}
+
+install_docker_swift_wrapper_if_needed() {
+  command -v swift >/dev/null 2>&1 && return 0
+  [[ "$(uname -s)" == "Linux" ]] || return 0
+  if ! docker_image_available "$docker_swift_image"; then
+    return 0
+  fi
+
+  ensure_tmp_root
+  mkdir -p "$tmp_root/bin"
+  cat > "$tmp_root/bin/swift" <<EOF
+#!/usr/bin/env bash
+docker run --rm -v "\$PWD":/src -w /src "$docker_swift_image" swift "\$@"
+EOF
+  chmod +x "$tmp_root/bin/swift"
+  export PATH="$tmp_root/bin:$PATH"
+  warn "native swift not found; using Docker Swift image '$docker_swift_image' for preflight Swift commands"
 }
 
 scan_staged_index_blobs() {
@@ -97,6 +122,59 @@ range_contains() {
   return 1
 }
 
+swift_changes_are_headless_only() {
+  local files="$1"
+  local file saw_swift=0
+  while IFS= read -r -d '' file; do
+    [[ "$file" == *.swift ]] || continue
+    saw_swift=1
+    case "$file" in
+      Sources/RepoPromptHeadlessServer/*) ;;
+      *) return 1 ;;
+    esac
+  done < "$files"
+  [[ "$saw_swift" == "1" ]]
+}
+
+run_headless_linux_validation_fallback() {
+  local files="$1"
+
+  [[ "$(uname -s)" == "Linux" ]] || return 1
+  swift_changes_are_headless_only "$files" || return 1
+  docker_image_available "$docker_swift_image" || return 1
+
+  warn "SwiftFormat/SwiftLint unavailable; running Linux headless fallback for Sources/RepoPromptHeadlessServer-only Swift changes"
+
+  log "Build rpce-headless in Docker"
+  docker run --rm -v "$repo_root":/src -w /src "$docker_swift_image" \
+    swift build --product rpce-headless --scratch-path .build-linux
+
+  log "Run rpce-headless Docker smokes"
+  docker run --rm -v "$repo_root":/src -w /src "$docker_swift_image" \
+    bash -lc 'apt-get update >/dev/null && apt-get install -y python3 >/dev/null && \
+      python3 Sources/RepoPromptHeadlessServer/Scripts/mcp_smoke.py .build-linux/debug/rpce-headless "$PWD" && \
+      python3 Sources/RepoPromptHeadlessServer/Scripts/socket_auth_smoke.py .build-linux/debug/rpce-headless "$PWD" && \
+      python3 Sources/RepoPromptHeadlessServer/Scripts/mcp_agent_smoke.py .build-linux/debug/rpce-headless "$PWD" && \
+      python3 Sources/RepoPromptHeadlessServer/Scripts/mcp_agent_lifecycle_smoke.py .build-linux/debug/rpce-headless "$PWD" && \
+      python3 Sources/RepoPromptHeadlessServer/Scripts/context_build_fake_agent_test.py .build-linux/debug/rpce-headless "$PWD" && \
+      python3 Sources/RepoPromptHeadlessServer/Scripts/context_builder_mcp_fake_agent_test.py .build-linux/debug/rpce-headless "$PWD"'
+}
+
+run_swift_lint_or_fallback() {
+  local files="$1"
+
+  if command -v swiftformat >/dev/null 2>&1 && command -v swiftlint >/dev/null 2>&1; then
+    make dev-lint
+    return
+  fi
+
+  if run_headless_linux_validation_fallback "$files"; then
+    return
+  fi
+
+  make dev-lint
+}
+
 push_success() {
   cat <<'EOF'
 
@@ -108,6 +186,7 @@ EOF
 
 require_tool git
 require_tool gitleaks
+install_docker_swift_wrapper_if_needed
 
 log "Check whitespace"
 git diff --check
@@ -159,7 +238,7 @@ fi
 
 if range_contains "$files" '\.swift$'; then
   log "Run coordinated Swift lint"
-  make dev-lint
+  run_swift_lint_or_fallback "$files"
 fi
 
 if range_contains "$files" '^(Sources/RepoPrompt/|Tests/RepoPromptTests/)'; then

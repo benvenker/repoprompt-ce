@@ -7,6 +7,7 @@ Use this after the scripted preflight when the touched boundary needs focused ev
 | Any contribution | `git diff --check`, `make guardrails`, staged-index secret scan before commit, outgoing-range secret scan before push |
 | `Scripts/conductor.py`, conductor tests, or `Makefile` conductor wiring | `make conductor-selftest` |
 | Swift files | `make dev-lint` |
+| Linux headless-only Swift files when SwiftFormat/SwiftLint are unavailable | Docker `swift:6.2.4-noble` `swift build --product rpce-headless --scratch-path .build-linux` plus headless MCP/agent/context-builder smokes; app/shared Swift still requires `make dev-lint` |
 | Root app source or root tests | `make dev-test` or the smallest focused `make dev-test FILTER=<Suite>` during iteration; run full `make dev-test` before push |
 | Provider package source or tests | `make dev-provider-test` |
 | `Sources/RepoPrompt/**` | `make dev-swift-build PRODUCT=RepoPrompt` |

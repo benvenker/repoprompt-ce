@@ -178,8 +178,14 @@ docker run --rm -v "$PWD":/src -w /src swift:6.2.4-noble \
 
 `make dev-swift-build`, `make guardrails`, and the contribution preflight may
 still require native host tools such as `swift`, SwiftFormat, SwiftLint, or
-`gitleaks`. If they fail on Linux because those host tools are missing, report
-the host-tool gap separately from Docker Swift build/smoke evidence.
+`gitleaks`. The contribution preflight uses `swift:6.2.4-noble` automatically
+for Swift commands on Linux when native `swift` is absent and that image is
+available. In push mode, if SwiftFormat/SwiftLint are missing and the outgoing
+Swift changes are confined to `Sources/RepoPromptHeadlessServer`, preflight
+runs Docker `rpce-headless` build and smoke evidence instead of native
+`dev-lint`; app/shared Swift changes still require the normal style tools.
+If a required host tool is still missing, report the host-tool gap separately
+from Docker Swift build/smoke evidence.
 
 Stdio `serve` exposes the full headless tool set, including `oracle_send`, `context_builder`, `agent_run`, and `agent_manage`. Socket mode is discovery-restricted:
 

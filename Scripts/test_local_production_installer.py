@@ -626,6 +626,26 @@ class LocalProductionInstallerTests(unittest.TestCase):
         self.write_stub(bin_dir, "swift", 'printf "%s\\n" "$FAKE_BUILD_DIR"\n')
         self.write_stub(
             bin_dir,
+            "plutil",
+            """\
+            python3 - "$@" <<'PY'
+            import plistlib
+            import sys
+
+            args = sys.argv[1:]
+            if len(args) == 4 and args[0] == "-extract" and args[2] == "raw":
+                with open(args[3], "rb") as handle:
+                    plist = plistlib.load(handle)
+                value = plist[args[1]]
+                print("1" if value is True else "0" if value is False else value)
+                raise SystemExit(0)
+            print(f"unsupported fake plutil invocation: {' '.join(args)}", file=sys.stderr)
+            raise SystemExit(64)
+            PY
+            """,
+        )
+        self.write_stub(
+            bin_dir,
             "codesign",
             """\
             if [[ "$1" == "-d" && "$2" == "-r-" ]]; then
