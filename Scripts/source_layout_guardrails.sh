@@ -301,6 +301,10 @@ allowed_tracked_docs=(
   "docs/releasing.md"
   "docs/worktrees.md"
   "docs/investigations/test-coverage-value-audit-ledger-2026-05-29.md"
+  "docs/plans/2026-06-15-001-fix-context-builder-async-results-plan.md"
+  "docs/plans/2026-06-15-001-fix-headless-timeout-observability-plan.md"
+  "docs/plans/2026-06-15-002-fix-headless-timeout-observability-closeout-plan.md"
+  "docs/plans/2026-06-16-001-fix-headless-closeout-review-findings-plan.md"
   "docs/plans/fable/001-linux-build-spike.md"
   "docs/plans/fable/002-carve-out-contextcore.md"
   "docs/plans/fable/003-headless-mcp-server.md"
@@ -317,7 +321,7 @@ allowed_tracked_docs=(
   "docs/plans/test-coverage-value-audit-2026-05-29.md"
 )
 unexpected_tracked_docs="$(comm -23 \
-  <(git ls-files docs | grep -v -E '^docs/plans/[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{3}-.+-plan\.(md|html)$' | sort) \
+  <(git ls-files docs | sort) \
   <(printf '%s\n' "${allowed_tracked_docs[@]}" | sort))"
 if [[ -n "$unexpected_tracked_docs" ]]; then
   fail "unexpected tracked docs found; keep agent-authored working documents local or add durable docs to the explicit allowlist"

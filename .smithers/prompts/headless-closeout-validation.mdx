@@ -1,11 +1,24 @@
 Run bounded validation for the headless closeout.
 
+Mandatory Agent Mail coordination:
+- Use the `agent-mail` skill/reference before doing this task.
+- At session start, resolve the current repository root and call `macro_start_session(human_key="<current repository root>", program="codex", model="<actual Codex model label available in this session, or unknown if unavailable>", task_description="headless-closeout-grinder bounded-validation")`.
+- Check the returned inbox and announce start/completion in thread `headless-closeout-review-findings-2026-06-16`.
+- This is read-only; do not reserve files unless you unexpectedly need to edit. If Agent Mail MCP tools are unavailable, report that and stop.
+
 Read `AGENTS.md` before running commands. Prefer the headless Linux Docker guidance and reuse `.build-linux`.
 
 For `headless-linux-docker-bounded`, run the smallest validation that proves the current closeout state:
+- Smithers helper tests: `cd .smithers && bun test tests`.
+- Smithers static validation: `cd .smithers && bun run typecheck`, `cd .smithers && bun run workflow:list`, `.smithers/node_modules/.bin/smithers workflow inspect headless-closeout-grinder`, `.smithers/node_modules/.bin/smithers workflow doctor headless-closeout-grinder`, and `.smithers/node_modules/.bin/smithers graph .smithers/workflows/headless-closeout-grinder.tsx`.
 - Docker Swift build for `rpce-headless` using `swift:6.2.4-noble` and `--scratch-path .build-linux`.
-- Headless smoke scripts that are relevant to the changed files and current closeout plan.
-- `git diff --check` for the intended files.
+- Fake-agent lifecycle smoke: `context_builder_mcp_fake_agent_test.py`.
+- Broad MCP smoke: `mcp_smoke.py`.
+- Source-layout guardrails: `make guardrails`.
+- Diff hygiene: `git diff --check` for the intended files.
+- Contribution readiness: report `pending_main_chat_staging` unless files have been staged by explicit main-chat approval.
+
+Return `validationLanes` with exactly these keys: `smithers_helper_tests`, `smithers_static_validation`, `docker_headless_build`, `fake_agent_lifecycle_smoke`, `mcp_smoke`, `source_layout_guardrails`, `diff_check`, and `contribution_readiness`. Each lane must include `status` and non-empty `evidence`. Use `status: "pass"` for passed lanes, `status: "pending_main_chat_staging"` for contribution readiness before staging, or `status: "allowed_host_gap"` only when `allowedHostGap: true` and the lane is genuinely impossible on this host.
 
 Report host-tool gaps separately from Docker product validation. Do not stage, commit, push, or launch the visible app.
 

@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "test": "bun test tests",
     "gateway": "bun ./gateway.ts",
     "workflow:list": "cd .. && .smithers/node_modules/.bin/smithers workflow list",
     "workflow:run": "cd .. && .smithers/node_modules/.bin/smithers workflow run",

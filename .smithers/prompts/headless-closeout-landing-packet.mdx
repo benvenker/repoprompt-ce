@@ -1,5 +1,11 @@
 Produce the final landing packet for this closeout run.
 
+Mandatory Agent Mail coordination:
+- Use the `agent-mail` skill/reference before doing this task.
+- At session start, resolve the current repository root and call `macro_start_session(human_key="<current repository root>", program="codex", model="<actual Codex model label available in this session, or unknown if unavailable>", task_description="headless-closeout-grinder landing-packet")`.
+- Check the returned inbox and announce start/completion in thread `headless-closeout-review-findings-2026-06-16`.
+- This is read-only; do not reserve files unless you unexpectedly need to edit. If Agent Mail MCP tools are unavailable, report that and stop.
+
 Summarize:
 - whether no actionable P0/P1/P2 findings remain,
 - what findings were resolved,

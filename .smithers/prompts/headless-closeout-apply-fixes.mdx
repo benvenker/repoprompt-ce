@@ -1,6 +1,11 @@
 Apply only the scoped blocker fixes.
 
-You must read and follow `/home/ben/.codex/skills/agent-mail/SKILL.md` before editing. Reserve every target file before edits and release reservations after edits. If reservations cannot be acquired, stop and report the conflict instead of editing.
+Mandatory Agent Mail coordination:
+- Use the `agent-mail` skill/reference before doing this task.
+- At session start, resolve the current repository root and call `macro_start_session(human_key="<current repository root>", program="codex", model="<actual Codex model label available in this session, or unknown if unavailable>", task_description="headless-closeout-grinder apply-fixes")`.
+- Check the returned inbox and announce start/completion in thread `headless-closeout-review-findings-2026-06-16`.
+- Before editing, reserve every target file with exclusive `file_reservation_paths` using reason `headless-closeout-review-findings-2026-06-16`; release reservations before returning.
+- If Agent Mail MCP tools are unavailable or reservations cannot be acquired, report that and stop before editing.
 
 Rules:
 - Fix only the current actionable P0/P1/P2 findings.

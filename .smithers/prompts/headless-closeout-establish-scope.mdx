@@ -1,6 +1,12 @@
 Establish the closeout scope for the RepoPrompt CE headless work.
 
-Read `AGENTS.md`, the closeout plan, both source plans, the CE code review skill, and current git status. Do not edit files, stage files, commit, launch the visible app, or mutate the repository.
+Mandatory Agent Mail coordination:
+- Use the `agent-mail` skill/reference before doing this task.
+- At session start, resolve the current repository root and call `macro_start_session(human_key="<current repository root>", program="codex", model="<actual Codex model label available in this session, or unknown if unavailable>", task_description="headless-closeout-grinder establish-scope")`.
+- Check the returned inbox and announce start/completion in thread `headless-closeout-review-findings-2026-06-16`.
+- This is read-only; do not reserve files unless you unexpectedly need to edit. If Agent Mail MCP tools are unavailable, report that and stop.
+
+Read `AGENTS.md`, the closeout plan, both source plans, the CE code review skill/reference, and current git status. Do not edit files, stage files, commit, launch the visible app, or mutate the repository.
 
 Closeout plan:
 {props.closeoutPlanPath}
@@ -8,7 +14,7 @@ Closeout plan:
 Source plans:
 {JSON.stringify(props.sourcePlanPaths, null, 2)}
 
-CE code review skill:
+CE code review skill/reference:
 {props.ceCodeReviewSkill}
 
 Operator note:

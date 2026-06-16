@@ -147,6 +147,7 @@ actor HeadlessContextBuilderService {
         let launch: RenderedAgentLaunch
         let socketPath: String
         let tempDirectory: URL
+        let discoveryHost: HeadlessWorkspaceHost
         let listener: HeadlessUnixSocketListener
         let stdoutPipe: Pipe
         let stderrPipe: Pipe
@@ -175,6 +176,7 @@ actor HeadlessContextBuilderService {
             launch: RenderedAgentLaunch,
             socketPath: String,
             tempDirectory: URL,
+            discoveryHost: HeadlessWorkspaceHost,
             listener: HeadlessUnixSocketListener,
             stdoutPipe: Pipe,
             stderrPipe: Pipe,
@@ -185,6 +187,7 @@ actor HeadlessContextBuilderService {
             self.launch = launch
             self.socketPath = socketPath
             self.tempDirectory = tempDirectory
+            self.discoveryHost = discoveryHost
             self.listener = listener
             self.stdoutPipe = stdoutPipe
             self.stderrPipe = stderrPipe
@@ -241,7 +244,7 @@ actor HeadlessContextBuilderService {
         case .wait:
             return try await jsonTextResult(wait(contextID: try requireContextID(toolRequest), timeoutSeconds: toolRequest.waitTimeoutSeconds))
         case .getResult:
-            return try jsonTextResult(result(contextID: try requireContextID(toolRequest)))
+            return try resultTool(contextID: try requireContextID(toolRequest))
         case .cancel:
             return try await jsonTextResult(cancel(contextID: try requireContextID(toolRequest)))
         case .cleanup:
@@ -327,7 +330,7 @@ actor HeadlessContextBuilderService {
     private func start(request: HeadlessContextBuilderRequest, oracleService: OracleService) async throws -> HeadlessContextBuilderRunSnapshot {
         if let activeRunID {
             if let active = asyncRuns[activeRunID] {
-                if !active.status.isTerminal {
+                if !active.status.isTerminal || !active.resourcesClosed {
                     throw HeadlessToolFailure(message: "context_builder is already running with context_id '\(activeRunID)'; poll, wait, get_result, cancel, or cleanup that run before starting another.")
                 }
                 self.activeRunID = nil
@@ -341,10 +344,11 @@ actor HeadlessContextBuilderService {
 
         let runID = UUID().uuidString
         let prepared = try Self.prepareLaunch(request: request)
+        let discoveryHost = try await makeDiscoveryHost()
         let listener = HeadlessUnixSocketListener(path: prepared.socketPath)
-        try listener.start { [host] fd in
+        try listener.start { [discoveryHost] fd in
             do {
-                try await HeadlessMCPServer(host: host).runSocketConnection(fd: fd)
+                try await HeadlessMCPServer(host: discoveryHost).runSocketConnection(fd: fd)
             } catch {
                 fputs("rpce-headless socket connection: \(error.localizedDescription)\n", stderr)
             }
@@ -360,6 +364,7 @@ actor HeadlessContextBuilderService {
             launch: prepared.launch,
             socketPath: prepared.socketPath,
             tempDirectory: prepared.tempDirectory,
+            discoveryHost: discoveryHost,
             listener: listener,
             stdoutPipe: stdout,
             stderrPipe: stderrPipe,
@@ -431,7 +436,14 @@ actor HeadlessContextBuilderService {
         }
     }
 
-    private func result(contextID: String) throws -> HeadlessContextBuilderResult {
+    private func makeDiscoveryHost() async throws -> HeadlessWorkspaceHost {
+        let roots = await host.rootsText()
+            .split(separator: "\n", omittingEmptySubsequences: true)
+            .map(String.init)
+        return try await HeadlessWorkspaceHost(rootPaths: roots)
+    }
+
+    private func resultTool(contextID: String) throws -> CallTool.Result {
         guard let record = asyncRuns[contextID] else {
             throw HeadlessToolFailure(message: "Unknown or cleaned up context_builder context_id '\(contextID)'.")
         }
@@ -439,16 +451,27 @@ actor HeadlessContextBuilderService {
             throw HeadlessToolFailure(message: "context_builder context_id '\(contextID)' is not ready; current run_status is \(record.status.rawValue).")
         }
         guard record.status == .completed, let result = record.result else {
-            throw HeadlessToolFailure(message: failedResultMessage(for: record))
+            let snapshot = snapshot(for: record)
+            return try CallTool.Result(
+                content: [.text(text: failedResultMessage(for: record), annotations: nil, _meta: nil)],
+                structuredContent: snapshot,
+                isError: true
+            )
         }
-        return result
+        return try jsonTextResult(result)
     }
 
     private func cancel(contextID: String) async -> HeadlessContextBuilderRunSnapshot {
         guard let record = asyncRuns[contextID] else { return expiredSnapshot(contextID: contextID) }
         guard !record.status.isTerminal else { return snapshot(for: record) }
         requestCancellation(for: record)
-        terminate(record: record)
+        if record.processID == nil {
+            record.reaperTask?.cancel()
+            record.reaperTask = nil
+            finishCancelled(record)
+        } else {
+            terminate(record: record)
+        }
         return await wait(contextID: contextID, timeoutSeconds: 5)
     }
 
@@ -597,6 +620,9 @@ actor HeadlessContextBuilderService {
         guard let record = asyncRuns[contextID] else { return }
         record.exitCode = exitCode
         record.updatedAt = Date()
+        if !record.status.isTerminal {
+            record.processID = nil
+        }
         guard !record.resourcesClosed else {
             if activeRunID == contextID { activeRunID = nil }
             return
@@ -617,7 +643,12 @@ actor HeadlessContextBuilderService {
         }
 
         do {
-            let harvest = try await host.contextBuildHarvest()
+            let harvest = try await record.discoveryHost.contextBuildHarvest()
+            if record.status.isTerminal || Task.isCancelled {
+                closeResources(for: record)
+                if activeRunID == contextID { activeRunID = nil }
+                return
+            }
             if record.status == .cancelling {
                 finishCancelled(record)
                 return
@@ -626,6 +657,11 @@ actor HeadlessContextBuilderService {
                 try await runOracleFollowUpIfNeeded(request: record.request, harvest: harvest, oracleService: oracleService)
             } else {
                 (nil, nil)
+            }
+            if record.status.isTerminal || Task.isCancelled {
+                closeResources(for: record)
+                if activeRunID == contextID { activeRunID = nil }
+                return
             }
             if record.status == .cancelling {
                 finishCancelled(record)
@@ -647,8 +683,18 @@ actor HeadlessContextBuilderService {
             if activeRunID == contextID { activeRunID = nil }
             closeResources(for: record)
         } catch {
+            if record.status.isTerminal {
+                closeResources(for: record)
+                if activeRunID == contextID { activeRunID = nil }
+                return
+            }
+            if record.status == .cancelling || Task.isCancelled {
+                record.error = record.error ?? "context_builder discovery was cancelled"
+                finishCancelled(record)
+                return
+            }
             record.error = error.localizedDescription
-            record.status = record.status == .cancelling ? .cancelled : .failed
+            record.status = .failed
             record.updatedAt = Date()
             if activeRunID == contextID { activeRunID = nil }
             closeResources(for: record)
@@ -661,7 +707,7 @@ actor HeadlessContextBuilderService {
         record.status = .failed
         record.updatedAt = Date()
         record.terminationStatus = "sigkill_requested_after_timeout"
-        if activeRunID == contextID { activeRunID = nil }
+        record.listener.stop()
         terminateProcessTree(processID: processID)
     }
 
@@ -672,6 +718,8 @@ actor HeadlessContextBuilderService {
     }
 
     private func finishCancelled(_ record: AsyncRunRecord) {
+        record.reaperTask?.cancel()
+        record.reaperTask = nil
         record.escalationTask?.cancel()
         record.escalationTask = nil
         record.timeoutTask?.cancel()
@@ -808,11 +856,24 @@ actor HeadlessContextBuilderService {
     }
 
     private func drainPipe(_ pipe: Pipe, contextID: String, stream: OutputStreamKind) {
-        let data = pipe.fileHandleForReading.availableData
-        guard !data.isEmpty else { return }
-        let text = String(data: data, encoding: .utf8) ?? String(decoding: data, as: UTF8.self)
-        Self.forwardPrefixed(text, label: "agent|")
-        appendOutput(contextID: contextID, stream: stream, text: text)
+        let fd = pipe.fileHandleForReading.fileDescriptor
+        let flags = fcntl(fd, F_GETFL)
+        guard flags >= 0 else { return }
+        guard fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0 else { return }
+        defer { _ = fcntl(fd, F_SETFL, flags) }
+
+        var buffer = [UInt8](repeating: 0, count: 8192)
+        while true {
+            let count = read(fd, &buffer, buffer.count)
+            if count > 0 {
+                let data = Data(buffer.prefix(Int(count)))
+                let text = String(data: data, encoding: .utf8) ?? String(decoding: data, as: UTF8.self)
+                Self.forwardPrefixed(text, label: "agent|")
+                appendOutput(contextID: contextID, stream: stream, text: text)
+            } else {
+                return
+            }
+        }
     }
 
     private func appendOutput(contextID: String, stream: OutputStreamKind, text: String) {

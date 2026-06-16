@@ -64,6 +64,17 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
         XCTAssertNotNil(properties["context_id"], "context_id is advertised for lifecycle calls.")
         XCTAssertNotNil(properties["timeout"], "wait timeout is advertised for lifecycle calls.")
         XCTAssertEqual(try requiredFields(forToolNamed: "context_builder"), [])
+        let branches = try contextBuilderSchemaBranches()
+        XCTAssertEqual(branches.count, 3)
+        XCTAssertEqual(branches[0]["required"] as? [String], ["instructions"])
+        XCTAssertNotNil(branches[0]["not"])
+        XCTAssertEqual(branches[1]["required"] as? [String], ["op", "instructions"])
+        XCTAssertEqual(((branches[1]["properties"] as? [String: Any])?["op"] as? [String: Any])?["const"] as? String, "start")
+        XCTAssertEqual(branches[2]["required"] as? [String], ["op", "context_id"])
+        XCTAssertEqual(
+            ((branches[2]["properties"] as? [String: Any])?["op"] as? [String: Any])?["enum"] as? [String],
+            ["poll", "wait", "get_result", "cancel", "cleanup"]
+        )
         XCTAssertFalse(HeadlessToolSchemas.discoveryToolNames.contains("context_builder"))
     }
 
@@ -94,6 +105,18 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
             ], environment: [:]), "op=\(op) should require context_id") { error in
                 XCTAssertEqual((error as? HeadlessToolFailure)?.message, "context_id is required and must be a non-empty string.")
             }
+        }
+    }
+
+    func testContextBuilderUnknownOpIsRejectedByParser() {
+        XCTAssertThrowsError(try HeadlessContextBuilderService.toolRequestFromMCP(arguments: [
+            "op": .string("bogus"),
+            "instructions": .string("Map the headless server")
+        ], environment: [:])) { error in
+            XCTAssertEqual(
+                (error as? HeadlessToolFailure)?.message,
+                "Unsupported context_builder op 'bogus'. Use start, poll, wait, get_result, cancel, or cleanup."
+            )
         }
     }
 
@@ -183,6 +206,11 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
         let schema = try schemaJSON(for: tool(named: toolName))
         let properties = try XCTUnwrap(schema["properties"] as? [String: Any])
         return try XCTUnwrap(properties[propertyName] as? [String: Any])
+    }
+
+    private func contextBuilderSchemaBranches() throws -> [[String: Any]] {
+        let schema = try schemaJSON(for: tool(named: "context_builder"))
+        return try XCTUnwrap(schema["oneOf"] as? [[String: Any]])
     }
 
     private func schemaJSON(for tool: Tool) throws -> [String: Any] {

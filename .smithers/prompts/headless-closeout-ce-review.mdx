@@ -1,6 +1,12 @@
 Run the Compound Engineering code review contract for this closeout.
 
-Read the CE code review skill at:
+Mandatory Agent Mail coordination:
+- Use the `agent-mail` skill/reference before doing this task.
+- At session start, resolve the current repository root and call `macro_start_session(human_key="<current repository root>", program="codex", model="<actual Codex model label available in this session, or unknown if unavailable>", task_description="headless-closeout-grinder ce-review")`.
+- Check the returned inbox and announce start/completion in thread `headless-closeout-review-findings-2026-06-16`.
+- This is read-only; do not reserve files unless you unexpectedly need to edit. If Agent Mail MCP tools are unavailable, report that and stop.
+
+Use the CE code review skill/reference:
 {props.ceCodeReviewSkill}
 
 Use it as the review prompt and run it in report-only machine mode with these arguments:

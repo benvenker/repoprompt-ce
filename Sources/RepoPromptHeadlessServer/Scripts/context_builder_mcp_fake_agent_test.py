@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import itertools, json, os, subprocess, sys, tempfile, time
+import http.server, itertools, json, os, subprocess, sys, tempfile, threading, time
 
 binary, root = sys.argv[1], sys.argv[2]
 
@@ -8,6 +8,17 @@ FAKE_AGENT = r'''
 import itertools, json, os, signal, subprocess, sys, time
 
 config_path = sys.argv[1]
+sequence_file = os.environ.get("FAKE_AGENT_SEQUENCE_FILE")
+invocation = 0
+if sequence_file:
+    try:
+        with open(sequence_file) as f:
+            invocation = int((f.read() or "0").strip())
+    except FileNotFoundError:
+        invocation = 0
+    invocation += 1
+    with open(sequence_file, "w") as f:
+        f.write(str(invocation))
 pid_file = os.environ.get("FAKE_AGENT_PID_FILE")
 if pid_file:
     with open(pid_file, "w") as f:
@@ -16,7 +27,10 @@ if os.environ.get("FAKE_AGENT_IGNORE_SIGTERM"):
     signal.signal(signal.SIGTERM, lambda signum, frame: None)
 if os.environ.get("FAKE_AGENT_EXIT"):
     sys.exit(int(os.environ["FAKE_AGENT_EXIT"]))
-if os.environ.get("FAKE_AGENT_EMPTY"):
+if os.environ.get("FAKE_AGENT_DESCENDANT_HOLDS_STDIO"):
+    subprocess.Popen([sys.executable, "-c", "import time; time.sleep(3)"])
+empty_on_invocation = os.environ.get("FAKE_AGENT_EMPTY_ON_INVOCATION")
+if os.environ.get("FAKE_AGENT_EMPTY") or (empty_on_invocation and invocation == int(empty_on_invocation)):
     sys.exit(0)
 diagnostic_stdout = os.environ.get("FAKE_AGENT_DIAGNOSTIC_STDOUT")
 if diagnostic_stdout is not None:
@@ -80,6 +94,12 @@ ctx, ctx_text = call("workspace_context", {"include":["selection","prompt","toke
 assert "Package.swift" in ctx_text, ctx_text[:500]
 p.stdin.close()
 p.wait(timeout=10)
+sleep_after_mcp = float(os.environ.get("FAKE_AGENT_SLEEP_AFTER_MCP", "0"))
+sleep_after_invocation = os.environ.get("FAKE_AGENT_SLEEP_AFTER_MCP_ON_INVOCATION")
+if sleep_after_invocation and invocation != int(sleep_after_invocation):
+    sleep_after_mcp = 0
+if sleep_after_mcp:
+    time.sleep(sleep_after_mcp)
 sys.exit(0)
 '''
 
@@ -109,6 +129,67 @@ def start_server(fake_agent, extra_env=None, remove_oracle_keys=False):
         text=True,
         env=env,
     )
+
+class SlowOracleHandler(http.server.BaseHTTPRequestHandler):
+    delay_seconds = 2.0
+    request_file = None
+    response_status = 200
+
+    def do_POST(self):
+        if self.path != "/chat/completions":
+            self.send_response(404)
+            self.end_headers()
+            return
+        length = int(self.headers.get("Content-Length", "0"))
+        if length:
+            self.rfile.read(length)
+        if self.request_file:
+            with open(self.request_file, "w") as f:
+                f.write("requested")
+        if self.response_status != 200:
+            time.sleep(self.delay_seconds)
+            self.send_response(self.response_status)
+            self.end_headers()
+            try:
+                self.wfile.write(b"oracle aborted")
+                self.wfile.flush()
+            except BrokenPipeError:
+                pass
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.end_headers()
+        self.wfile.flush()
+        time.sleep(self.delay_seconds)
+        chunk = {
+            "choices": [
+                {
+                    "delta": {
+                        "content": "slow oracle completion that must not overwrite cancellation"
+                    }
+                }
+            ]
+        }
+        try:
+            self.wfile.write(f"data: {json.dumps(chunk)}\n\n".encode())
+            self.wfile.write(b"data: [DONE]\n\n")
+            self.wfile.flush()
+        except BrokenPipeError:
+            pass
+
+    def log_message(self, fmt, *args):
+        return
+
+def start_slow_oracle(request_file, delay_seconds=2.0, response_status=200):
+    class Handler(SlowOracleHandler):
+        pass
+    Handler.request_file = request_file
+    Handler.delay_seconds = delay_seconds
+    Handler.response_status = response_status
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return server, f"http://127.0.0.1:{server.server_address[1]}"
 
 def pid_alive(pid):
     try:
@@ -246,7 +327,12 @@ def main():
 
         p.stdin.close()
         p.wait(timeout=10)
-        p = start_server(fake, {"FAKE_AGENT_SLEEP_BEFORE_MCP": "600"}, remove_oracle_keys=True)
+        cancel_pid_file = tempfile.mktemp(prefix="rpce-context-builder-cancel-pid-")
+        p = start_server(fake, {
+            "FAKE_AGENT_SLEEP_BEFORE_MCP": "600",
+            "FAKE_AGENT_IGNORE_SIGTERM": "1",
+            "FAKE_AGENT_PID_FILE": cancel_pid_file,
+        }, remove_oracle_keys=True)
         ids = itertools.count(1)
 
         rpc("initialize", {"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"context-builder-mcp-harness","version":"0"}})
@@ -260,18 +346,28 @@ def main():
         assert not result.get("isError"), text
         cancel_id = (result.get("structuredContent") or json.loads(text)).get("context_id")
         assert cancel_id, text
+        cancel_pid = int(wait_for_file(cancel_pid_file))
+        assert pid_alive(cancel_pid), cancel_pid
         result, text = call("context_builder", {"op": "cancel", "context_id": cancel_id})
         assert not result.get("isError"), text
         cancel_payload = result.get("structuredContent") or json.loads(text)
         assert cancel_payload.get("run_status") == "cancelled", cancel_payload
+        assert not pid_alive(cancel_pid), f"fake agent survived context_builder cancel: pid={cancel_pid}"
         result, text = call("context_builder", {"op": "get_result", "context_id": cancel_id})
         assert result.get("isError"), text
+        cancel_structured = result.get("structuredContent") or {}
+        assert cancel_structured.get("context_id") == cancel_id, cancel_structured
+        assert cancel_structured.get("run_status") == "cancelled", cancel_structured
         assert "did not complete successfully" in text, text
         assert cancel_id in text and "run_status is cancelled" in text, text
         result, text = call("context_builder", {"op": "cleanup", "context_id": cancel_id})
         assert not result.get("isError"), text
         cleanup_payload = result.get("structuredContent") or json.loads(text)
         assert cleanup_payload.get("deleted_count") == 1, cleanup_payload
+        try:
+            os.remove(cancel_pid_file)
+        except OSError:
+            pass
 
         p.stdin.close()
         p.wait(timeout=10)
@@ -342,6 +438,14 @@ def main():
         assert diagnostics.get("termination_status") == "sigkill_requested_after_timeout", diagnostics
         result, text = call("context_builder", {"op": "get_result", "context_id": timeout_id})
         assert result.get("isError"), text
+        timeout_structured = result.get("structuredContent") or {}
+        assert timeout_structured.get("context_id") == timeout_id, timeout_structured
+        assert timeout_structured.get("run_status") == "failed", timeout_structured
+        assert "timed out" in timeout_structured.get("error", ""), timeout_structured
+        structured_diagnostics = timeout_structured.get("diagnostics") or {}
+        assert structured_diagnostics.get("stdout", "").startswith("CTX_TIMEOUT_STDOUT_SENTINEL|"), structured_diagnostics
+        assert structured_diagnostics.get("stderr", "").startswith("CTX_TIMEOUT_STDERR_SENTINEL|"), structured_diagnostics
+        assert structured_diagnostics.get("termination_status") == "sigkill_requested_after_timeout", structured_diagnostics
         assert "did not complete successfully" in text, text
         assert timeout_id in text and "run_status is failed" in text and "timed out" in text, text
         assert "CTX_TIMEOUT_STDOUT_SENTINEL|" in text and "CTX_TIMEOUT_STDERR_SENTINEL|" in text, text
@@ -391,11 +495,190 @@ def main():
         assert diagnostics.get("termination_status") == "sigkill_requested_after_timeout", diagnostics
         result, text = call("context_builder", {"op": "get_result", "context_id": quiet_timeout_id})
         assert result.get("isError"), text
+        quiet_structured = result.get("structuredContent") or {}
+        assert quiet_structured.get("context_id") == quiet_timeout_id, quiet_structured
+        assert quiet_structured.get("run_status") == "failed", quiet_structured
+        assert (quiet_structured.get("diagnostics") or {}).get("output_empty") is True, quiet_structured
         assert "did not complete successfully" in text, text
         assert quiet_timeout_id in text and "run_status is failed" in text and "timed out" in text, text
         assert "output_empty=true" in text and "timeout_seconds: 1" in text, text
         assert "termination_status: sigkill_requested_after_timeout" in text, text
         result, text = call("context_builder", {"op": "cleanup", "context_id": quiet_timeout_id})
+        assert not result.get("isError"), text
+        cleanup_payload = result.get("structuredContent") or json.loads(text)
+        assert cleanup_payload.get("deleted_count") == 1, cleanup_payload
+
+        p.stdin.close()
+        p.wait(timeout=10)
+        oracle_request_file = tempfile.mktemp(prefix="rpce-context-builder-oracle-request-")
+        oracle_server, oracle_url = start_slow_oracle(oracle_request_file, delay_seconds=2.0)
+        p = start_server(fake, {
+            "RPCE_ORACLE_BASE_URL": oracle_url,
+            "RPCE_ORACLE_API_KEY": "fake-key",
+            "RPCE_ORACLE_MODEL": "fake-model",
+        })
+        ids = itertools.count(1)
+
+        try:
+            rpc("initialize", {"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"context-builder-mcp-harness","version":"0"}})
+            notify("notifications/initialized")
+            result, text = call("context_builder", {
+                "op": "start",
+                "instructions": "Async fixture should be cancellable during slow oracle follow-up.",
+                "response_type": "question",
+                "export_response": False,
+            })
+            assert not result.get("isError"), text
+            oracle_cancel_id = (result.get("structuredContent") or json.loads(text)).get("context_id")
+            assert oracle_cancel_id, text
+            wait_for_file(oracle_request_file, timeout=5)
+            result, text = call("context_builder", {"op": "cancel", "context_id": oracle_cancel_id})
+            assert not result.get("isError"), text
+            oracle_cancel_payload = result.get("structuredContent") or json.loads(text)
+            assert oracle_cancel_payload.get("run_status") == "cancelled", oracle_cancel_payload
+            time.sleep(2.5)
+            result, text = call("context_builder", {"op": "poll", "context_id": oracle_cancel_id})
+            assert not result.get("isError"), text
+            poll_after_oracle = result.get("structuredContent") or json.loads(text)
+            assert poll_after_oracle.get("run_status") == "cancelled", poll_after_oracle
+            assert poll_after_oracle.get("result_status") is None, poll_after_oracle
+            result, text = call("context_builder", {"op": "get_result", "context_id": oracle_cancel_id})
+            assert result.get("isError"), text
+            oracle_cancel_structured = result.get("structuredContent") or {}
+            assert oracle_cancel_structured.get("context_id") == oracle_cancel_id, oracle_cancel_structured
+            assert oracle_cancel_structured.get("run_status") == "cancelled", oracle_cancel_structured
+            assert "completed" not in json.dumps(oracle_cancel_structured), oracle_cancel_structured
+            result, text = call("context_builder", {"op": "cleanup", "context_id": oracle_cancel_id})
+            assert not result.get("isError"), text
+        finally:
+            oracle_server.shutdown()
+            oracle_server.server_close()
+            try:
+                os.remove(oracle_request_file)
+            except OSError:
+                pass
+
+        p.stdin.close()
+        p.wait(timeout=10)
+        oracle_abort_file = tempfile.mktemp(prefix="rpce-context-builder-oracle-abort-")
+        oracle_server, oracle_url = start_slow_oracle(oracle_abort_file, delay_seconds=1.0, response_status=500)
+        p = start_server(fake, {
+            "RPCE_ORACLE_BASE_URL": oracle_url,
+            "RPCE_ORACLE_API_KEY": "fake-key",
+            "RPCE_ORACLE_MODEL": "fake-model",
+        })
+        ids = itertools.count(1)
+
+        try:
+            rpc("initialize", {"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"context-builder-mcp-harness","version":"0"}})
+            notify("notifications/initialized")
+            result, text = call("context_builder", {
+                "op": "start",
+                "instructions": "Async fixture should stay cancelled when slow oracle follow-up aborts.",
+                "response_type": "question",
+                "export_response": False,
+            })
+            assert not result.get("isError"), text
+            oracle_abort_id = (result.get("structuredContent") or json.loads(text)).get("context_id")
+            assert oracle_abort_id, text
+            wait_for_file(oracle_abort_file, timeout=5)
+            result, text = call("context_builder", {"op": "cancel", "context_id": oracle_abort_id})
+            assert not result.get("isError"), text
+            oracle_abort_cancel_payload = result.get("structuredContent") or json.loads(text)
+            assert oracle_abort_cancel_payload.get("run_status") == "cancelled", oracle_abort_cancel_payload
+            time.sleep(1.5)
+            result, text = call("context_builder", {"op": "poll", "context_id": oracle_abort_id})
+            assert not result.get("isError"), text
+            poll_after_oracle_abort = result.get("structuredContent") or json.loads(text)
+            assert poll_after_oracle_abort.get("run_status") == "cancelled", poll_after_oracle_abort
+            assert poll_after_oracle_abort.get("result_status") is None, poll_after_oracle_abort
+            assert "oracle aborted" not in poll_after_oracle_abort.get("error", ""), poll_after_oracle_abort
+            result, text = call("context_builder", {"op": "get_result", "context_id": oracle_abort_id})
+            assert result.get("isError"), text
+            oracle_abort_structured = result.get("structuredContent") or {}
+            assert oracle_abort_structured.get("context_id") == oracle_abort_id, oracle_abort_structured
+            assert oracle_abort_structured.get("run_status") == "cancelled", oracle_abort_structured
+            assert "oracle aborted" not in oracle_abort_structured.get("error", ""), oracle_abort_structured
+            result, text = call("context_builder", {"op": "cleanup", "context_id": oracle_abort_id})
+            assert not result.get("isError"), text
+        finally:
+            oracle_server.shutdown()
+            oracle_server.server_close()
+            try:
+                os.remove(oracle_abort_file)
+            except OSError:
+                pass
+
+        p.stdin.close()
+        p.wait(timeout=10)
+        sequence_file = tempfile.mktemp(prefix="rpce-context-builder-sequence-")
+        p = start_server(fake, {
+            "FAKE_AGENT_SEQUENCE_FILE": sequence_file,
+            "FAKE_AGENT_SLEEP_AFTER_MCP": "600",
+            "FAKE_AGENT_SLEEP_AFTER_MCP_ON_INVOCATION": "1",
+            "FAKE_AGENT_EMPTY_ON_INVOCATION": "2",
+        }, remove_oracle_keys=True)
+        ids = itertools.count(1)
+
+        rpc("initialize", {"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"context-builder-mcp-harness","version":"0"}})
+        notify("notifications/initialized")
+        result, text = call("context_builder", {
+            "op": "start",
+            "instructions": "First async run should select files and then time out.",
+            "response_type": "clarify",
+            "timeout_seconds": 1,
+            "export_response": False,
+        })
+        assert not result.get("isError"), text
+        stale_id = (result.get("structuredContent") or json.loads(text)).get("context_id")
+        assert stale_id, text
+        result, text = call("context_builder", {"op": "wait", "context_id": stale_id, "timeout": 10})
+        assert not result.get("isError"), text
+        stale_payload = result.get("structuredContent") or json.loads(text)
+        assert stale_payload.get("run_status") == "failed", stale_payload
+        result, text = call("context_builder", {"op": "cleanup", "context_id": stale_id})
+        assert not result.get("isError"), text
+
+        result, text = call("context_builder", {
+            "instructions": "Second run exits empty; it must not inherit stale async selection.",
+            "response_type": "clarify",
+            "export_response": False,
+        })
+        assert not result.get("isError"), text
+        payload = result.get("structuredContent") or json.loads(text)
+        assert payload.get("status") == "empty_selection", payload
+        assert payload.get("file_count") == 0, payload
+        assert "Package.swift" not in json.dumps(payload.get("selection", "")), payload
+        try:
+            os.remove(sequence_file)
+        except OSError:
+            pass
+
+        p.stdin.close()
+        p.wait(timeout=10)
+        p = start_server(fake, {
+            "FAKE_AGENT_EMPTY": "1",
+            "FAKE_AGENT_DESCENDANT_HOLDS_STDIO": "1",
+        }, remove_oracle_keys=True)
+        ids = itertools.count(1)
+
+        rpc("initialize", {"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"context-builder-mcp-harness","version":"0"}})
+        notify("notifications/initialized")
+        result, text = call("context_builder", {
+            "op": "start",
+            "instructions": "Completion should not block when a descendant keeps stdio open.",
+            "response_type": "clarify",
+            "export_response": False,
+        })
+        assert not result.get("isError"), text
+        fd_id = (result.get("structuredContent") or json.loads(text)).get("context_id")
+        assert fd_id, text
+        result, text = call("context_builder", {"op": "wait", "context_id": fd_id, "timeout": 1})
+        assert not result.get("isError"), text
+        fd_payload = result.get("structuredContent") or json.loads(text)
+        assert fd_payload.get("run_status") == "completed", fd_payload
+        assert fd_payload.get("result_status") == "empty_selection", fd_payload
+        result, text = call("context_builder", {"op": "cleanup", "context_id": fd_id})
         assert not result.get("isError"), text
         cleanup_payload = result.get("structuredContent") or json.loads(text)
         assert cleanup_payload.get("deleted_count") == 1, cleanup_payload
