@@ -36,6 +36,8 @@ struct HeadlessContextBuilderToolRequest {
     let request: HeadlessContextBuilderRequest?
 }
 
+typealias HeadlessProgressReporter = @Sendable (_ progress: Double, _ total: Double?, _ message: String) async -> Void
+
 struct HeadlessContextBuilderExecution {
     let contextID: String
     let request: HeadlessContextBuilderRequest
@@ -219,6 +221,7 @@ actor HeadlessContextBuilderService {
     private let host: HeadlessWorkspaceHost
     private let outputCaptureLimitBytes: Int
     private var activeRunID: String?
+    private var latestRunID: String?
     private var asyncRuns: [String: AsyncRunRecord] = [:]
 
     init(
@@ -229,20 +232,26 @@ actor HeadlessContextBuilderService {
         self.outputCaptureLimitBytes = outputCaptureLimitBytes
     }
 
-    func execute(arguments: [String: MCP.Value], oracleService: OracleService) async throws -> CallTool.Result {
+    func execute(
+        arguments: [String: MCP.Value],
+        oracleService: OracleService,
+        progressReporter: HeadlessProgressReporter? = nil
+    ) async throws -> CallTool.Result {
         let toolRequest = try Self.toolRequestFromMCP(arguments: arguments)
         switch toolRequest.operation {
         case .synchronous:
             guard let request = toolRequest.request else { throw HeadlessToolFailure(message: "missing context_builder request") }
-            let execution = try await run(request: request, oracleService: oracleService)
-            return try jsonTextResult(execution.mcpResult)
+            return try await startAndWaitForSynchronousRequest(request: request, oracleService: oracleService, progressReporter: progressReporter)
         case .start:
             guard let request = toolRequest.request else { throw HeadlessToolFailure(message: "missing context_builder request") }
-            return try await jsonTextResult(start(request: request, oracleService: oracleService))
+            await progressReporter?(0, 1, "Starting context_builder discovery...")
+            let snapshot = try await start(request: request, oracleService: oracleService)
+            await progressReporter?(1, 1, "context_builder started with context_id \(snapshot.contextID). Poll or wait for progress.")
+            return try jsonTextResult(snapshot)
         case .poll:
             return try jsonTextResult(poll(contextID: try requireContextID(toolRequest)))
         case .wait:
-            return try await jsonTextResult(wait(contextID: try requireContextID(toolRequest), timeoutSeconds: toolRequest.waitTimeoutSeconds))
+            return try await jsonTextResult(wait(contextID: try requireContextID(toolRequest), timeoutSeconds: toolRequest.waitTimeoutSeconds, progressReporter: progressReporter))
         case .getResult:
             return try resultTool(contextID: try requireContextID(toolRequest))
         case .cancel:
@@ -250,6 +259,28 @@ actor HeadlessContextBuilderService {
         case .cleanup:
             return try jsonTextResult(cleanup(contextID: try requireContextID(toolRequest)))
         }
+    }
+
+    private func startAndWaitForSynchronousRequest(
+        request: HeadlessContextBuilderRequest,
+        oracleService: OracleService,
+        progressReporter: HeadlessProgressReporter?
+    ) async throws -> CallTool.Result {
+        await progressReporter?(0, 1, "Starting context_builder discovery...")
+        let started = try await start(request: request, oracleService: oracleService)
+        let waitSeconds = min(request.timeoutSeconds, Self.synchronousMCPWaitTimeoutSeconds())
+        let snapshot = await wait(contextID: started.contextID, timeoutSeconds: waitSeconds, progressReporter: progressReporter)
+        guard snapshot.runStatus == HeadlessContextBuilderRunStatus.completed.rawValue ||
+            snapshot.runStatus == HeadlessContextBuilderRunStatus.failed.rawValue ||
+            snapshot.runStatus == HeadlessContextBuilderRunStatus.cancelled.rawValue
+        else {
+            return try jsonTextResult(snapshot)
+        }
+        let result = try resultTool(contextID: started.contextID)
+        if let record = asyncRuns[started.contextID], record.status == .completed {
+            discardTerminalRecord(record)
+        }
+        return result
     }
 
     func shutdown() async {
@@ -278,6 +309,7 @@ actor HeadlessContextBuilderService {
             closeResources(for: record)
         }
         activeRunID = nil
+        latestRunID = nil
     }
 
     func run(request: HeadlessContextBuilderRequest, oracleService: OracleService) async throws -> HeadlessContextBuilderExecution {
@@ -372,6 +404,7 @@ actor HeadlessContextBuilderService {
         )
         asyncRuns[runID] = record
         activeRunID = runID
+        latestRunID = runID
 
         capturePipe(stdout, contextID: runID, stream: .stdout, label: "agent|")
         capturePipe(stderrPipe, contextID: runID, stream: .stderr, label: "agent|")
@@ -403,6 +436,7 @@ actor HeadlessContextBuilderService {
         } catch {
             asyncRuns[runID] = nil
             activeRunID = nil
+            if latestRunID == runID { latestRunID = nil }
             listener.stop()
             stdout.fileHandleForReading.readabilityHandler = nil
             stderrPipe.fileHandleForReading.readabilityHandler = nil
@@ -418,19 +452,36 @@ actor HeadlessContextBuilderService {
     }
 
     private func poll(contextID: String) -> HeadlessContextBuilderRunSnapshot {
-        guard let record = asyncRuns[contextID] else { return expiredSnapshot(contextID: contextID) }
+        guard let resolved = resolveContextID(contextID) else { return expiredSnapshot(contextID: contextID) }
+        guard let record = asyncRuns[resolved] else { return expiredSnapshot(contextID: resolved) }
         return snapshot(for: record)
     }
 
-    private func wait(contextID: String, timeoutSeconds: Int) async -> HeadlessContextBuilderRunSnapshot {
+    private func wait(
+        contextID: String,
+        timeoutSeconds: Int,
+        progressReporter: HeadlessProgressReporter? = nil
+    ) async -> HeadlessContextBuilderRunSnapshot {
+        guard let resolved = resolveContextID(contextID) else { return expiredSnapshot(contextID: contextID) }
         if timeoutSeconds <= 0 {
-            guard let record = asyncRuns[contextID] else { return expiredSnapshot(contextID: contextID) }
+            guard let record = asyncRuns[resolved] else { return expiredSnapshot(contextID: resolved) }
             return snapshot(for: record)
         }
         let deadline = Date().addingTimeInterval(TimeInterval(timeoutSeconds))
+        var lastProgressAt = Date.distantPast
         while true {
-            guard let record = asyncRuns[contextID] else { return expiredSnapshot(contextID: contextID) }
+            guard let record = asyncRuns[resolved] else { return expiredSnapshot(contextID: resolved) }
             if record.status.isTerminal { return snapshot(for: record) }
+            let now = Date()
+            if now.timeIntervalSince(lastProgressAt) >= 5 {
+                let elapsed = max(0, Int(now.timeIntervalSince(record.startedAt).rounded(.down)))
+                await progressReporter?(
+                    Double(min(elapsed, timeoutSeconds)),
+                    Double(timeoutSeconds),
+                    "\(statusText(for: record)) Elapsed \(elapsed)s; poll or wait again with context_id \(record.id)."
+                )
+                lastProgressAt = now
+            }
             if Date() >= deadline { return snapshot(for: record, waitResult: "timed_out") }
             try? await Task.sleep(for: .milliseconds(100))
         }
@@ -444,7 +495,8 @@ actor HeadlessContextBuilderService {
     }
 
     private func resultTool(contextID: String) throws -> CallTool.Result {
-        guard let record = asyncRuns[contextID] else {
+        let resolved = resolveContextID(contextID) ?? contextID
+        guard let record = asyncRuns[resolved] else {
             throw HeadlessToolFailure(message: "Unknown or cleaned up context_builder context_id '\(contextID)'.")
         }
         guard record.status.isTerminal else {
@@ -462,7 +514,8 @@ actor HeadlessContextBuilderService {
     }
 
     private func cancel(contextID: String) async -> HeadlessContextBuilderRunSnapshot {
-        guard let record = asyncRuns[contextID] else { return expiredSnapshot(contextID: contextID) }
+        guard let resolved = resolveContextID(contextID) else { return expiredSnapshot(contextID: contextID) }
+        guard let record = asyncRuns[resolved] else { return expiredSnapshot(contextID: resolved) }
         guard !record.status.isTerminal else { return snapshot(for: record) }
         requestCancellation(for: record)
         if record.processID == nil {
@@ -472,11 +525,12 @@ actor HeadlessContextBuilderService {
         } else {
             terminate(record: record)
         }
-        return await wait(contextID: contextID, timeoutSeconds: 5)
+        return await wait(contextID: resolved, timeoutSeconds: 5)
     }
 
     private func cleanup(contextID: String) throws -> HeadlessContextBuilderCleanupReply {
-        guard let record = asyncRuns[contextID] else {
+        let resolved = resolveContextID(contextID) ?? contextID
+        guard let record = asyncRuns[resolved] else {
             return HeadlessContextBuilderCleanupReply(
                 status: "partial",
                 deletedCount: 0,
@@ -491,18 +545,19 @@ actor HeadlessContextBuilderService {
                 deletedCount: 0,
                 skippedCount: 1,
                 deletedContexts: [],
-                skippedContexts: [.init(contextID: contextID, reason: "skipped_active")]
+                skippedContexts: [.init(contextID: record.id, reason: "skipped_active")]
             )
         }
         closeResources(for: record)
-        asyncRuns[contextID] = nil
-        if activeRunID == contextID { activeRunID = nil }
+        asyncRuns[record.id] = nil
+        if activeRunID == record.id { activeRunID = nil }
+        if latestRunID == record.id { latestRunID = nil }
         try? FileManager.default.removeItem(at: record.tempDirectory)
         return HeadlessContextBuilderCleanupReply(
             status: "completed",
             deletedCount: 1,
             skippedCount: 0,
-            deletedContexts: [.init(contextID: contextID, reason: nil)],
+            deletedContexts: [.init(contextID: record.id, reason: nil)],
             skippedContexts: []
         )
     }
@@ -549,10 +604,13 @@ actor HeadlessContextBuilderService {
             )
         case .poll, .wait, .getResult, .cancel, .cleanup:
             let contextID = try requireNonEmptyString(arguments["context_id"], name: "context_id")
+            let requestedWaitTimeout = arguments["timeout"]?.intCoerced()
+                ?? arguments["timeout_seconds"]?.intCoerced()
+                ?? Self.defaultLifecycleWaitTimeoutSeconds(environment)
             return HeadlessContextBuilderToolRequest(
                 operation: operation,
                 contextID: contextID,
-                waitTimeoutSeconds: max(0, arguments["timeout"]?.intCoerced() ?? 120),
+                waitTimeoutSeconds: Self.cappedLifecycleWaitTimeout(requestedWaitTimeout, environment: environment),
                 request: nil
             )
         }
@@ -606,6 +664,41 @@ actor HeadlessContextBuilderService {
             throw HeadlessToolFailure(message: "context_id is required and must be a non-empty string.")
         }
         return contextID
+    }
+
+    private func resolveContextID(_ contextID: String) -> String? {
+        let trimmed = contextID.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed == "active" || trimmed == "current" {
+            return activeRunID ?? latestRunID
+        }
+        return trimmed
+    }
+
+    private static func synchronousMCPWaitTimeoutSeconds(
+        _ environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> Int {
+        max(0, environment.headlessTrimmedInt("RPCE_CONTEXT_BUILDER_SYNC_WAIT_TIMEOUT_SECONDS") ?? 90)
+    }
+
+    static func defaultLifecycleWaitTimeoutSeconds(
+        _ environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> Int {
+        max(0, environment.headlessTrimmedInt("RPCE_CONTEXT_BUILDER_WAIT_DEFAULT_SECONDS") ?? 15)
+    }
+
+    static func maxLifecycleWaitTimeoutSeconds(
+        _ environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> Int {
+        max(1, environment.headlessTrimmedInt("RPCE_CONTEXT_BUILDER_WAIT_MAX_SECONDS") ?? 30)
+    }
+
+    static func cappedLifecycleWaitTimeout(
+        _ requested: Int,
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> Int {
+        let requested = max(0, requested)
+        guard requested > 0 else { return 0 }
+        return min(requested, maxLifecycleWaitTimeoutSeconds(environment))
     }
 
     private func waitForShutdownProgress(_ records: [AsyncRunRecord], timeoutSeconds: TimeInterval) async {
@@ -701,6 +794,15 @@ actor HeadlessContextBuilderService {
         }
     }
 
+    private func discardTerminalRecord(_ record: AsyncRunRecord) {
+        guard record.status.isTerminal else { return }
+        closeResources(for: record)
+        asyncRuns[record.id] = nil
+        if activeRunID == record.id { activeRunID = nil }
+        if latestRunID == record.id { latestRunID = nil }
+        try? FileManager.default.removeItem(at: record.tempDirectory)
+    }
+
     private func timeoutAsyncRun(contextID: String, processID: pid_t) {
         guard let record = asyncRuns[contextID], !record.status.isTerminal else { return }
         record.error = "context_builder discovery timed out after \(record.request.timeoutSeconds) seconds"
@@ -735,12 +837,15 @@ actor HeadlessContextBuilderService {
             contextID: record.id,
             runStatus: record.status.rawValue,
             statusText: statusText(for: record),
+            startedAt: timestamp(record.startedAt),
             updatedAt: timestamp(record.updatedAt),
+            elapsedSeconds: max(0, Int(Date().timeIntervalSince(record.startedAt).rounded(.down))),
             agent: record.request.agentName,
             responseType: record.request.responseTypeName,
             processID: record.processID.map(Int.init),
             resultStatus: record.result?.status,
             error: record.error,
+            nextAction: nextAction(for: record),
             diagnostics: diagnostics(for: record),
             meta: waitResult.map { .init(waitResult: $0) }
         )
@@ -752,12 +857,15 @@ actor HeadlessContextBuilderService {
             contextID: contextID,
             runStatus: HeadlessContextBuilderRunStatus.expired.rawValue,
             statusText: "context_builder run is unavailable or expired.",
+            startedAt: nil,
             updatedAt: timestamp(now),
+            elapsedSeconds: nil,
             agent: "unknown",
             responseType: "unknown",
             processID: nil,
             resultStatus: nil,
             error: nil,
+            nextAction: "Start a new context_builder run with op:\"start\", or use a context_id returned by an active/latest run before cleanup.",
             diagnostics: nil,
             meta: nil
         )
@@ -777,6 +885,21 @@ actor HeadlessContextBuilderService {
             "context_builder discovery was cancelled."
         case .expired:
             "context_builder run is unavailable or expired."
+        }
+    }
+
+    private func nextAction(for record: AsyncRunRecord) -> String? {
+        switch record.status {
+        case .running:
+            "Call context_builder with op:\"poll\" for an immediate snapshot, op:\"wait\" with a short timeout for progress, or op:\"cancel\" to stop this run. You may use context_id:\"active\" or \"current\" for this run."
+        case .cancelling:
+            "Poll or wait briefly until cancellation reaches a terminal state."
+        case .completed:
+            "Call context_builder with op:\"get_result\" and this context_id, or context_id:\"active\"/\"current\" while it remains the latest run, then op:\"cleanup\" when done."
+        case .failed, .cancelled:
+            "Inspect diagnostics with this snapshot or get_result, then call op:\"cleanup\" when done."
+        case .expired:
+            nil
         }
     }
 

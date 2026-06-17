@@ -40,3 +40,11 @@ remaining ambitions are larger product-shape work suited for a later pass:
 payloads.
 
 Bar met for this focused first pass: yes.
+
+## Pass 3 Note
+
+Pass 3 deliberately ran as a functional follow-up, not a full ambition-bar
+audit/rescore. It shipped the two pass-2 deferred items (`headless_status` as
+the compact triage/status packet, and structured `get_code_structure`
+fallbacks) plus architecture-onboarding guidance. A later audit pass should
+judge the result against the skill's opinionated bar.

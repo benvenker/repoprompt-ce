@@ -130,18 +130,46 @@ unrelated repos silently receive the wrong headless workspace.
 Agents should discover the loaded headless contract from the tool itself:
 
 ```bash
+rpce-headless robot-docs status --json
 rpce-headless capabilities --json
 rpce-headless robot-docs guide
 rpce-headless dump --json
 ```
 
-The full stdio MCP surface also exposes `headless_capabilities`; call it first
-to verify `loaded_roots`, stdio/socket exposure, Context Builder examples,
-agent runner examples, oracle guidance, and smoke commands. For architecture
-onboarding, `context_builder` and bounded read-only `agent_run` subagents are
-preferred tools, not last resorts. Use `agent_manage list_agents` before
-`agent_run`, choose an available real configured agent, inspect logs, and clean
-up terminal sessions. Keep `oracle_send` opt-in/on-demand.
+The full stdio and discovery-restricted socket MCP surfaces expose
+`headless_status`; call it first for the compact workspace triage packet:
+`loaded_roots`, `loaded_root_metadata`, root mismatch warnings, transport
+exposure, suggested first calls, architecture-onboarding steps, and smoke
+commands. `headless_capabilities` is the fuller contract with exit codes,
+tool exposure, Context Builder examples, agent runner examples, and oracle
+guidance. For architecture onboarding, use `context_builder` as the preferred
+summarization/filtering path before broad manual reads. Use bounded read-only
+server-managed subagents as an optional independent review path: call
+`agent_manage list_agents` before `agent_run`, choose an available real
+configured agent, inspect logs, and clean up terminal sessions through
+`agent_manage`. Do not substitute client-local ad hoc subagents for this
+contract. `context_builder` wait calls should stay progress-friendly: use
+short `op:"wait"` windows, consume `started_at` / `elapsed_seconds` /
+`next_action` snapshots, and expect MCP `notifications/progress` heartbeats
+when the client supplies a progress token. Omitted-`op` compatibility calls are
+union-shaped: completion inside the sync cap returns the original result shape,
+while longer runs return lifecycle snapshots. The default wait cap is
+intentional; raise `RPCE_CONTEXT_BUILDER_WAIT_MAX_SECONDS` only when a client
+truly wants longer blocking waits. Follow native RepoPrompt workflow shapes for
+complex work:
+`explore`-style cheap/narrow fact gathering, `context_builder` for curated
+selection/synthesis, then `pair` or `design` for the main line or bounded
+critique. These native workflow patterns are exposed in `native_workflows` on
+`headless_status` and `headless_capabilities`; they are separate from Smithers
+workflows. Keep custom workflow plans honest: app-native Agent Mode supports custom markdown
+workflows and settings, but headless v1 exposes them as `metadata_only` until a
+workflow resolver/settings mutation surface is implemented. Agents may propose
+custom workflow markdown and settings changes; do not claim headless
+`agent_run workflow_name` works until the resolver exists. Keep
+`oracle_send` opt-in/on-demand. When `get_code_structure` has no codemap for a
+resolved file, consume its structured `codemap_unavailable` evidence and follow
+the `file_search` then `read_file` fallback instead of treating it as a missing
+path.
 
 ### Linux / VPS Swift
 
@@ -235,7 +263,12 @@ Stdio `serve` exposes the full headless tool set, including `oracle_send`, `cont
 .build/debug/rpce-headless connect --socket /tmp/rpce.sock
 ```
 
-Discovery sockets expose only selection, prompt, tree, search, structure, workspace context, and file reads. They intentionally block oracle, context builder, and process-backed agent tools.
+Discovery sockets expose only status/capabilities, selection, prompt, tree,
+search, structure, workspace context, and file reads. They intentionally block
+oracle, context builder, and process-backed agent tools. `headless_status` is
+transport-aware: on restricted sockets it should report direct evidence tools
+as available here and reserve `context_builder`, `agent_manage`, `agent_run`,
+and `oracle_send` for full stdio or authenticated full-tool sockets.
 
 Manual headless MCP restart and smoke testing must leave no orphaned
 `rpce-headless serve --root "$PWD"` processes. Prefer test harness teardown

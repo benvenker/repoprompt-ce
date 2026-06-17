@@ -31,6 +31,7 @@ struct HeadlessWorkspaceContextReply: Codable, Equatable {
     let context: String
     let prompt: String
     let loadedRoots: [String]
+    let loadedRootMetadata: [HeadlessRootMetadata]
     let selectedFiles: [String]
     let codemapFiles: [String]
     let totalTokens: Int
@@ -43,6 +44,7 @@ struct HeadlessWorkspaceContextReply: Codable, Equatable {
         case context
         case prompt
         case loadedRoots = "loaded_roots"
+        case loadedRootMetadata = "loaded_root_metadata"
         case selectedFiles = "selected_files"
         case codemapFiles = "codemap_files"
         case totalTokens = "total_tokens"
@@ -55,6 +57,9 @@ struct HeadlessWorkspaceContextReply: Codable, Equatable {
 
 struct HeadlessDumpSummaryReply: Codable, Equatable {
     let loadedRoots: [String]
+    let loadedRootMetadata: [HeadlessRootMetadata]
+    let rootWarnings: [HeadlessRootWarning]
+    let currentDirectory: String
     let rootCount: Int
     let folderCount: Int
     let fileCount: Int
@@ -62,10 +67,158 @@ struct HeadlessDumpSummaryReply: Codable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case loadedRoots = "loaded_roots"
+        case loadedRootMetadata = "loaded_root_metadata"
+        case rootWarnings = "root_warnings"
+        case currentDirectory = "current_directory"
         case rootCount = "root_count"
         case folderCount = "folder_count"
         case fileCount = "file_count"
         case generation
+    }
+}
+
+struct HeadlessRootMetadata: Codable, Equatable {
+    let id: String
+    let name: String
+    let path: String
+    let currentDirectoryRelationship: String
+    let isCurrentDirectory: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case path
+        case currentDirectoryRelationship = "current_directory_relationship"
+        case isCurrentDirectory = "is_current_directory"
+    }
+}
+
+struct HeadlessRootWarning: Codable, Equatable {
+    let code: String
+    let message: String
+    let suggestedCommand: String?
+
+    enum CodingKeys: String, CodingKey {
+        case code
+        case message
+        case suggestedCommand = "suggested_command"
+    }
+}
+
+struct HeadlessCodeStructureReply: Codable, Equatable {
+    struct FileResult: Codable, Equatable {
+        let path: String
+        let fullPath: String
+        let rootID: String
+        let rootName: String
+        let hasStructure: Bool
+        let status: String
+        let fallbackTools: [String]
+        let structure: String?
+
+        enum CodingKeys: String, CodingKey {
+            case path
+            case fullPath = "full_path"
+            case rootID = "root_id"
+            case rootName = "root_name"
+            case hasStructure = "has_structure"
+            case status
+            case fallbackTools = "fallback_tools"
+            case structure
+        }
+    }
+
+    let scope: String
+    let requestedPaths: [String]
+    let unresolvedPaths: [String]
+    let files: [FileResult]
+    let structureCount: Int
+    let fallbackTools: [String]
+    let fallbackGuidance: String?
+    let text: String
+
+    enum CodingKeys: String, CodingKey {
+        case scope
+        case requestedPaths = "requested_paths"
+        case unresolvedPaths = "unresolved_paths"
+        case files
+        case structureCount = "structure_count"
+        case fallbackTools = "fallback_tools"
+        case fallbackGuidance = "fallback_guidance"
+        case text
+    }
+}
+
+enum HeadlessRootMetadataFactory {
+    static func currentDirectory() -> String {
+        (FileManager.default.currentDirectoryPath as NSString).standardizingPath
+    }
+
+    static func metadata(for paths: [String], currentDirectory: String = currentDirectory()) -> [HeadlessRootMetadata] {
+        paths.sorted().enumerated().map { index, path in
+            let standardized = (path as NSString).standardizingPath
+            return HeadlessRootMetadata(
+                id: "root-\(index + 1)",
+                name: rootName(for: standardized),
+                path: standardized,
+                currentDirectoryRelationship: relationship(rootPath: standardized, currentDirectory: currentDirectory),
+                isCurrentDirectory: standardized == currentDirectory
+            )
+        }
+    }
+
+    static func metadata(for refs: [WorkspaceRootRef], currentDirectory: String = currentDirectory()) -> [HeadlessRootMetadata] {
+        refs.sorted { $0.standardizedFullPath < $1.standardizedFullPath }.map { root in
+            HeadlessRootMetadata(
+                id: root.id.uuidString,
+                name: root.name,
+                path: root.standardizedFullPath,
+                currentDirectoryRelationship: relationship(rootPath: root.standardizedFullPath, currentDirectory: currentDirectory),
+                isCurrentDirectory: root.standardizedFullPath == currentDirectory
+            )
+        }
+    }
+
+    static func warnings(for roots: [HeadlessRootMetadata], currentDirectory: String = currentDirectory()) -> [HeadlessRootWarning] {
+        guard !roots.isEmpty else {
+            return [
+                HeadlessRootWarning(
+                    code: "no_loaded_roots",
+                    message: "No roots are loaded. Start with `rpce-headless serve --root \(currentDirectory)` or run from the repository root.",
+                    suggestedCommand: "rpce-headless serve --root \(currentDirectory)"
+                )
+            ]
+        }
+        let cwdCovered = roots.contains {
+            $0.currentDirectoryRelationship == "current_directory" || $0.currentDirectoryRelationship == "contains_current_directory"
+        }
+        guard !cwdCovered else { return [] }
+        return [
+            HeadlessRootWarning(
+                code: "current_directory_outside_loaded_roots",
+                message: "The process current directory is not inside any loaded root. Agent searches may inspect a different workspace than the shell prompt implies.",
+                suggestedCommand: "rpce-headless serve --root \(currentDirectory)"
+            )
+        ]
+    }
+
+    private static func relationship(rootPath: String, currentDirectory: String) -> String {
+        let root = (rootPath as NSString).standardizingPath
+        let cwd = (currentDirectory as NSString).standardizingPath
+        if root == cwd { return "current_directory" }
+        if isDescendant(cwd, of: root) { return "contains_current_directory" }
+        if isDescendant(root, of: cwd) { return "inside_current_directory" }
+        return "outside_current_directory"
+    }
+
+    private static func isDescendant(_ path: String, of root: String) -> Bool {
+        let prefix = root.hasSuffix("/") ? root : root + "/"
+        return path.hasPrefix(prefix)
+    }
+
+    private static func rootName(for path: String) -> String {
+        let name = (path as NSString).lastPathComponent
+        return name.isEmpty ? path : name
     }
 }
 
@@ -138,12 +291,15 @@ struct HeadlessContextBuilderRunSnapshot: Codable, Equatable {
     let contextID: String
     let runStatus: String
     let statusText: String
+    let startedAt: String?
     let updatedAt: String
+    let elapsedSeconds: Int?
     let agent: String
     let responseType: String
     let processID: Int?
     let resultStatus: String?
     let error: String?
+    let nextAction: String?
     let diagnostics: HeadlessContextBuilderDiagnostics?
     let meta: Meta?
 
@@ -151,12 +307,15 @@ struct HeadlessContextBuilderRunSnapshot: Codable, Equatable {
         case contextID = "context_id"
         case runStatus = "run_status"
         case statusText = "status_text"
+        case startedAt = "started_at"
         case updatedAt = "updated_at"
+        case elapsedSeconds = "elapsed_seconds"
         case agent
         case responseType = "response_type"
         case processID = "process_id"
         case resultStatus = "result_status"
         case error
+        case nextAction = "next_action"
         case diagnostics
         case meta = "_meta"
     }

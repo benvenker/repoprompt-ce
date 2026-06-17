@@ -10,6 +10,7 @@ final class HeadlessCLIParserTests: XCTestCase {
                 return XCTFail("Expected help for args \(args)")
             }
             XCTAssertTrue(text.contains("Usage: rpce-headless <command> [options]"))
+            XCTAssertTrue(text.contains("robot-docs status --json"))
             XCTAssertTrue(text.contains("capabilities --json"))
             XCTAssertTrue(text.contains("robot-docs guide"))
         }
@@ -36,6 +37,28 @@ final class HeadlessCLIParserTests: XCTestCase {
         let command = try HeadlessCLI.parse(["robot-docs", "guide"])
         guard case .robotDocsGuide = command else {
             return XCTFail("Expected robot docs guide command")
+        }
+    }
+
+    func testRobotDocsStatusJsonCommand() throws {
+        let command = try HeadlessCLI.parse(["robot-docs", "status", "--json"])
+        guard case .robotDocsStatus = command else {
+            return XCTFail("Expected robot docs status command")
+        }
+    }
+
+    func testRobotDocsTriageJsonAlias() throws {
+        let command = try HeadlessCLI.parse(["robot-docs", "triage", "--json"])
+        guard case .robotDocsStatus = command else {
+            return XCTFail("Expected robot docs triage alias to parse as status")
+        }
+    }
+
+    func testRobotDocsStatusRequiresJsonAndTeachesCommand() {
+        XCTAssertThrowsError(try HeadlessCLI.parse(["robot-docs", "status"])) { error in
+            let exit = error as? HeadlessCLI.ExitError
+            XCTAssertEqual(exit?.code, 64)
+            XCTAssertTrue(exit?.message.contains("rpce-headless robot-docs status --json") == true, exit?.message ?? "")
         }
     }
 

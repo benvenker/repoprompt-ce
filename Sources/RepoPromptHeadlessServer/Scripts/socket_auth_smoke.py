@@ -17,6 +17,7 @@ WRONG_TOKEN = "rpce-socket-auth-token-wrong-smoke"
 SHORT_TOKEN = "short-token-15x"
 DISCOVERY_TOOLS = {
     "headless_capabilities",
+    "headless_status",
     "read_file",
     "get_file_tree",
     "file_search",
@@ -175,6 +176,12 @@ def initialize_and_list_tools(conn, client_name):
     return {tool["name"] for tool in rpc(conn, ids, "tools/list")["tools"]}
 
 
+def call_tool(conn, ids, name, arguments=None):
+    result = rpc(conn, ids, "tools/call", {"name": name, "arguments": arguments or {}})
+    text = "".join(content.get("text", "") for content in result.get("content", []))
+    return result, text
+
+
 def assert_server_survives(process, label):
     assert process.poll() is None, f"{label}: server exited unexpectedly rc={process.returncode}"
 
@@ -262,9 +269,29 @@ def run_restricted_socket_scenario(socket_path, process):
     conn = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     conn.connect(socket_path)
     try:
-        tools = initialize_and_list_tools(conn, "socket-auth-restricted-smoke")
+        ids = itertools.count(1)
+        rpc(conn, ids, "initialize", {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": {"name": "socket-auth-restricted-smoke", "version": "0"},
+        })
+        notify(conn, "notifications/initialized")
+        tools = {tool["name"] for tool in rpc(conn, ids, "tools/list")["tools"]}
         assert tools == DISCOVERY_TOOLS, sorted(tools)
         assert "agent_run" not in tools, sorted(tools)
+        result, text = call_tool(conn, ids, "headless_status")
+        assert not result.get("isError"), text
+        status = result.get("structuredContent") or json.loads(text)
+        assert status["mcp_exposure"]["current_transport"] == "socket", status
+        assert status["mcp_exposure"]["current_exposure"] == "discovery_restricted", status
+        assert "context_builder" not in status["mcp_exposure"]["available_tools"], status
+        assert status["available_agent_tools"]["context_builder"] is False, status
+        assert status["available_agent_tools"]["agent_run"] is False, status
+        assert status["available_agent_tools"]["agent_manage"] is False, status
+        assert status["available_agent_tools"]["oracle_send"] is False, status
+        assert all("context_builder" not in call for call in status["suggested_first_tool_calls"]), status
+        assert all("agent_run" not in call for call in status["suggested_first_tool_calls"]), status
+        assert "full stdio" in status["available_agent_tools"]["guidance"], status
     finally:
         conn.close()
     assert_server_survives(process, "restricted-control")

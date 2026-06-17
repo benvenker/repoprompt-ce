@@ -4,14 +4,14 @@ Mode: audit-only.
 
 ## Highest Leverage Fixes
 
-1. Add an in-tool capabilities / robot-docs contract.
-   - This should be the canonical single source for a fresh agent: loaded root, tool exposure, root verification, context_builder defaults, agent_manage/agent_run pattern, oracle opt-in rule, fake-agent caveat, and smoke commands.
+1. Add an in-tool status / capabilities / robot-docs contract.
+   - `headless_status` should be the canonical first call for a fresh agent: loaded root, tool exposure, root verification, available advanced tools, suggested next calls, and smoke commands. `headless_capabilities` should remain the fuller follow-up contract with context_builder defaults, agent_manage/agent_run pattern, oracle opt-in rule, fake-agent caveat, exit codes, and examples.
 
 2. Fix CLI help ergonomics.
    - `rpce-headless --help`, bare `rpce-headless`, and every subcommand `--help` should be first-try friendly and exit 0.
 
-3. Make read-only subagent onboarding the blessed path.
-   - Recommended sequence: verify root, `agent_manage list_agents`, dispatch narrow read-only `agent_run` tasks, use `context_builder` for curated context, cleanup sessions, and integrate findings with direct evidence.
+3. Make Context Builder the blessed architecture-onboarding path, with subagents as optional review.
+   - Recommended sequence: call `headless_status`, start `context_builder` for curated synthesis/key-file selection, verify anchors with direct tree/search/structure/read tools, and use `agent_manage list_agents` plus bounded read-only `agent_run` only when independent review would reduce guesswork. Always cleanup sessions.
 
 4. Simplify `context_builder` discovery.
    - The lifecycle is strong, but the current single schema carries sync mode, async mode, timeouts, response types, cleanup, and unsupported export behavior. Schema-only agents need either clearer examples in the schema or separate surfaces.
@@ -34,4 +34,4 @@ Mode: audit-only.
 
 ## Product Interpretation
 
-The headless surface is no longer just remote grep. The contract should encourage agents to use `context_builder` and read-only lower-powered subagents as the normal architecture-onboarding path. Oracle should remain explicit/on-demand because it is external inference rather than repo evidence.
+The headless surface is no longer just remote grep. The contract should encourage agents to call `headless_status` first, use `context_builder` as the normal architecture-onboarding path, and reserve read-only lower-powered subagents for optional independent review. Oracle should remain explicit/on-demand because it is external inference rather than repo evidence.

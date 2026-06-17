@@ -7,6 +7,7 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
     func testFullHeadlessToolsAdvertiseAgentRunAndManageButDiscoveryToolsDoNot() throws {
         let expectedFullToolNames: Set<String> = [
             "headless_capabilities",
+            "headless_status",
             "read_file",
             "get_file_tree",
             "file_search",
@@ -22,7 +23,7 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
         let fullToolNames = Set(HeadlessToolSchemas.tools.map(\.name))
 
         XCTAssertEqual(fullToolNames, expectedFullToolNames)
-        XCTAssertEqual(fullToolNames.count, 12)
+        XCTAssertEqual(fullToolNames.count, 13)
 
         XCTAssertTrue(fullToolNames.contains("agent_run"), "Full headless MCP tools should advertise agent_run.")
         XCTAssertTrue(fullToolNames.contains("agent_manage"), "Full headless MCP tools should advertise agent_manage.")
@@ -31,6 +32,7 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
         let discoveryToolNames = Set(HeadlessToolSchemas.discoveryTools.map(\.name))
         XCTAssertEqual(discoveryToolNames, HeadlessToolSchemas.discoveryToolNames)
         XCTAssertTrue(discoveryToolNames.contains("headless_capabilities"), "Discovery-restricted sockets should expose the read-only capabilities contract.")
+        XCTAssertTrue(discoveryToolNames.contains("headless_status"), "Discovery-restricted sockets should expose compact workspace status.")
         XCTAssertFalse(discoveryToolNames.contains("agent_run"), "Discovery-restricted headless sockets must not expose agent_run.")
         XCTAssertFalse(discoveryToolNames.contains("agent_manage"), "Discovery-restricted headless sockets must not expose agent_manage.")
         XCTAssertFalse(discoveryToolNames.contains("context_builder"), "Discovery-restricted headless sockets must not expose context_builder.")
@@ -40,6 +42,22 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
     func testHeadlessCapabilitiesMirrorToolExposure() throws {
         let capabilities = HeadlessCapabilities.make(loadedRoots: ["/tmp/example"])
         XCTAssertEqual(capabilities.loadedRoots, ["/tmp/example"])
+        XCTAssertEqual(capabilities.loadedRootMetadata.map(\.path), ["/tmp/example"])
+        XCTAssertTrue(capabilities.recommendedWorkflow[0].contains("headless_status"))
+        XCTAssertTrue(capabilities.recommendedWorkflow[0].contains("robot-docs status --json"))
+        XCTAssertTrue(capabilities.recommendedWorkflow[1].contains("headless_capabilities"))
+        XCTAssertTrue(capabilities.recommendedWorkflow[1].contains("fuller contract"))
+        XCTAssertTrue(capabilities.architectureOnboarding.steps.contains { $0.contains("context_builder") })
+        XCTAssertEqual(capabilities.nativeWorkflows.source, "RepoPrompt CE native product workflow prompts, not Smithers workflows.")
+        XCTAssertTrue(capabilities.nativeWorkflows.roles.contains { $0.name == "explore" && $0.bounds.contains("read-only") })
+        XCTAssertTrue(capabilities.nativeWorkflows.roles.contains { $0.name == "pair" })
+        XCTAssertTrue(capabilities.nativeWorkflows.roles.contains { $0.name == "design" })
+        XCTAssertTrue(capabilities.nativeWorkflows.workflows.contains { $0.name == "investigate" })
+        XCTAssertTrue(capabilities.nativeWorkflows.workflows.contains { $0.name == "optimize" })
+        XCTAssertTrue(capabilities.nativeWorkflows.workflows.contains { $0.name == "deep_plan" })
+        XCTAssertEqual(capabilities.nativeWorkflows.customWorkflows.currentHeadlessSupport, "metadata_only")
+        XCTAssertTrue(capabilities.nativeWorkflows.customWorkflows.appNativeSupport.contains { $0.contains("AgentWorkflowStore") })
+        XCTAssertTrue(capabilities.nativeWorkflows.customWorkflows.futureHeadlessContract.contains { $0.contains("workflow_name") })
 
         let stdio = try XCTUnwrap(capabilities.transports.first { $0.name == "stdio" })
         XCTAssertEqual(stdio.exposure, "full")
@@ -53,14 +71,93 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
         XCTAssertTrue(capabilities.exitCodes.contains { $0.code == 64 && $0.meaning.contains("usage") })
     }
 
+    func testFullToolDiscoveryPromotesStatusFirstManagedOnboardingBeforeFileReads() throws {
+        let toolNames = HeadlessToolSchemas.tools.map(\.name)
+        XCTAssertEqual(
+            Array(toolNames.prefix(5)),
+            ["headless_status", "headless_capabilities", "context_builder", "agent_manage", "agent_run"]
+        )
+        XCTAssertLessThan(
+            try XCTUnwrap(toolNames.firstIndex(of: "context_builder")),
+            try XCTUnwrap(toolNames.firstIndex(of: "read_file"))
+        )
+
+        let contextBuilder = try tool(named: "context_builder")
+        XCTAssertTrue(contextBuilder.description.contains("Preferred repo-onboarding"))
+        XCTAssertTrue(contextBuilder.description.contains("instead of manually"))
+
+        let agentManage = try tool(named: "agent_manage")
+        XCTAssertTrue(agentManage.description.contains("server's subagent pool"))
+        XCTAssertTrue(agentManage.description.contains("instead of client-local"))
+
+        let agentRun = try tool(named: "agent_run")
+        XCTAssertTrue(agentRun.description.contains("server-managed subagent lifecycle"))
+        XCTAssertTrue(agentRun.description.contains("Do not treat this as generic client-local agent spawning"))
+    }
+
+    func testHeadlessStatusSummarizesWorkspaceAndNextCalls() {
+        let status = HeadlessCapabilities.status(loadedRoots: ["/tmp/example"])
+
+        XCTAssertEqual(status.toolName, "rpce-headless")
+        XCTAssertEqual(status.loadedRoots, ["/tmp/example"])
+        XCTAssertEqual(status.loadedRootMetadata.map(\.name), ["example"])
+        XCTAssertEqual(status.mcpExposure.currentTransport, "stdio")
+        XCTAssertEqual(status.mcpExposure.currentExposure, "full")
+        XCTAssertTrue(status.mcpExposure.availableTools.contains("context_builder"))
+        XCTAssertTrue(status.mcpExposure.fullTools.contains("context_builder"))
+        XCTAssertTrue(status.mcpExposure.discoveryRestrictedTools.contains("headless_status"))
+        XCTAssertTrue(status.availableAgentTools.contextBuilder)
+        XCTAssertTrue(status.availableAgentTools.agentRun)
+        XCTAssertTrue(status.availableAgentTools.fullStdioTools.contains("agent_run"))
+        XCTAssertTrue(status.availableAgentTools.guidance.contains("oracle_send"))
+        XCTAssertEqual(status.suggestedFirstToolCalls[0], "headless_status")
+        XCTAssertTrue(status.suggestedFirstToolCalls[1].contains("context_builder"))
+        XCTAssertTrue(status.suggestedFirstToolCalls[2].contains("agent_manage"))
+        XCTAssertTrue(status.suggestedFirstToolCalls[3].contains("agent_run"))
+        XCTAssertEqual(status.architectureOnboarding.preferredSummaryTool, "context_builder")
+        XCTAssertTrue(status.nativeWorkflows.compositionRules.contains { $0.contains("context_builder") })
+        XCTAssertTrue(status.nativeWorkflows.workflows.contains { $0.name == "optimize" })
+        XCTAssertEqual(status.nativeWorkflows.customWorkflows.currentHeadlessSupport, "metadata_only")
+    }
+
+    func testHeadlessStatusDoesNotSuggestFullOnlyToolsOnRestrictedSocket() {
+        let status = HeadlessCapabilities.status(loadedRoots: ["/tmp/example"], discoveryRestricted: true)
+
+        XCTAssertEqual(status.mcpExposure.currentTransport, "socket")
+        XCTAssertEqual(status.mcpExposure.currentExposure, "discovery_restricted")
+        XCTAssertFalse(status.mcpExposure.availableTools.contains("context_builder"))
+        XCTAssertFalse(status.availableAgentTools.contextBuilder)
+        XCTAssertFalse(status.availableAgentTools.agentRun)
+        XCTAssertFalse(status.availableAgentTools.agentManage)
+        XCTAssertFalse(status.availableAgentTools.oracleSend)
+        XCTAssertTrue(status.availableAgentTools.fullStdioTools.contains("context_builder"))
+        XCTAssertTrue(status.availableAgentTools.guidance.contains("full stdio"))
+        XCTAssertFalse(status.suggestedFirstToolCalls.contains { $0.contains("context_builder") })
+        XCTAssertFalse(status.suggestedFirstToolCalls.contains { $0.contains("agent_run") })
+        XCTAssertTrue(status.suggestedFirstToolCalls.contains { $0.contains("workspace_context") })
+    }
+
     func testRobotDocsGuideNamesPreferredAgentWorkflow() {
         let guide = HeadlessCapabilities.robotDocsGuide(loadedRoots: ["/repo"])
+        XCTAssertTrue(guide.contains("robot-docs status --json"))
+        XCTAssertTrue(guide.contains("headless_status"))
         XCTAssertTrue(guide.contains("rpce-headless capabilities --json"))
         XCTAssertTrue(guide.contains("headless_capabilities"))
         XCTAssertTrue(guide.contains("agent_manage"))
         XCTAssertTrue(guide.contains("agent_run"))
         XCTAssertTrue(guide.contains("context_builder"))
         XCTAssertTrue(guide.contains("FAKE_AGENT_SCRIPT"))
+
+        let contextBuilderRange = try XCTUnwrap(guide.range(of: "prefer `context_builder`"))
+        let directEvidenceRange = try XCTUnwrap(guide.range(of: "For direct evidence"))
+        XCTAssertLessThan(contextBuilderRange.lowerBound, directEvidenceRange.lowerBound)
+        XCTAssertTrue(guide.contains("server-managed subagent lifecycle"))
+        XCTAssertTrue(guide.contains("Native RepoPrompt workflow shapes"))
+        XCTAssertTrue(guide.contains("Investigate"))
+        XCTAssertTrue(guide.contains("Optimize"))
+        XCTAssertTrue(guide.contains("Deep Plan"))
+        XCTAssertTrue(guide.contains("Custom workflows"))
+        XCTAssertTrue(guide.contains("metadata/extension guidance"))
     }
 
     func testHeadlessAgentOpEnumsAreScopedToProcessBackedSubset() throws {
@@ -108,14 +205,28 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
 
     func testContextBuilderSchemaDescriptionsTeachAsyncLifecycle() throws {
         let toolDescription = try tool(named: "context_builder").description
-        XCTAssertTrue(toolDescription.contains("Omit op"))
+        XCTAssertTrue(toolDescription.contains("prefer op=start"))
+        XCTAssertTrue(toolDescription.contains("context_id:\"active\""))
+        XCTAssertTrue(toolDescription.contains("compatibility mode"))
+        XCTAssertTrue(toolDescription.contains("original result shape"))
+        XCTAssertTrue(toolDescription.contains("running lifecycle snapshot"))
         XCTAssertTrue(toolDescription.contains("op=start"))
         XCTAssertTrue(toolDescription.contains("timeout_seconds"))
 
         let timeoutSeconds = try propertySchema(named: "timeout_seconds", forToolNamed: "context_builder")
-        XCTAssertTrue((timeoutSeconds["description"] as? String)?.contains("Discovery-agent lifetime cap") == true)
+        XCTAssertTrue((timeoutSeconds["description"] as? String)?.contains("op=wait alias") == true)
         let waitTimeout = try propertySchema(named: "timeout", forToolNamed: "context_builder")
-        XCTAssertTrue((waitTimeout["description"] as? String)?.contains("Client wait deadline") == true)
+        XCTAssertTrue((waitTimeout["description"] as? String)?.contains("progress-friendly") == true)
+    }
+
+    func testContextBuilderCapabilitiesDescribeCompatibilityUnionShape() {
+        let capabilities = HeadlessCapabilities.make(loadedRoots: ["/tmp/example"])
+
+        XCTAssertTrue(capabilities.contextBuilder.syncExample.contains("original result shape"))
+        XCTAssertTrue(capabilities.contextBuilder.syncExample.contains("running snapshot"))
+        XCTAssertTrue(capabilities.contextBuilder.timeoutGuidance.contains("short completed calls return the original result shape"))
+        XCTAssertTrue(capabilities.contextBuilder.timeoutGuidance.contains("running lifecycle snapshot"))
+        XCTAssertTrue(capabilities.contextBuilder.timeoutGuidance.contains("RPCE_CONTEXT_BUILDER_WAIT_MAX_SECONDS"))
     }
 
     func testContextBuilderRequestParsingKeepsSynchronousCompatibilityMode() throws {
@@ -174,7 +285,32 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
         XCTAssertNil(request.request)
     }
 
-    func testContextBuilderWaitIgnoresTimeoutSecondsAsPollingTimeout() throws {
+    func testContextBuilderWaitUsesConfiguredDefaultWhenTimeoutOmitted() throws {
+        let request = try HeadlessContextBuilderService.toolRequestFromMCP(arguments: [
+            "op": .string("wait"),
+            "context_id": .string("ctx-123")
+        ], environment: ["RPCE_CONTEXT_BUILDER_WAIT_DEFAULT_SECONDS": "6"])
+
+        XCTAssertEqual(request.operation, .wait)
+        XCTAssertEqual(request.contextID, "ctx-123")
+        XCTAssertEqual(request.waitTimeoutSeconds, 6)
+        XCTAssertNil(request.request)
+    }
+
+    func testContextBuilderWaitTimeoutZeroBehavesLikePoll() throws {
+        let request = try HeadlessContextBuilderService.toolRequestFromMCP(arguments: [
+            "op": .string("wait"),
+            "context_id": .string("ctx-123"),
+            "timeout": .int(0)
+        ], environment: ["RPCE_CONTEXT_BUILDER_WAIT_MAX_SECONDS": "7"])
+
+        XCTAssertEqual(request.operation, .wait)
+        XCTAssertEqual(request.contextID, "ctx-123")
+        XCTAssertEqual(request.waitTimeoutSeconds, 0)
+        XCTAssertNil(request.request)
+    }
+
+    func testContextBuilderWaitAcceptsTimeoutSecondsAlias() throws {
         let request = try HeadlessContextBuilderService.toolRequestFromMCP(arguments: [
             "op": .string("wait"),
             "context_id": .string("ctx-123"),
@@ -183,7 +319,20 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
 
         XCTAssertEqual(request.operation, .wait)
         XCTAssertEqual(request.contextID, "ctx-123")
-        XCTAssertEqual(request.waitTimeoutSeconds, 120)
+        XCTAssertEqual(request.waitTimeoutSeconds, 2)
+        XCTAssertNil(request.request)
+    }
+
+    func testContextBuilderWaitTimeoutIsCappedForProgress() throws {
+        let request = try HeadlessContextBuilderService.toolRequestFromMCP(arguments: [
+            "op": .string("wait"),
+            "context_id": .string("ctx-123"),
+            "timeout_seconds": .int(99)
+        ], environment: ["RPCE_CONTEXT_BUILDER_WAIT_MAX_SECONDS": "7"])
+
+        XCTAssertEqual(request.operation, .wait)
+        XCTAssertEqual(request.contextID, "ctx-123")
+        XCTAssertEqual(request.waitTimeoutSeconds, 7)
         XCTAssertNil(request.request)
     }
 
@@ -192,12 +341,15 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
             contextID: "ctx-timeout",
             runStatus: "failed",
             statusText: "context_builder discovery failed.",
+            startedAt: "2026-06-15T00:00:00.000Z",
             updatedAt: "2026-06-15T00:00:00.000Z",
+            elapsedSeconds: 1,
             agent: "fake",
             responseType: "clarify",
             processID: 42,
             resultStatus: nil,
             error: "context_builder discovery timed out after 1 seconds",
+            nextAction: "Inspect diagnostics with this snapshot or get_result, then call op:\"cleanup\" when done.",
             diagnostics: HeadlessContextBuilderDiagnostics(
                 stdout: "CTX_STDOUT",
                 stderr: "CTX_STDERR",
@@ -219,6 +371,9 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
 
         XCTAssertEqual(json["context_id"] as? String, "ctx-timeout")
         XCTAssertEqual(json["run_status"] as? String, "failed")
+        XCTAssertEqual(json["started_at"] as? String, "2026-06-15T00:00:00.000Z")
+        XCTAssertEqual(json["elapsed_seconds"] as? Int, 1)
+        XCTAssertTrue((json["next_action"] as? String)?.contains("cleanup") == true)
         XCTAssertEqual(diagnostics["stdout"] as? String, "CTX_STDOUT")
         XCTAssertEqual(diagnostics["stderr"] as? String, "CTX_STDERR")
         XCTAssertEqual(diagnostics["stdout_truncated"] as? Bool, true)

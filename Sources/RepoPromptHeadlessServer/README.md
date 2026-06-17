@@ -94,17 +94,28 @@ Agent-facing self-documentation is available in-tool:
 
 ```bash
 .build/debug/rpce-headless --help
+.build/debug/rpce-headless robot-docs status --json
 .build/debug/rpce-headless capabilities --json
 .build/debug/rpce-headless robot-docs guide
 .build/debug/rpce-headless dump --json
 ```
 
+`robot-docs status --json` is the compact first-call triage packet for agents:
+tool/version, current directory, `loaded_roots`, `loaded_root_metadata`,
+root mismatch warnings, MCP exposure mode, available agent tools, suggested
+first tool calls, native RepoPrompt workflow shapes, architecture-onboarding
+steps, and smoke commands.
+`robot-docs triage --json` is accepted as a compatibility alias.
+
 `capabilities --json` is the stable machine-readable contract: version, exit
-codes, root semantics, stdio vs socket exposure, recommended onboarding
-workflow, Context Builder examples, agent runner examples, oracle opt-in
-guidance, fake-agent caveat, and smoke commands. The MCP tool
-`headless_capabilities` returns the same contract for the currently loaded
-workspace, including `loaded_roots`.
+codes, root semantics, `loaded_roots`, `loaded_root_metadata`, root warnings,
+stdio vs socket exposure, recommended onboarding workflow, architecture
+onboarding, native RepoPrompt workflow shapes, Context Builder examples,
+agent runner examples, oracle opt-in guidance, fake-agent caveat, and smoke
+commands. The MCP tool
+`headless_capabilities` returns the same full contract for the currently loaded
+workspace. MCP `headless_status` returns the compact status packet and is
+available on both stdio and discovery-restricted sockets.
 
 Stdout is reserved for newline-delimited JSON-RPC. Diagnostics go to stderr.
 This stdio mode is intended for MCP clients that launch the process directly;
@@ -120,6 +131,7 @@ Socket serving for discovery agents:
 
 All socket connections are discovery-restricted to:
 
+- `headless_status`
 - `headless_capabilities`
 - `manage_selection`
 - `prompt`
@@ -205,6 +217,9 @@ MCP `context_builder` configuration is resolved from the process environment:
 - `RPCE_CONTEXT_BUILDER_AGENT` (defaults to `fake` when `FAKE_AGENT_SCRIPT` is set, otherwise `claude`)
 - `RPCE_CONTEXT_BUILDER_AGENT_CONFIG`
 - `RPCE_CONTEXT_BUILDER_TIMEOUT_SECONDS`
+- `RPCE_CONTEXT_BUILDER_SYNC_WAIT_TIMEOUT_SECONDS`
+- `RPCE_CONTEXT_BUILDER_WAIT_DEFAULT_SECONDS`
+- `RPCE_CONTEXT_BUILDER_WAIT_MAX_SECONDS`
 - `RPCE_CONTEXT_BUILDER_TOKEN_BUDGET`
 - `RPCE_CONTEXT_BUILDER_SOCKET_PATH`
 
@@ -212,7 +227,13 @@ MCP `response_type:"clarify"` is offline and only harvests context. `question`, 
 
 MCP callers have two `context_builder` modes:
 
-- Omit `op` for the synchronous compatibility path. This preserves the original one-shot result shape and is appropriate for short deterministic calls:
+- Omit `op` for compatibility mode. It starts a pollable run, waits only up to
+  the short synchronous cap, and returns one of two shapes: the original
+  one-shot result shape when discovery completes within that cap, or a
+  lifecycle snapshot with `context_id`, `run_status`, `_meta.wait_result`, and
+  `next_action` when the run is still active. This is appropriate for short
+  deterministic calls; agents that need onboarding or planning should prefer
+  `op:"start"` so the lifecycle is explicit from the first call.
 
 ```json
 {"instructions":"Map the MCP server entry points","response_type":"clarify"}
@@ -233,13 +254,23 @@ The start call returns a compact snapshot with `context_id` and
 {"op":"wait","context_id":"<context_id>","timeout":30}
 ```
 
-`timeout_seconds` belongs to discovery. Set it on `op:"start"` or in
-`RPCE_CONTEXT_BUILDER_TIMEOUT_SECONDS` to cap the spawned discovery-agent
+`timeout_seconds` belongs to discovery on `op:"start"` or in
+`RPCE_CONTEXT_BUILDER_TIMEOUT_SECONDS`: it caps the spawned discovery-agent
 lifetime; an overlong agent fails the run, terminates the process group, and
-clears the single-flight active slot. The `timeout` field on `op:"wait"` is
-only the client polling deadline; `timeout_seconds` is ignored by `op:"wait"`
-and cannot stand in for `timeout`. If that wait expires, the reply includes
+clears the single-flight active slot. On `op:"wait"`, `timeout` is the client
+wait window and `timeout_seconds` is accepted as an alias because agents often
+guess that name. If both are present, `timeout` wins. Large wait windows are
+capped to a progress-friendly maximum so clients receive regular snapshots
+instead of a long silent tool call. Defaults are 15 seconds for omitted
+`op:"wait"` timeouts and 30 seconds for the wait cap; operators can raise
+`RPCE_CONTEXT_BUILDER_WAIT_MAX_SECONDS` when a client truly wants longer
+blocking waits. If that wait expires, the reply includes
 `_meta.wait_result:"timed_out"` and the run can still be `running`.
+
+When the MCP client supplies a request progress token, `rpce-headless` also
+emits `notifications/progress` heartbeats during long `context_builder` waits.
+Snapshots include `started_at`, `elapsed_seconds`, and `next_action` so clients
+that do not render MCP progress still have structured recovery guidance.
 
 When `run_status` is terminal, fetch the retained result explicitly:
 
@@ -247,7 +278,8 @@ When `run_status` is terminal, fetch the retained result explicitly:
 {"op":"get_result","context_id":"<context_id>"}
 ```
 
-`get_result` returns the same context-builder fields as one-shot mode:
+`get_result` returns the same context-builder fields as the completed
+compatibility result shape:
 `status`, `prompt`, `selection`, `file_count`, `total_tokens`,
 `token_budget`, `response_type`, and any oracle `plan` or `review`. For
 failed runs, inspect the snapshot `run_status`, `error`, and optional
@@ -297,32 +329,104 @@ python3 Sources/RepoPromptHeadlessServer/Scripts/context_builder_mcp_fake_agent_
 ```
 
 Expected success output: `CONTEXT_BUILD OK`.
+Expected MCP success output: `CONTEXT_BUILDER_MCP OK`.
 
 Pi note: Pi has no built-in MCP hookup in this target. Use the `pi-mcp-adapter` extension with the generated MCP config shape (`command: rpce-headless`, `args: ["connect", "--socket", "<path>"]`). The example `"pi"` agent entry is an operational starting point and remains UNVERIFIED.
 
 ## Headless agent runner
 
-`agent_run` and `agent_manage` expose a process-backed subset of headless
-agent control. They are not app Agent Mode: there is no steering, responding,
-worktree management, or app window state. `agent_run` supports
-`start`, `poll`, `wait`, and `cancel`; `agent_manage` supports `list_agents`,
-`list_sessions`, `get_log`, `stop_session`, and `cleanup_sessions`.
+`agent_run` and `agent_manage` expose the rpce-headless server-managed
+subagent lifecycle. They are the headless contract for delegated discovery;
+do not substitute client-local ad hoc subagents when the task is specifically
+testing or using this server. They are not app Agent Mode: there is no
+steering, responding, worktree management, or app window state. `agent_run`
+supports `start`, `poll`, `wait`, and `cancel`; `agent_manage` supports
+`list_agents`, `list_sessions`, `get_log`, `stop_session`, and
+`cleanup_sessions`.
 
-The preferred read-only subagent pattern is:
+The default architecture-onboarding path is status first, Context Builder
+second, then direct evidence tools. Use the server-managed subagent lifecycle
+as an optional independent review path when a second read-only pass would
+reduce guesswork.
 
-1. Confirm the workspace with `headless_capabilities` or
-   `workspace_context` structured `loaded_roots`.
-2. Call `agent_manage` with `op:"list_agents"`.
-3. Choose an available real configured agent; avoid the `fake` smoke fixture
+The read-only subagent pattern is:
+
+1. Confirm the workspace with `headless_status` and inspect
+   `loaded_root_metadata` plus `root_warnings`.
+2. Start `context_builder` with `response_type:"clarify"` for curated
+   architecture synthesis and key-file selection.
+3. Call `agent_manage` with `op:"list_agents"` if independent review would
+   help.
+4. Choose an available real configured agent; avoid the `fake` smoke fixture
    outside automated tests.
-4. Start a bounded read-only `agent_run` task, usually detached.
-5. `wait` or `poll`, then call `agent_manage get_log` for evidence.
-6. Call `agent_manage cleanup_sessions` for terminal sessions.
+5. Start a bounded read-only `agent_run` task, usually detached.
+6. `wait` or `poll`, then call `agent_manage get_log` for evidence.
+7. Call `agent_manage cleanup_sessions` for terminal sessions.
 
-Use `context_builder` as the higher-level curated discovery path when the
-main agent needs filtered multi-file synthesis before answering. Keep
-`oracle_send` explicit/on-demand because it asks an external model rather
+Keep `oracle_send` explicit/on-demand because it asks an external model rather
 than reading repo evidence directly.
+
+For architecture onboarding, the intended MCP flow is:
+
+1. Call `headless_status`.
+2. Start `context_builder` with `response_type:"clarify"` for architecture
+   mapping, implementation planning, or broad repo onboarding.
+3. Call `agent_manage` with `op:"list_agents"` when a second read-only pass
+   would help, then start a bounded server-managed `agent_run` task and read
+   its logs through `agent_manage`.
+4. Call `get_file_tree` with `mode:"full"` and `max_depth:2` to verify the
+   shape and cite anchors.
+5. Search anchors such as `AGENTS.md`, `README`, `CONTEXT.md`, `docs/adr`,
+   package manifests, and source entry points.
+6. Call `get_code_structure` on likely entry-point files.
+7. If a resolved file has no codemap, `get_code_structure` returns structured
+   `codemap_unavailable` file evidence with fallback tools
+   `["file_search","read_file"]`; follow that fallback rather than treating the
+   path as missing.
+
+## Native RepoPrompt workflow shapes
+
+`headless_status` and `headless_capabilities` expose `native_workflows`, a
+compact summary of the RepoPrompt product workflow grammar. This is not the
+Smithers workflow layer and headless v1 does not launch app-native workflow
+commands directly. It teaches agents how to compose the headless tools and how
+custom workflow support should plug in:
+
+- `explore`: cheap, read-only, narrow probes for facts, seams, callgraphs,
+  conventions, and prior art.
+- `engineer`: balanced implementation work.
+- `pair`: highest-tier main-line investigation or implementation after
+  shared evidence exists.
+- `design`: bounded architecture critique or planning feedback.
+
+The recurring shape is: keep the top-level agent lean, gather cheap/narrow
+evidence first, use `context_builder` to curate selection and synthesize
+architectural bones, then use `pair` or `design` for the main line or critique.
+Subagents should be scoped; avoid recursive free-for-all swarms and avoid
+having every reviewer run a full independent research tree by default.
+
+Native workflow summaries included in the contract:
+
+- `investigate`: optional explore-style external/prior fact gathering,
+  `context_builder`, one pair investigator, then orchestrator synthesis.
+- `optimize`: parallel explore-style bottleneck/callgraph/convention/scope
+  probes, `context_builder` for metric and candidates, then one measured pair
+  change per loop iteration.
+- `deep_plan`: explore-style seam/prior-art probes, `context_builder` for
+  architectural bones, one bounded design critique, then orchestrator polish.
+
+`native_workflows.custom_workflows` records the extension point:
+
+- Current headless support is `metadata_only`; headless `agent_run` still
+  rejects `workflow_name` and `workflow_id` until a resolver is implemented.
+- App-native Agent Mode already supports custom markdown workflows through
+  `AgentWorkflowStore`, workflow settings, and app MCP workflow listing and
+  selection.
+- Future headless support should add explicit workflow list/create/update/delete
+  or settings-backed operations with validation and no partial writes, then
+  allow `agent_run` to resolve `workflow_name`/`workflow_id`.
+- Until then, agents should propose custom workflow markdown and intended
+  settings changes rather than silently writing global workflow settings.
 
 The same `Examples/agents.json` template format drives both `agent_run` and
 the context builder. Runtime configuration comes from:
@@ -376,7 +480,11 @@ Continuations with `chat_id` default to no new context unless
 
 ## Tools
 
+- `headless_status`
 - `headless_capabilities`
+- `context_builder` (stdio / authenticated full-tool socket)
+- `agent_manage` (stdio / authenticated full-tool socket)
+- `agent_run` (stdio / authenticated full-tool socket)
 - `read_file`
 - `get_file_tree`
 - `file_search`
@@ -384,10 +492,7 @@ Continuations with `chat_id` default to no new context unless
 - `manage_selection`
 - `workspace_context`
 - `prompt`
-- `agent_run` (stdio / authenticated full-tool socket)
-- `agent_manage` (stdio / authenticated full-tool socket)
 - `oracle_send` (stdio / authenticated full-tool socket)
-- `context_builder` (stdio / authenticated full-tool socket)
 
 ## Security notes
 

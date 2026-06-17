@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="${ROOT:-$(pwd)}"
-grep -q "Fall back to.*file_search.*read_file" "$ROOT/Sources/RepoPromptHeadlessServer/HeadlessWorkspaceHost.swift"
+BINARY="${RPCE_HEADLESS_BINARY:-$ROOT/.build-linux/debug/rpce-headless}"
+python3 "$ROOT/Sources/RepoPromptHeadlessServer/Scripts/mcp_smoke.py" "$BINARY" "$ROOT"

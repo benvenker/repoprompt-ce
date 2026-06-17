@@ -82,7 +82,7 @@
       }
     }
   ],
-  "current_pass": 2,
+  "current_pass": 3,
   "pass_N+1_ready": true,
-  "next_pass_focus": "robot-triage mega-command, structured get_code_structure fallback payloads, richer loaded-root objects"
+  "next_pass_focus": "full skill-guided rescore of pass-3 status JSON, loaded-root metadata, structured get_code_structure fallback, and architecture-onboarding surfaces"
 }

@@ -27,8 +27,12 @@ actor HeadlessWorkspaceHost {
     func dumpSummaryReply() async -> HeadlessDumpSummaryReply {
         let diagnostics = await store.catalogDiagnostics(rootScope: .allLoaded)
         let roots = await loadedRoots()
+        let rootMetadata = await loadedRootMetadata()
         return HeadlessDumpSummaryReply(
             loadedRoots: roots,
+            loadedRootMetadata: rootMetadata,
+            rootWarnings: HeadlessRootMetadataFactory.warnings(for: rootMetadata),
+            currentDirectory: HeadlessRootMetadataFactory.currentDirectory(),
             rootCount: roots.count,
             folderCount: diagnostics.folderCount,
             fileCount: diagnostics.fileCount,
@@ -39,6 +43,11 @@ actor HeadlessWorkspaceHost {
     func loadedRoots() async -> [String] {
         let roots = await store.rootRefs(scope: .allLoaded)
         return roots.map(\.fullPath).sorted()
+    }
+
+    func loadedRootMetadata() async -> [HeadlessRootMetadata] {
+        let roots = await store.rootRefs(scope: .allLoaded)
+        return HeadlessRootMetadataFactory.metadata(for: roots)
     }
 
     func rootsText() async -> String {
@@ -117,28 +126,63 @@ actor HeadlessWorkspaceHost {
         return renderSearchResults(results)
     }
 
-    func codeStructure(paths: [String]?, scope: String, maxResults: Int) async throws -> String {
+    func codeStructure(paths: [String]?, scope: String, maxResults: Int) async throws -> HeadlessCodeStructureReply {
         _ = await store.awaitAppliedIngress(rootScope: .allLoaded)
         let files: [WorkspaceFileRecord]
+        let invalidPaths: [String]
+        let requestedPaths = paths ?? selection.selectedPaths + selection.autoCodemapPaths
         if scope == "selected" {
             let combined = selection.selectedPaths + selection.autoCodemapPaths
-            files = await mutationService.resolveSelectionCandidates(paths: combined, rawPaths: combined, expandFolders: true, rootScope: .allLoaded).candidates
+            let resolved = await mutationService.resolveSelectionCandidates(paths: combined, rawPaths: combined, expandFolders: true, rootScope: .allLoaded)
+            files = resolved.candidates
+            invalidPaths = resolved.invalidPaths
         } else {
             guard let paths, !paths.isEmpty else { throw HeadlessToolFailure(message: "missing paths (required when scope='paths')") }
-            files = await mutationService.resolveSelectionCandidates(paths: paths, rawPaths: paths, expandFolders: true, rootScope: .allLoaded).candidates
+            let resolved = await mutationService.resolveSelectionCandidates(paths: paths, rawPaths: paths, expandFolders: true, rootScope: .allLoaded)
+            files = resolved.candidates
+            invalidPaths = resolved.invalidPaths
         }
         let limited = Array(files.prefix(max(0, maxResults)))
         let snapshots = await store.codemapSnapshotDictionary()
-        let blocks = limited.compactMap { file -> String? in
-            guard let api = snapshots[file.id]?.fileAPI else { return nil }
-            return api.getFullAPIDescription(displayPath: file.standardizedRelativePath)
+        let roots = await store.rootRefs(scope: .allLoaded)
+        let rootsByID = Dictionary(uniqueKeysWithValues: roots.map { ($0.id, $0) })
+        let fallbackTools = ["file_search", "read_file"]
+        let fileResults = limited.map { file -> HeadlessCodeStructureReply.FileResult in
+            let structure = snapshots[file.id]?.fileAPI?.getFullAPIDescription(displayPath: file.standardizedRelativePath)
+            let root = rootsByID[file.rootID]
+            return HeadlessCodeStructureReply.FileResult(
+                path: file.standardizedRelativePath,
+                fullPath: file.standardizedFullPath,
+                rootID: file.rootID.uuidString,
+                rootName: root?.name ?? "",
+                hasStructure: structure != nil,
+                status: structure == nil ? "codemap_unavailable" : "available",
+                fallbackTools: structure == nil ? fallbackTools : [],
+                structure: structure
+            )
         }
-        if blocks.isEmpty {
-            let requested = (paths ?? selection.selectedPaths + selection.autoCodemapPaths).joined(separator: ", ")
-            let scopeHint = requested.isEmpty ? "the selected files" : requested
-            return "No code structure available for requested files (\(scopeHint)). Fall back to `file_search` for symbols or terms, then use `read_file` on the matching paths."
+        let structureBlocks = fileResults.compactMap(\.structure)
+        let unavailable = fileResults.filter { !$0.hasStructure }
+        let fallbackGuidance: String? = unavailable.isEmpty ? nil : "Some requested paths resolved but have no codemap. Fall back to `file_search` for symbols or terms, then use `read_file` on the matching paths."
+        var textBlocks = structureBlocks
+        if let fallbackGuidance {
+            let paths = unavailable.map(\.path).joined(separator: ", ")
+            textBlocks.append("No code structure available for: \(paths).\n\(fallbackGuidance)")
         }
-        return blocks.joined(separator: "\n\n")
+        if textBlocks.isEmpty {
+            let scopeHint = requestedPaths.isEmpty ? "the selected files" : requestedPaths.joined(separator: ", ")
+            textBlocks.append("No code structure available for requested files (\(scopeHint)). Fall back to `file_search` for symbols or terms, then use `read_file` on the matching paths.")
+        }
+        return HeadlessCodeStructureReply(
+            scope: scope,
+            requestedPaths: requestedPaths,
+            unresolvedPaths: invalidPaths,
+            files: fileResults,
+            structureCount: fileResults.filter(\.hasStructure).count,
+            fallbackTools: fallbackTools,
+            fallbackGuidance: fallbackGuidance,
+            text: textBlocks.joined(separator: "\n\n")
+        )
     }
 
     func manageSelection(args: [String: MCP.Value]) async throws -> HeadlessSelectionReply {
@@ -249,6 +293,7 @@ actor HeadlessWorkspaceHost {
             context: context,
             prompt: promptText,
             loadedRoots: await loadedRoots(),
+            loadedRootMetadata: await loadedRootMetadata(),
             selectedFiles: selection.selectedPaths,
             codemapFiles: selection.autoCodemapPaths,
             totalTokens: accounting.tokenResult.totalTokenCount,

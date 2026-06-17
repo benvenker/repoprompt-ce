@@ -76,7 +76,7 @@ def call(name, args=None):
 rpc("initialize", {"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"fake-context-builder-agent","version":"0"}})
 notify("notifications/initialized")
 tools = {t["name"] for t in rpc("tools/list")["tools"]}
-expected = {"headless_capabilities","read_file","get_file_tree","file_search","get_code_structure","manage_selection","workspace_context","prompt"}
+expected = {"headless_capabilities","headless_status","read_file","get_file_tree","file_search","get_code_structure","manage_selection","workspace_context","prompt"}
 assert expected <= tools, tools
 assert "oracle_send" not in tools, tools
 assert "context_builder" not in tools, tools
@@ -213,6 +213,7 @@ def main():
     try:
         p = start_server(fake)
         ids = itertools.count(1)
+        progress_events = []
 
         def rpc(method, params=None):
             i = next(ids)
@@ -224,6 +225,9 @@ def main():
                     err = p.stderr.read()
                     raise AssertionError(f"server closed stdout while waiting for {method}; stderr={err}")
                 msg = json.loads(line)
+                if msg.get("method") == "notifications/progress":
+                    progress_events.append(msg.get("params") or {})
+                    continue
                 if msg.get("id") == i:
                     assert "error" not in msg, f"{method} -> {msg['error']}"
                     return msg["result"]
@@ -232,15 +236,18 @@ def main():
             p.stdin.write(json.dumps({"jsonrpc":"2.0","method":method,"params":params or {}})+"\n")
             p.stdin.flush()
 
-        def call(name, args=None):
-            result = rpc("tools/call", {"name": name, "arguments": args or {}})
+        def call(name, args=None, meta=None):
+            params = {"name": name, "arguments": args or {}}
+            if meta is not None:
+                params["_meta"] = meta
+            result = rpc("tools/call", params)
             text = "".join(c.get("text", "") for c in result.get("content", []))
             return result, text
 
         rpc("initialize", {"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"context-builder-mcp-harness","version":"0"}})
         notify("notifications/initialized")
         tools = {t["name"] for t in rpc("tools/list")["tools"]}
-        expected = {"headless_capabilities","read_file","get_file_tree","file_search","get_code_structure","manage_selection","workspace_context","prompt","oracle_send","context_builder"}
+        expected = {"headless_capabilities","headless_status","read_file","get_file_tree","file_search","get_code_structure","manage_selection","workspace_context","prompt","oracle_send","context_builder"}
         assert expected <= tools, f"missing: {expected - tools}; tools={sorted(tools)}"
 
         result, text = call("context_builder", {
@@ -262,6 +269,125 @@ def main():
 
         p.stdin.close()
         p.wait(timeout=10)
+
+        p = start_server(fake, {
+            "FAKE_AGENT_SLEEP_BEFORE_MCP": "2.5",
+            "RPCE_CONTEXT_BUILDER_SYNC_WAIT_TIMEOUT_SECONDS": "1",
+        }, remove_oracle_keys=True)
+        ids = itertools.count(1)
+
+        rpc("initialize", {"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"context-builder-mcp-harness","version":"0"}})
+        notify("notifications/initialized")
+        result, text = call("context_builder", {
+            "instructions": "Synchronous compatibility should return a pollable running snapshot before client timeouts.",
+            "response_type": "clarify",
+            "export_response": False,
+            "timeout_seconds": 20,
+        })
+        assert not result.get("isError"), text
+        sync_payload = result.get("structuredContent") or json.loads(text)
+        sync_id = sync_payload.get("context_id")
+        assert sync_id, sync_payload
+        assert sync_payload.get("run_status") == "running", sync_payload
+        assert sync_payload.get("_meta", {}).get("wait_result") == "timed_out", sync_payload
+
+        result, text = call("context_builder", {"op": "poll", "context_id": "active"})
+        assert not result.get("isError"), text
+        active_payload = result.get("structuredContent") or json.loads(text)
+        assert active_payload.get("context_id") == sync_id, active_payload
+        assert active_payload.get("run_status") == "running", active_payload
+
+        progress_events.clear()
+        result, text = call(
+            "context_builder",
+            {"op": "wait", "context_id": "active", "timeout_seconds": 20},
+            meta={"progressToken": "ctx-wait-progress"}
+        )
+        assert not result.get("isError"), text
+        done_payload = result.get("structuredContent") or json.loads(text)
+        assert done_payload.get("context_id") == sync_id, done_payload
+        assert done_payload.get("run_status") == "completed", done_payload
+        assert isinstance(done_payload.get("elapsed_seconds"), int), done_payload
+        assert done_payload.get("next_action", "").startswith("Call context_builder with op:\"get_result\""), done_payload
+        assert any(
+            event.get("progressToken") == "ctx-wait-progress" and "context_builder discovery is running" in event.get("message", "")
+            for event in progress_events
+        ), progress_events
+
+        result, text = call("context_builder", {"op": "get_result", "context_id": "active"})
+        assert not result.get("isError"), text
+        result_payload = result.get("structuredContent") or json.loads(text)
+        assert result_payload.get("status") == "completed", result_payload
+        assert result_payload.get("context_id") == sync_id, result_payload
+
+        result, text = call("context_builder", {"op": "get_result", "context_id": "current"})
+        assert not result.get("isError"), text
+        current_result_payload = result.get("structuredContent") or json.loads(text)
+        assert current_result_payload.get("context_id") == sync_id, current_result_payload
+
+        result, text = call("context_builder", {"op": "cleanup", "context_id": "current"})
+        assert not result.get("isError"), text
+        cleanup_payload = result.get("structuredContent") or json.loads(text)
+        assert cleanup_payload.get("deleted_count") == 1, cleanup_payload
+        result, text = call("context_builder", {"op": "poll", "context_id": "active"})
+        assert not result.get("isError"), text
+        expired_active = result.get("structuredContent") or json.loads(text)
+        assert expired_active.get("run_status") == "expired", expired_active
+
+        p.stdin.close()
+        p.wait(timeout=10)
+
+        p = start_server(fake, {
+            "FAKE_AGENT_SLEEP_BEFORE_MCP": "2.5",
+            "RPCE_CONTEXT_BUILDER_WAIT_MAX_SECONDS": "1",
+        }, remove_oracle_keys=True)
+        ids = itertools.count(1)
+
+        rpc("initialize", {"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"context-builder-mcp-harness","version":"0"}})
+        notify("notifications/initialized")
+        result, text = call("context_builder", {
+            "op": "start",
+            "instructions": "A capped wait should return a recoverable running snapshot.",
+            "response_type": "clarify",
+            "timeout_seconds": 20,
+        })
+        assert not result.get("isError"), text
+        capped_start = result.get("structuredContent") or json.loads(text)
+        capped_id = capped_start.get("context_id")
+        assert capped_id and capped_start.get("run_status") == "running", capped_start
+
+        capped_wait_started = time.monotonic()
+        result, text = call("context_builder", {"op": "wait", "context_id": capped_id, "timeout": 20})
+        capped_wait_elapsed = time.monotonic() - capped_wait_started
+        assert not result.get("isError"), text
+        capped_wait = result.get("structuredContent") or json.loads(text)
+        assert capped_wait_elapsed < 2.0, (capped_wait_elapsed, capped_wait)
+        assert capped_wait.get("context_id") == capped_id, capped_wait
+        assert capped_wait.get("run_status") == "running", capped_wait
+        assert capped_wait.get("_meta", {}).get("wait_result") == "timed_out", capped_wait
+        assert capped_wait.get("next_action", "").startswith("Call context_builder with op:\"poll\""), capped_wait
+
+        for _ in range(5):
+            result, text = call("context_builder", {"op": "wait", "context_id": capped_id, "timeout": 20})
+            assert not result.get("isError"), text
+            capped_done = result.get("structuredContent") or json.loads(text)
+            if capped_done.get("run_status") == "completed":
+                break
+        else:
+            raise AssertionError(capped_done)
+        assert capped_done.get("result_status") == "completed", capped_done
+
+        result, text = call("context_builder", {"op": "get_result", "context_id": capped_id})
+        assert not result.get("isError"), text
+        capped_result = result.get("structuredContent") or json.loads(text)
+        assert capped_result.get("status") == "completed", capped_result
+
+        result, text = call("context_builder", {"op": "cleanup", "context_id": capped_id})
+        assert not result.get("isError"), text
+
+        p.stdin.close()
+        p.wait(timeout=10)
+
         p = start_server(fake, {"FAKE_AGENT_SLEEP_BEFORE_MCP": "2.5"}, remove_oracle_keys=True)
         ids = itertools.count(1)
 
@@ -315,6 +441,11 @@ def main():
         assert payload.get("status") == "completed", payload
         assert "fake handoff from mcp context_builder" in payload.get("prompt", ""), payload
         assert "Package.swift" in json.dumps(payload.get("selection", "")), payload
+
+        result, text = call("context_builder", {"op": "get_result", "context_id": "active"})
+        assert not result.get("isError"), text
+        active_result_payload = result.get("structuredContent") or json.loads(text)
+        assert active_result_payload.get("context_id") == context_id, active_result_payload
 
         result, text = call("context_builder", {"op": "cleanup", "context_id": context_id})
         assert not result.get("isError"), text

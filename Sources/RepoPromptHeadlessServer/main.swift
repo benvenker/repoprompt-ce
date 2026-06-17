@@ -46,6 +46,9 @@ do {
     case .capabilities:
         let root = (FileManager.default.currentDirectoryPath as NSString).standardizingPath
         print(try HeadlessJSON.string(HeadlessCapabilities.make(loadedRoots: [root])))
+    case .robotDocsStatus:
+        let root = (FileManager.default.currentDirectoryPath as NSString).standardizingPath
+        print(try HeadlessJSON.string(HeadlessCapabilities.status(loadedRoots: [root])))
     case .robotDocsGuide:
         print(HeadlessCapabilities.robotDocsGuide())
     }
@@ -65,6 +68,7 @@ enum HeadlessCLI {
         case connect(socketPath: String, auth: Bool)
         case contextBuild(ContextBuildOptions)
         case capabilities
+        case robotDocsStatus
         case robotDocsGuide
     }
 
@@ -101,7 +105,13 @@ enum HeadlessCLI {
             if tail.isEmpty || tail == ["guide"] {
                 return .robotDocsGuide
             }
-            throw usage("Unknown robot-docs topic: \(tail.joined(separator: " ")). Use `rpce-headless robot-docs guide`.")
+            if tail == ["status", "--json"] || tail == ["triage", "--json"] {
+                return .robotDocsStatus
+            }
+            if tail.first == "status" || tail.first == "triage" {
+                throw usage("robot-docs \(tail.first ?? "status") requires --json. Use `rpce-headless robot-docs status --json`.")
+            }
+            throw usage("Unknown robot-docs topic: \(tail.joined(separator: " ")). Use `rpce-headless robot-docs guide` or `rpce-headless robot-docs status --json`.")
         }
 
         if subcommand == "connect" {
@@ -325,8 +335,11 @@ enum HeadlessCLI {
         case "robot-docs":
             """
             Usage: rpce-headless robot-docs guide
+                   rpce-headless robot-docs status --json
 
             Print a paste-ready agent handbook for onboarding to rpce-headless.
+            Use status --json for the compact machine-readable workspace triage packet.
+            `triage --json` is accepted as a compatibility alias for status.
             """
         default:
             topLevelHelp
@@ -342,9 +355,10 @@ enum HeadlessCLI {
       connect        Bridge stdio JSON-RPC to a Unix socket.
       context-build  Run the headless Context Builder orchestration.
       capabilities   Print the machine-readable agent contract; use --json.
-      robot-docs     Print the agent onboarding guide; use `robot-docs guide`.
+      robot-docs     Print the agent onboarding guide or status JSON.
 
     First commands for agents:
+      rpce-headless robot-docs status --json
       rpce-headless capabilities --json
       rpce-headless robot-docs guide
       rpce-headless dump --json

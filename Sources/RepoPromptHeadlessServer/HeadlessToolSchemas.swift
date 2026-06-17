@@ -3,6 +3,7 @@ import MCP
 enum HeadlessToolSchemas {
     static let discoveryToolNames: Set<String> = [
         "headless_capabilities",
+        "headless_status",
         "manage_selection",
         "prompt",
         "workspace_context",
@@ -18,24 +19,53 @@ enum HeadlessToolSchemas {
 
     static let tools: [Tool] = [
         Tool(
-            name: "headless_capabilities",
-            description: "Return the agent-readable rpce-headless contract: loaded_roots, stdio vs socket tool exposure, recommended onboarding workflow, context_builder examples, agent_manage/agent_run pattern, oracle opt-in guidance, fake-agent caveat, exit codes, and smoke commands.",
+            name: "headless_status",
+            description: "Return the compact first-call workspace triage packet: loaded root metadata, root mismatch warnings, MCP exposure mode, available agent tools, suggested first tool calls, native RepoPrompt workflow shapes, architecture onboarding recipe, and smoke commands.",
             inputSchema: object([:]),
             annotations: .init(readOnlyHint: true, destructiveHint: false, openWorldHint: false)
         ),
         Tool(
-            name: "read_file",
-            description: "Read file contents with optional line range. Parameters: path (required), start_line (1-based or negative tail), limit.",
-            inputSchema: object([
-                "path": string("File path"),
-                "start_line": integer("Line to start from (1-based), or negative for tail behavior"),
-                "limit": integer("Number of lines to read")
-            ], required: ["path"]),
+            name: "headless_capabilities",
+            description: "Return the fuller agent-readable rpce-headless contract after compact status triage: loaded_roots plus loaded_root_metadata, root warnings, stdio vs socket tool exposure, native RepoPrompt workflow shapes, architecture onboarding workflow, context_builder examples, agent_manage/agent_run pattern, oracle opt-in guidance, fake-agent caveat, exit codes, and smoke commands.",
+            inputSchema: object([:]),
             annotations: .init(readOnlyHint: true, destructiveHint: false, openWorldHint: false)
         ),
         Tool(
+            name: "context_builder",
+            description: "Preferred repo-onboarding and architecture-synthesis tool. Use this early for tasks like 'map this repo', 'find the implementation seam', or 'build a grounded plan' instead of manually clipping through many read_file calls. For planning/onboarding, prefer op=start then poll/wait/get_result/cleanup; context_id:\"active\" or \"current\" addresses the active run, or the latest completed run until cleanup. Omitting op is compatibility mode: it starts a pollable run and waits only up to a short MCP-safe cap; short completed calls return the original result shape and are cleaned up by the server, while longer calls return a running lifecycle snapshot with context_id and next_action. Full stdio mode only; discovery-restricted sockets do not expose this tool. export_response is unsupported in headless v1.",
+            inputSchema: contextBuilderInputSchema(),
+            annotations: .init(readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true)
+        ),
+        Tool(
+            name: "agent_manage",
+            description: "Manage the rpce-headless server's subagent pool and sessions. Use this instead of client-local/ad hoc subagents when repo discovery needs independent review. Start with list_agents, then use agent_run only for a server-managed bounded task; use list_sessions/get_log/cleanup_sessions to supervise and collect evidence. These are not app/window Agent Mode sessions. Supported ops: list_agents, list_sessions, get_log, stop_session, cleanup_sessions.",
+            inputSchema: object([
+                "op": string(operationDescription, enumValues: ["list_agents", "list_sessions", "get_log", "stop_session", "cleanup_sessions"]),
+                "session_id": string("Headless session id for get_log or stop_session"),
+                "session_ids": array(string("Headless session id"), "Session ids for cleanup_sessions"),
+                "state": string("Optional state filter for list_sessions", enumValues: ["running", "cancelling", "completed", "failed", "cancelled"]),
+                "limit": integer("Maximum sessions or log turns to return"),
+                "offset": integer("Log turn offset for get_log")
+            ], required: ["op"]),
+            annotations: .init(readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true)
+        ),
+        Tool(
+            name: "agent_run",
+            description: "Start or control one bounded task in the rpce-headless server-managed subagent lifecycle. Do not treat this as generic client-local agent spawning: first call agent_manage list_agents, choose an available server-configured agent, wait/poll, inspect logs through agent_manage, and cleanup terminal sessions. Full stdio mode only; discovery-restricted sockets do not expose this tool. Supported ops: start, poll, wait, cancel.",
+            inputSchema: object([
+                "op": string(operationDescription, enumValues: ["start", "poll", "wait", "cancel"]),
+                "message": string("Message/prompt for op=start"),
+                "model_id": string("Configured headless agent name from agent_manage list_agents; defaults to RPCE_AGENT_RUN_DEFAULT_AGENT or claude"),
+                "session_name": string("Optional display name for the headless process session"),
+                "detach": boolean("For op=start, return immediately after launching instead of waiting"),
+                "timeout": integer("Timeout in seconds for start/wait; 0 behaves like poll"),
+                "session_id": string("Headless session id for poll, wait, or cancel")
+            ], required: ["op"]),
+            annotations: .init(readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true)
+        ),
+        Tool(
             name: "get_file_tree",
-            description: "Generate ASCII directory tree. type: files|roots; mode: auto|full|folders|selected. Single-workspace headless server; no worktree metadata.",
+            description: "Generate ASCII directory tree for quick orientation and evidence. For architecture synthesis or planning, call context_builder before relying on repeated tree/search/read loops. type: files|roots; mode: auto|full|folders|selected. Single-workspace headless server; no worktree metadata.",
             inputSchema: object([
                 "type": string("Tree type", enumValues: ["files", "roots"]),
                 "mode": string("Filter mode", enumValues: ["auto", "full", "folders", "selected"]),
@@ -46,7 +76,7 @@ enum HeadlessToolSchemas {
         ),
         Tool(
             name: "file_search",
-            description: "Search paths and/or file contents. Supports pattern, mode auto|path|content|both, regex, max_results, filter.extensions, filter.paths, filter.exclude, context_lines, whole_word, count_only.",
+            description: "Search paths and/or file contents for direct evidence. For broad repo onboarding, use context_builder first, then use file_search to verify anchors and citations. Supports pattern, mode auto|path|content|both, regex, max_results, filter.extensions, filter.paths, filter.exclude, context_lines, whole_word, count_only.",
             inputSchema: object([
                 "pattern": string("Search pattern"),
                 "mode": string("Search scope", enumValues: ["auto", "path", "content", "both"]),
@@ -66,12 +96,22 @@ enum HeadlessToolSchemas {
         ),
         Tool(
             name: "get_code_structure",
-            description: "Return code structure for explicit paths or current selection. Parameters: scope paths|selected, paths, max_results. If no codemap is available for a path/language, the result names the file_search/read_file fallback.",
+            description: "Return code structure for explicit files or current selection. Best used after context_builder or file_search identifies likely entry points. Parameters: scope paths|selected, paths, max_results. Structured content lists each resolved file, whether a codemap is available, unresolved paths, and the file_search/read_file fallback for no-codemap files.",
             inputSchema: object([
                 "scope": string("Scope", enumValues: ["paths", "selected"]),
                 "paths": array(string("File or directory path"), "Paths when scope='paths'"),
                 "max_results": integer("Maximum codemaps to render")
             ]),
+            annotations: .init(readOnlyHint: true, destructiveHint: false, openWorldHint: false)
+        ),
+        Tool(
+            name: "read_file",
+            description: "Read file contents with optional line range for evidence and citations. For onboarding/planning, prefer context_builder first and use read_file for the specific files it or search identifies. Parameters: path (required), start_line (1-based or negative tail), limit.",
+            inputSchema: object([
+                "path": string("File path"),
+                "start_line": integer("Line to start from (1-based), or negative for tail behavior"),
+                "limit": integer("Number of lines to read")
+            ], required: ["path"]),
             annotations: .init(readOnlyHint: true, destructiveHint: false, openWorldHint: false)
         ),
         Tool(
@@ -106,39 +146,6 @@ enum HeadlessToolSchemas {
                 "preset": string("Unsupported preset")
             ]),
             annotations: .init(readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false)
-        ),
-        Tool(
-            name: "agent_run",
-            description: "Start and control headless process-backed agents for this rpce-headless server. Full stdio mode only; discovery-restricted sockets do not expose this tool. Recommended flow: call agent_manage list_agents, choose an available real agent, start bounded read-only tasks, wait/poll, get logs, then cleanup terminal sessions. Supported ops: start, poll, wait, cancel.",
-            inputSchema: object([
-                "op": string(operationDescription, enumValues: ["start", "poll", "wait", "cancel"]),
-                "message": string("Message/prompt for op=start"),
-                "model_id": string("Configured headless agent name from agent_manage list_agents; defaults to RPCE_AGENT_RUN_DEFAULT_AGENT or claude"),
-                "session_name": string("Optional display name for the headless process session"),
-                "detach": boolean("For op=start, return immediately after launching instead of waiting"),
-                "timeout": integer("Timeout in seconds for start/wait; 0 behaves like poll"),
-                "session_id": string("Headless session id for poll, wait, or cancel")
-            ], required: ["op"]),
-            annotations: .init(readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true)
-        ),
-        Tool(
-            name: "agent_manage",
-            description: "Inspect and manage headless process-backed agent sessions for this rpce-headless server. These are not app/window Agent Mode sessions. Start here with list_agents before agent_run; use get_log for evidence and cleanup_sessions for terminal runs. Supported ops: list_agents, list_sessions, get_log, stop_session, cleanup_sessions.",
-            inputSchema: object([
-                "op": string(operationDescription, enumValues: ["list_agents", "list_sessions", "get_log", "stop_session", "cleanup_sessions"]),
-                "session_id": string("Headless session id for get_log or stop_session"),
-                "session_ids": array(string("Headless session id"), "Session ids for cleanup_sessions"),
-                "state": string("Optional state filter for list_sessions", enumValues: ["running", "cancelling", "completed", "failed", "cancelled"]),
-                "limit": integer("Maximum sessions or log turns to return"),
-                "offset": integer("Log turn offset for get_log")
-            ], required: ["op"]),
-            annotations: .init(readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true)
-        ),
-        Tool(
-            name: "context_builder",
-            description: "Headless Context Builder orchestration. Omit op for synchronous clarify-style discovery. Use op=start for async discovery, then poll/wait, get_result, and cleanup with the returned context_id. timeout_seconds caps the discovery agent lifetime; timeout is only for op=wait. Discovery-restricted sockets do not expose this tool. export_response is unsupported in headless v1.",
-            inputSchema: contextBuilderInputSchema(),
-            annotations: .init(readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true)
         ),
         Tool(
             name: "oracle_send",
@@ -184,14 +191,14 @@ enum HeadlessToolSchemas {
 
     private static func contextBuilderInputSchema() -> MCP.Value {
         let properties: [String: MCP.Value] = [
-            "op": string("Optional lifecycle operation. Omit for synchronous one-shot mode. Use start for async runs, then poll/wait/get_result/cancel/cleanup with context_id.", enumValues: ["start", "poll", "wait", "get_result", "cancel", "cleanup"]),
-            "context_id": string("Context Builder run id returned by op=start; required for poll, wait, get_result, cancel, or cleanup"),
+            "op": string("Optional lifecycle operation. Prefer start for planning/onboarding runs, then poll/wait/get_result/cancel/cleanup with context_id. Omitting op starts a pollable compatibility run and waits only up to a short MCP-safe cap; completion inside the cap returns the original result shape, otherwise the reply is a lifecycle snapshot.", enumValues: ["start", "poll", "wait", "get_result", "cancel", "cleanup"]),
+            "context_id": string("Context Builder run id returned by op=start or synchronous compatibility mode; use active/current to address the active run or latest completed run until cleanup"),
             "instructions": string("Discovery instructions for the Context Builder agent. Example: Map the MCP server entry points and select the key files."),
             "response_type": string("clarify returns context only; question/plan/review ask the oracle after discovery", enumValues: ["clarify", "question", "plan", "review"]),
             "export_response": boolean("Unsupported in headless v1; true returns a clear tool error. Use get_result and workspace_context instead."),
             "token_budget": integer("Optional token budget override"),
-            "timeout_seconds": integer("Discovery-agent lifetime cap for one-shot/start. This does not control op=wait polling."),
-            "timeout": integer("Client wait deadline in seconds for op=wait; 0 behaves like poll. This does not kill the discovery agent.")
+            "timeout_seconds": integer("Discovery-agent lifetime cap for start/compatibility runs; also accepted as an op=wait alias for agent intuition. For op=wait, timeout wins when both fields are present and the wait is capped to a progress-friendly maximum."),
+            "timeout": integer("Progress-friendly client wait deadline in seconds for op=wait; 0 behaves like poll. This does not kill the discovery agent, and large values are capped so clients receive regular snapshots.")
         ]
         var synchronous: [String: MCP.Value] = [
             "type": "object",

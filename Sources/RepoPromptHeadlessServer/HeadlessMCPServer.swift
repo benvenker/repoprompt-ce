@@ -66,7 +66,7 @@ struct HeadlessMCPServer {
             name: "rpce-headless",
             version: Self.version,
             title: "RepoPrompt CE Headless",
-            instructions: "Headless RepoPrompt CE context tools for one loaded workspace. Diagnostics are written to stderr; stdout is reserved for JSON-RPC.",
+            instructions: "Headless RepoPrompt CE context tools for one loaded workspace. Call headless_status first. For repo onboarding, architecture mapping, or implementation planning, prefer context_builder before manual file-by-file reads. For delegated discovery, use the rpce-headless server-managed subagent lifecycle through agent_manage plus bounded read-only agent_run; do not substitute client-local ad hoc subagents for this contract. Direct tree/search/read tools provide evidence. Diagnostics are written to stderr; stdout is reserved for JSON-RPC.",
             capabilities: MCP.Server.Capabilities(tools: .init(listChanged: false)),
             configuration: MCP.Server.Configuration(responseSendTimeout: .seconds(120))
         )
@@ -79,6 +79,15 @@ struct HeadlessMCPServer {
         }
         await server.withMethodHandler(CallTool.self) { params in
             let arguments = params.arguments ?? [:]
+            let progressReporter: HeadlessProgressReporter? = params._meta?.progressToken.map { token in
+                let reporter: HeadlessProgressReporter = { @Sendable progress, total, message in
+                    let notification = ProgressNotification.message(
+                        .init(progressToken: token, progress: progress, total: total, message: message)
+                    )
+                    try? await server.notify(notification)
+                }
+                return reporter
+            }
             do {
                 if discoveryRestricted, !HeadlessToolSchemas.discoveryToolNames.contains(params.name) {
                     return CallTool.Result(
@@ -86,7 +95,7 @@ struct HeadlessMCPServer {
                         isError: true
                     )
                 }
-                return try await callTool(name: params.name, arguments: arguments, host: host, oracleService: oracleService, contextBuilderService: contextBuilderService, agentSessionManager: agentSessionManager)
+                return try await callTool(name: params.name, arguments: arguments, host: host, oracleService: oracleService, contextBuilderService: contextBuilderService, agentSessionManager: agentSessionManager, progressReporter: progressReporter)
             } catch let failure as HeadlessToolFailure {
                 return CallTool.Result(
                     content: [.text(text: failure.message, annotations: nil, _meta: nil)],
@@ -121,11 +130,17 @@ struct HeadlessMCPServer {
         host: HeadlessWorkspaceHost,
         oracleService: OracleService,
         contextBuilderService: HeadlessContextBuilderService,
-        agentSessionManager: HeadlessAgentSessionManager?
+        agentSessionManager: HeadlessAgentSessionManager?,
+        progressReporter: HeadlessProgressReporter?
     ) async throws -> CallTool.Result {
         switch name {
         case "headless_capabilities":
-            let reply = HeadlessCapabilities.make(loadedRoots: await host.loadedRoots())
+            let rootMetadata = await host.loadedRootMetadata()
+            let reply = HeadlessCapabilities.make(loadedRootMetadata: rootMetadata)
+            return try jsonTextResult(reply)
+        case "headless_status":
+            let rootMetadata = await host.loadedRootMetadata()
+            let reply = HeadlessCapabilities.status(loadedRootMetadata: rootMetadata, discoveryRestricted: agentSessionManager == nil)
             return try jsonTextResult(reply)
         case "read_file":
             guard let path = arguments["path"]?.stringValue else { throw HeadlessToolFailure(message: "missing path") }
@@ -146,12 +161,16 @@ struct HeadlessMCPServer {
         case "file_search":
             return try await textResult(host.fileSearch(args: arguments))
         case "get_code_structure":
-            let text = try await host.codeStructure(
+            let reply = try await host.codeStructure(
                 paths: arguments["paths"]?.stringArray,
                 scope: arguments["scope"]?.stringValue?.lowercased() ?? "paths",
                 maxResults: arguments["max_results"]?.intCoerced() ?? 10
             )
-            return textResult(text)
+            return try CallTool.Result(
+                content: [.text(text: reply.text, annotations: nil, _meta: nil)],
+                structuredContent: reply,
+                isError: false
+            )
         case "manage_selection":
             let reply = try await host.manageSelection(args: arguments)
             return try jsonTextResult(reply)
@@ -168,7 +187,7 @@ struct HeadlessMCPServer {
         case "oracle_send":
             return try await OracleSendTool.call(arguments: arguments, service: oracleService)
         case "context_builder":
-            return try await contextBuilderService.execute(arguments: arguments, oracleService: oracleService)
+            return try await contextBuilderService.execute(arguments: arguments, oracleService: oracleService, progressReporter: progressReporter)
         case "agent_run":
             guard let agentSessionManager else {
                 throw HeadlessToolFailure(message: "agent_run is unavailable on discovery-restricted socket connections.")
