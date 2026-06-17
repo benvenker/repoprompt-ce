@@ -136,15 +136,20 @@ swift_changes_are_headless_only() {
   [[ "$saw_swift" == "1" ]]
 }
 
-run_headless_linux_validation_fallback() {
+root_test_changes_are_headless_only() {
   local files="$1"
+  local file saw_root_test_change=0
+  while IFS= read -r -d '' file; do
+    case "$file" in
+      Sources/RepoPrompt/*) return 1 ;;
+      Tests/RepoPromptTests/MCP/Headless*.swift) saw_root_test_change=1 ;;
+      Tests/RepoPromptTests/*) return 1 ;;
+    esac
+  done < "$files"
+  [[ "$saw_root_test_change" == "1" ]]
+}
 
-  [[ "$(uname -s)" == "Linux" ]] || return 1
-  swift_changes_are_headless_only "$files" || return 1
-  docker_image_available "$docker_swift_image" || return 1
-
-  warn "SwiftFormat/SwiftLint unavailable; running Linux headless fallback for Sources/RepoPromptHeadlessServer-only Swift changes"
-
+run_headless_linux_validation() {
   log "Build rpce-headless in Docker"
   docker run --rm -v "$repo_root":/src -w /src "$docker_swift_image" \
     swift build --product rpce-headless --scratch-path .build-linux
@@ -160,6 +165,17 @@ run_headless_linux_validation_fallback() {
       python3 Sources/RepoPromptHeadlessServer/Scripts/context_builder_mcp_fake_agent_test.py .build-linux/debug/rpce-headless "$PWD"'
 }
 
+run_headless_linux_validation_fallback() {
+  local files="$1"
+
+  [[ "$(uname -s)" == "Linux" ]] || return 1
+  swift_changes_are_headless_only "$files" || return 1
+  docker_image_available "$docker_swift_image" || return 1
+
+  warn "SwiftFormat/SwiftLint unavailable; running Linux headless fallback for Sources/RepoPromptHeadlessServer-only Swift changes"
+  run_headless_linux_validation
+}
+
 run_swift_lint_or_fallback() {
   local files="$1"
 
@@ -173,6 +189,20 @@ run_swift_lint_or_fallback() {
   fi
 
   make dev-lint
+}
+
+run_root_tests_or_headless_linux_fallback() {
+  local files="$1"
+
+  if [[ "$(uname -s)" == "Linux" ]] &&
+     root_test_changes_are_headless_only "$files" &&
+     docker_image_available "$docker_swift_image"; then
+    warn "Root test graph is macOS-only on Linux; running headless Docker validation for Headless MCP test changes"
+    run_headless_linux_validation
+    return
+  fi
+
+  make dev-test
 }
 
 push_success() {
@@ -243,7 +273,7 @@ fi
 
 if range_contains "$files" '^(Sources/RepoPrompt/|Tests/RepoPromptTests/)'; then
   log "Run coordinated root tests"
-  make dev-test
+  run_root_tests_or_headless_linux_fallback "$files"
 fi
 
 if range_contains "$files" '^Packages/RepoPromptAgentProviders/'; then

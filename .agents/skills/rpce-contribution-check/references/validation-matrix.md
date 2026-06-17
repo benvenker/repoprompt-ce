@@ -9,6 +9,7 @@ Use this after the scripted preflight when the touched boundary needs focused ev
 | Swift files | `make dev-lint` |
 | Linux headless-only Swift files when SwiftFormat/SwiftLint are unavailable | Docker `swift:6.2.4-noble` `swift build --product rpce-headless --scratch-path .build-linux` plus headless MCP/agent/context-builder smokes; app/shared Swift still requires `make dev-lint` |
 | Root app source or root tests | `make dev-test` or the smallest focused `make dev-test FILTER=<Suite>` during iteration; run full `make dev-test` before push |
+| Linux headless MCP tests under `Tests/RepoPromptTests/MCP/Headless*.swift` when the root test graph imports macOS-only modules | Docker `swift:6.2.4-noble` `swift build --product rpce-headless --scratch-path .build-linux` plus headless MCP/agent/context-builder smokes |
 | Provider package source or tests | `make dev-provider-test` |
 | `Sources/RepoPrompt/**` | `make dev-swift-build PRODUCT=RepoPrompt` |
 | `Sources/RepoPromptMCP/**` or `Sources/RepoPromptShared/**` | `make dev-swift-build PRODUCT=repoprompt-mcp` |
