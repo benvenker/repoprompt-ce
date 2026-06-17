@@ -51,7 +51,7 @@ actor HeadlessWorkspaceHost {
     }
 
     func rootsText() async -> String {
-        (await loadedRoots()).joined(separator: "\n")
+        await (loadedRoots()).joined(separator: "\n")
     }
 
     func readFile(path: String, startLine: Int?, limit: Int?) async throws -> String {
@@ -289,11 +289,11 @@ actor HeadlessWorkspaceHost {
             request: PromptContextAccountingRequest(selection: selection, promptText: promptText, fileTree: preassembled.fileTreeContent.map { .rendered($0) } ?? .none, codeMapUsage: .auto, filePathDisplay: .relative, rootScope: .allLoaded, pathLocateProfile: .mcpRead),
             store: store
         )
-        return HeadlessWorkspaceContextReply(
+        return await HeadlessWorkspaceContextReply(
             context: context,
             prompt: promptText,
-            loadedRoots: await loadedRoots(),
-            loadedRootMetadata: await loadedRootMetadata(),
+            loadedRoots: loadedRoots(),
+            loadedRootMetadata: loadedRootMetadata(),
             selectedFiles: selection.selectedPaths,
             codemapFiles: selection.autoCodemapPaths,
             totalTokens: accounting.tokenResult.totalTokenCount,

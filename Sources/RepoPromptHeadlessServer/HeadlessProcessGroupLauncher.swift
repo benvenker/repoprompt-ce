@@ -191,7 +191,7 @@ enum HeadlessProcessGroupLauncher {
     }
 
     private static func normalizedExitCode(_ status: Int32) -> Int32 {
-        (status & 0x7f) == 0 ? (status >> 8) & 0xff : 128 + (status & 0x7f)
+        (status & 0x7F) == 0 ? (status >> 8) & 0xFF : 128 + (status & 0x7F)
     }
 
     private static func systemMessage(for code: Int32) -> String {

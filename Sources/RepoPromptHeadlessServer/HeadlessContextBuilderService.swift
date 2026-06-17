@@ -249,15 +249,15 @@ actor HeadlessContextBuilderService {
             await progressReporter?(1, 1, "context_builder started with context_id \(snapshot.contextID). Poll or wait for progress.")
             return try jsonTextResult(snapshot)
         case .poll:
-            return try jsonTextResult(poll(contextID: try requireContextID(toolRequest)))
+            return try jsonTextResult(poll(contextID: requireContextID(toolRequest)))
         case .wait:
-            return try await jsonTextResult(wait(contextID: try requireContextID(toolRequest), timeoutSeconds: toolRequest.waitTimeoutSeconds, progressReporter: progressReporter))
+            return try await jsonTextResult(wait(contextID: requireContextID(toolRequest), timeoutSeconds: toolRequest.waitTimeoutSeconds, progressReporter: progressReporter))
         case .getResult:
-            return try resultTool(contextID: try requireContextID(toolRequest))
+            return try resultTool(contextID: requireContextID(toolRequest))
         case .cancel:
-            return try await jsonTextResult(cancel(contextID: try requireContextID(toolRequest)))
+            return try await jsonTextResult(cancel(contextID: requireContextID(toolRequest)))
         case .cleanup:
-            return try jsonTextResult(cleanup(contextID: try requireContextID(toolRequest)))
+            return try jsonTextResult(cleanup(contextID: requireContextID(toolRequest)))
         }
     }
 
@@ -596,11 +596,11 @@ actor HeadlessContextBuilderService {
 
         switch operation {
         case .synchronous, .start:
-            return HeadlessContextBuilderToolRequest(
+            return try HeadlessContextBuilderToolRequest(
                 operation: operation,
                 contextID: nil,
                 waitTimeoutSeconds: 0,
-                request: try requestFromMCP(arguments: arguments, environment: environment)
+                request: requestFromMCP(arguments: arguments, environment: environment)
             )
         case .poll, .wait, .getResult, .cancel, .cleanup:
             let contextID = try requireNonEmptyString(arguments["context_id"], name: "context_id")
@@ -1092,7 +1092,7 @@ actor HeadlessContextBuilderService {
     }
 
     private func diagnosticExcerpt(_ text: String) -> String {
-        utf8Prefix(text, byteLimit: 4_096)
+        utf8Prefix(text, byteLimit: 4096)
     }
 
     private func runOracleFollowUpIfNeeded(

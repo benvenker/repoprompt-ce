@@ -33,7 +33,7 @@ do {
         let host = try await HeadlessWorkspaceHost(rootPaths: roots)
         if json {
             let summary = await host.dumpSummaryReply()
-            print(try HeadlessJSON.string(summary))
+            try print(HeadlessJSON.string(summary))
         } else {
             let summary = await host.dumpSummary()
             print(summary)
@@ -45,10 +45,10 @@ do {
         Foundation.exit(exitCode)
     case .capabilities:
         let root = (FileManager.default.currentDirectoryPath as NSString).standardizingPath
-        print(try HeadlessJSON.string(HeadlessCapabilities.make(loadedRoots: [root])))
+        try print(HeadlessJSON.string(HeadlessCapabilities.make(loadedRoots: [root])))
     case .robotDocsStatus:
         let root = (FileManager.default.currentDirectoryPath as NSString).standardizingPath
-        print(try HeadlessJSON.string(HeadlessCapabilities.status(loadedRoots: [root])))
+        try print(HeadlessJSON.string(HeadlessCapabilities.status(loadedRoots: [root])))
     case .robotDocsGuide:
         print(HeadlessCapabilities.robotDocsGuide())
     }
@@ -395,7 +395,7 @@ enum HeadlessCLI {
         let right = Array(rhs)
         if left.isEmpty { return right.count }
         if right.isEmpty { return left.count }
-        var previous = Array(0...right.count)
+        var previous = Array(0 ... right.count)
         for (leftIndex, leftChar) in left.enumerated() {
             var current = [leftIndex + 1]
             for (rightIndex, rightChar) in right.enumerated() {

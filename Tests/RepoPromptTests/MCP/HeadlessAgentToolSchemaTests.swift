@@ -4,8 +4,8 @@ import MCP
 import XCTest
 
 final class HeadlessAgentToolSchemaTests: XCTestCase {
-    func testFullHeadlessToolsAdvertiseAgentRunAndManageButDiscoveryToolsDoNot() throws {
-        let expectedFullToolNames: Set<String> = [
+    func testFullHeadlessToolsAdvertiseAgentRunAndManageButDiscoveryToolsDoNot() {
+        let expectedFullToolNames: Set = [
             "headless_capabilities",
             "headless_status",
             "read_file",
