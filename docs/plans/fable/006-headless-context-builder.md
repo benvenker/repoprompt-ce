@@ -14,10 +14,10 @@
 - **Priority**: P2
 - **Effort**: L
 - **Risk**: MED-HIGH (subprocess orchestration + external CLIs; mitigated by a fully offline fake-agent gate)
-- **Depends on**: plans/003 (required), plans/005 (only for the optional answer/plan follow-up step), plans/004 (only for running on Linux)
+- **Depends on**: plans/003 (required), plans/005 (only for the optional answer/plan follow-up step), plans/004 (only for running `rpce-headless` on Linux)
 - **Category**: direction (new capability)
 - **Planned at**: commit `1db9bbc`, 2026-06-11
-- **Completed**: 2026-06-11 — macOS/offline fake-agent path implemented and validated. Linux gate opened when plan 004 completed; Linux container validation of the context builder is still pending.
+- **Completed**: 2026-06-11 — macOS/offline fake-agent path implemented and validated. The `rpce-headless` Linux gate opened when plan 004 completed; Linux container validation of the context builder is still pending.
 
 ## Completion notes
 

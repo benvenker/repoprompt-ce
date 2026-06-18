@@ -2,9 +2,19 @@
 title: "fix: Align headless agent_run lifecycle parity"
 type: "fix"
 date: "2026-06-18"
+status: "superseded"
+superseded_reason: "Target ambiguity: this plan treats the next Linux/headless work as Swift rpce-headless app-parity work and must not drive automation without explicit human re-approval."
 ---
 
 # fix: Align headless agent_run lifecycle parity
+
+> **Do not execute as written.** This plan was created from an ambiguous
+> app-vs-headless comparison and then became the source for a Smithers mission
+> that targeted Swift `rpce-headless` changes. It is kept only as historical
+> evidence. Before creating tickets from it, confirm the intended target with a
+> human: app-side Swift reference behavior, the existing Swift `rpce-headless`
+> MCP server, or some future separate Linux runtime. Do not infer app-parity
+> implementation work from "Linux port" wording alone.
 
 ## Summary
 

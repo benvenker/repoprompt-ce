@@ -1,0 +1,20 @@
+# Final Mission Review: Validation
+
+Holistically review the integrated campaign against the original source plan with focus on tests, validation evidence, command failures, skipped checks, and regressions.
+
+Approve only when validation evidence is adequate for the source plan. Identify follow-up tickets for missing or failing validation.
+
+Plan summary:
+{JSON.stringify(props.planSummary, null, 2)}
+
+Materialized tickets:
+{JSON.stringify(props.materializedTickets, null, 2)}
+
+Ticket results:
+{JSON.stringify(props.ticketResults, null, 2)}
+
+Integration result:
+{JSON.stringify(props.integrationResult, null, 2)}
+
+REQUIRED OUTPUT:
+{props.schema}

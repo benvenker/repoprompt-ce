@@ -12,6 +12,7 @@ import {
 import {
   PiDeepSeekV4Pro,
   PiGlm51,
+  PiGlm52,
   PiGpt55High,
   PiKimiK27Code,
   PiMiniMaxM3,
@@ -33,6 +34,7 @@ export {
 export {
   PiDeepSeekV4Pro,
   PiGlm51,
+  PiGlm52,
   PiGpt55High,
   PiKimiK27Code,
   PiMiniMaxM3,
@@ -52,6 +54,7 @@ export const providers = {
   minimaxM3: PiMiniMaxM3,
   kimiK27Code: PiKimiK27Code,
   glm51: PiGlm51,
+  glm52: PiGlm52,
   qwenCoderPlus: PiQwenCoderPlus,
   deepSeekV4Pro: PiDeepSeekV4Pro,
 } as const;
@@ -61,12 +64,14 @@ export const agents = {
   // cheapFast: Smithers would normally suggest Vibe here, but Vibe is not available: missing `vibe` on PATH; missing credentials (~/.vibe/.env or ~/.vibe/config.toml or $MISTRAL_API_KEY).
   // cheapFast: Smithers would normally suggest Antigravity here, but Antigravity is not available: missing credentials (~/.gemini/antigravity-cli/settings.json or ~/.gemini/antigravity-cli).
   cheapFast: [providers.pi],
+  cheapExecution: [providers.glm52],
   smart: [providers.codex, providers.claudeOpus],
   smartTool: [providers.codex, providers.claudeOpus],
   openRouterCode: [
     providers.minimaxM3,
     providers.kimiK27Code,
     providers.glm51,
+    providers.glm52,
     providers.qwenCoderPlus,
     providers.deepSeekV4Pro,
   ],
@@ -86,6 +91,7 @@ export function createReadOnlySmithersAgents(env: Record<string, string>) {
     minimaxM3: createOpenRouterPiAgent("minimax/minimax-m3", env, "high", piReadOnlyTools),
     kimiK27Code: createOpenRouterPiAgent("moonshotai/kimi-k2.7-code", env, "high", piReadOnlyTools),
     glm51: createOpenRouterPiAgent("z-ai/glm-5.1", env, "high", piReadOnlyTools),
+    glm52: createOpenRouterPiAgent("z-ai/glm-5.2", env, "high", piReadOnlyTools),
     qwenCoderPlus: createOpenRouterPiAgent("qwen/qwen3-coder-plus", env, undefined, piReadOnlyTools),
     deepSeekV4Pro: createOpenRouterPiAgent("deepseek/deepseek-v4-pro", env, "high", piReadOnlyTools),
   } as const;

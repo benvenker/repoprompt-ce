@@ -2,6 +2,13 @@
 
 `rpce-headless` is a standalone MCP server/CLI for the RepoPrompt CE context tools. It loads one logical workspace from one or more `--root` paths and does not require the macOS app.
 
+Implementation boundary: this is the SwiftPM `RepoPromptHeadlessServer`
+product plus shared Swift context libraries. Linux instructions in this file
+cover building, packaging, installing, and smoke-testing this Swift MCP server
+on Linux. They do not describe a separate non-Swift Linux implementation, and
+they do not imply app-side Agent Mode features are supported here unless the
+tool contracts below list them.
+
 ## Build
 
 ```bash
@@ -10,10 +17,10 @@ make dev-swift-build PRODUCT=rpce-headless
 swift build --product rpce-headless
 ```
 
-## Linux Build
+## rpce-headless Swift Linux Build
 
-The verified Linux target for this fork is Ubuntu 24.04 using the official
-Swift image:
+The verified Linux target for this `rpce-headless` Swift MCP server is Ubuntu
+24.04 using the official Swift image:
 
 ```bash
 docker run --rm -v "$PWD":/src -w /src swift:6.2.4-noble \
@@ -37,7 +44,8 @@ Expected success output includes `INIT OK` and `ALL OK`.
 
 The current deployment shape assumes either a Docker build on the VPS or a
 release binary copied from a matching Ubuntu 24.04 build host. The VPS does
-not need the macOS app.
+not need the macOS app, but it is still running the `rpce-headless` Swift
+server binary.
 
 ```bash
 git clone <repo-url> /srv/repoprompt-ce

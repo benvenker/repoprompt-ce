@@ -75,6 +75,10 @@ Committed agent assets in this checkout:
 
 [`rpce-headless`](Sources/RepoPromptHeadlessServer) is a standalone MCP server
 and CLI for RepoPrompt CE context tools. It does not require the macOS app.
+It is implemented by the SwiftPM `RepoPromptHeadlessServer` target and shared
+Swift context libraries, even when built, packaged, installed, and smoke-tested
+on Linux. Treat app-side code under `Sources/RepoPrompt` as reference material
+for this surface unless a plan explicitly says to change the macOS app.
 
 ```bash
 make dev-swift-build PRODUCT=rpce-headless

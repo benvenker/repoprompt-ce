@@ -1,5 +1,10 @@
 # Plan 004: Make `RepoPromptContextCore` + `rpce-headless` build and run on Linux
 
+> **Scope note:** In this historical plan, "Linux port" means making the Swift
+> `RepoPromptContextCore`, `RepoPromptShared`, and `RepoPromptHeadlessServer`
+> targets build and smoke-test on Linux. It is not a separate non-Swift server
+> implementation and it does not port app-side Agent Mode semantics.
+
 > **Executor instructions**: Follow this plan step by step. Run every
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
@@ -25,12 +30,13 @@
 
 ## Why this matters
 
-The whole point of this fork is running the context engine on a Linux VPS.
-Plans 002–003 produce a macOS-only headless server. A pre-planning scan found
-the Linux-blocking surface is small and enumerable: one FSEvents/CoreServices
-usage, four CryptoKit files, five Darwin-import files, and shallow Combine
-usage. This plan applies those mechanical substitutions and proves the result
-in Docker using the image recorded by plan 001.
+The point of this track is running the context engine through `rpce-headless`
+on a Linux VPS. Plans 002–003 produce a macOS-only Swift headless server. A
+pre-planning scan found the Linux-blocking surface is small and enumerable:
+one FSEvents/CoreServices usage, four CryptoKit files, five Darwin-import
+files, and shallow Combine usage. This plan applies those mechanical
+substitutions and proves the result in Docker using the image recorded by
+plan 001.
 
 ## Current state
 

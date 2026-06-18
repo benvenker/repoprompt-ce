@@ -8,6 +8,28 @@ RepoPrompt CE is a Swift Package macOS app with three agent-facing surfaces:
 
 `CLAUDE.md` is a symlink to this file. Keep this file short enough for agents to read before acting.
 
+## Headless and Fable target boundary
+
+Fable/headless Linux work is a private-fork effort to run RepoPrompt CE's
+context-engineering backend on Linux as a standalone MCP server/CLI. The live
+implementation in this repo is still Swift: `Package.swift` defines the
+`rpce-headless` product, backed by the `RepoPromptHeadlessServer` target plus
+`RepoPromptContextCore` and `RepoPromptShared`.
+
+In existing Fable docs, "Linux port" means making those Swift targets build,
+package, install, and smoke-test on Linux, usually through the Docker Swift
+lane below. It does not mean there is a separate non-Swift Linux service in
+this checkout. If a user says "Linux port" and appears to mean a separate
+destination, stop and identify the intended target before planning tickets.
+
+Treat app-side Swift code under `Sources/RepoPrompt` as reference material for
+headless work unless the user explicitly asks to change the macOS app. The
+Fable plan index rejects wholesale porting of the app provider stack and
+`MCPWindowToolDependencies`; headless code should use narrow handlers over
+`RepoPromptContextCore`. App-parity ideas such as steering, responding,
+worktrees, app tabs, and native workflow execution are deferred unless a new
+approved plan says otherwise.
+
 ## First moves
 
 - Check `git status --short` before edits. The tree may already contain intended work; do not revert or clean dirty files unless the user explicitly asks.
@@ -171,7 +193,7 @@ resolved file, consume its structured `codemap_unavailable` evidence and follow
 the `file_search` then `read_file` fallback instead of treating it as a missing
 path.
 
-### Linux / VPS Swift
+### rpce-headless Swift Linux validation
 
 On Linux hosts, especially `ben-netcup-v2`, do not assume Swift is unavailable
 just because `swift` is not on `PATH`. This VPS may use Docker Swift instead of
@@ -183,7 +205,10 @@ docker images --format '{{.Repository}}:{{.Tag}}' | grep '^swift:' || true
 docker run --rm swift:6.2.4-noble swift --version
 ```
 
-The known-good Linux image for Fable/headless work is `swift:6.2.4-noble`.
+The known-good Linux image for `rpce-headless` Swift validation is
+`swift:6.2.4-noble`. This lane proves the standalone Swift MCP server build,
+install, and smoke path; it is not proof that broader app features or a
+separate non-Swift Linux runtime exist.
 Use the existing Docker-built `rpce-headless` binary under `.build-linux` before
 trying a new host-side build or smoke path. The host often lacks Swift runtime
 libraries even when the Docker build is healthy.

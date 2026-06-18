@@ -1,0 +1,20 @@
+# Write Mission Kanban Report
+
+Persist or return the final mission report. Prefer writing a markdown report under `.smithers/reports/mission-kanban/` with a deterministic name derived from the source plan and run evidence. Create the reports directory if needed.
+
+The report must aggregate ticket results, branches, changed files, validation results, review findings, unresolved risks, follow-up tickets, and whether the original source plan is satisfied.
+
+Run configuration:
+{JSON.stringify(props.runConfig, null, 2)}
+
+Materialized tickets:
+{JSON.stringify(props.materializedTickets, null, 2)}
+
+Integration result:
+{JSON.stringify(props.integrationResult, null, 2)}
+
+Final synthesis:
+{JSON.stringify(props.finalSynthesis, null, 2)}
+
+REQUIRED OUTPUT:
+{props.schema}

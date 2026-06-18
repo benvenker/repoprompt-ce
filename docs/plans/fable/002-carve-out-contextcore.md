@@ -41,8 +41,9 @@
 
 RepoPrompt CE's context engine (file selection store, codemaps, search, token
 accounting, prompt packaging) currently lives inside the **app executable
-target** `RepoPrompt`, so nothing else can link it. The goal of this fork is
-a headless Linux MCP server (plan 003) that reuses this engine. SwiftPM
+target** `RepoPrompt`, so nothing else can link it. The goal of this plan
+series is the Swift `rpce-headless` MCP server (plan 003) that reuses this
+engine. SwiftPM
 cannot link one executable target into another, so the engine must move into
 a library target. This plan is pure target surgery: after it lands, the app
 builds and behaves exactly as before, but ~30 KLOC of deterministic engine

@@ -16,13 +16,13 @@
 - **Risk**: MED (network streaming; mitigated by the offline mock gate)
 - **Depends on**: plans/003 (server exists). Independent of plan 004 — but
   build for both platforms from the start by following the dependency rules
-  below; the Linux gate at the end requires 004 to be DONE.
+  below; the `rpce-headless` Linux gate at the end requires 004 to be DONE.
 - **Category**: direction (new capability)
 - **Planned at**: commit `1db9bbc`, 2026-06-11
 - **Completed at**: 2026-06-11 — macOS headless build, offline mock
   oracle test, missing-key assertion, and plan-003 smoke regression passed.
-  Linux container gate was skipped because plan 004 remains blocked by the
-  Docker/plan-001 gate.
+  `rpce-headless` Linux container gate was skipped because plan 004 was still
+  blocked by the Docker/plan-001 gate at the time.
 
 ## Why this matters
 

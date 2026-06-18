@@ -1,0 +1,28 @@
+# Implement Mission Kanban Ticket
+
+Implement the materialized ticket in the current Smithers worktree. Follow RepoPrompt CE `AGENTS.md`, Compound Engineering `ce-work` discipline, and the ticket file as the local source of truth.
+
+Constraints:
+
+- Work only on the assigned ticket.
+- Use branch `{props.branch}` from base branch `{props.runConfig?.baseBranch}`.
+- Do not stage, commit, force-push, or launch/relaunch the visible app unless explicitly requested by the operator.
+- Preserve source-plan coverage and report any scope conflict instead of silently broadening the work.
+- If validation or review feedback is present, address it before doing new speculative work.
+
+Ticket:
+{JSON.stringify(props.ticket, null, 2)}
+
+Plan summary:
+{JSON.stringify(props.planSummary, null, 2)}
+
+Previous validation:
+{JSON.stringify(props.validation ?? null, null, 2)}
+
+Previous review:
+{JSON.stringify(props.review ?? null, null, 2)}
+
+Return changed files, implementation notes, and unresolved risks.
+
+REQUIRED OUTPUT:
+{props.schema}

@@ -72,7 +72,8 @@ surfaces instead of assuming uplift from this functional handoff alone.
 
 The full XCTest target was not run on Linux because it pulls macOS-only app
 dependencies (`SwiftUI`, `CoreLocation`). Product-only `rpce-headless` build
-and headless smokes are the valid Linux proof for this pass.
+and headless smokes are the valid Linux proof for this `rpce-headless`
+ergonomics pass only.
 
 ## Remaining Follow-Up
 

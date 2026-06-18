@@ -1,0 +1,20 @@
+# Integrate Mission Kanban Ticket Results
+
+Serialize completed ticket results through a merge-queue-shaped integration step.
+
+Integrate only branches whose ticket results are suitable. Track branches, changed files, validation evidence, review findings, conflicts, deferred merges, and unresolved risks. Do not discard partial or failed ticket evidence; report it.
+
+Run configuration:
+{JSON.stringify(props.runConfig, null, 2)}
+
+Materialized tickets:
+{JSON.stringify(props.materializedTickets, null, 2)}
+
+Ticket results:
+{JSON.stringify(props.ticketResults, null, 2)}
+
+Plan summary:
+{JSON.stringify(props.planSummary, null, 2)}
+
+REQUIRED OUTPUT:
+{props.schema}

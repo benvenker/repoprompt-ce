@@ -1,0 +1,26 @@
+# Final Mission Synthesis
+
+Fan in ticket results, integration evidence, and final reviews into a source-plan satisfaction decision.
+
+Decision rules:
+
+- `satisfied` only when ticket results, integration, and all final reviews show the original source plan is covered.
+- `partial` when useful work landed but any requirement, validation, or risk remains unresolved.
+- `blocked` when integration cannot proceed or the resulting campaign is not usable.
+
+Return unresolved risks and concrete follow-up ticket specs when the plan is not fully satisfied.
+
+Plan summary:
+{JSON.stringify(props.planSummary, null, 2)}
+
+Ticket results:
+{JSON.stringify(props.ticketResults, null, 2)}
+
+Integration result:
+{JSON.stringify(props.integrationResult, null, 2)}
+
+Final reviews:
+{JSON.stringify(props.reviews, null, 2)}
+
+REQUIRED OUTPUT:
+{props.schema}

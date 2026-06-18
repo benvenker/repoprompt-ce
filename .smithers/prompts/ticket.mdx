@@ -1,7 +1,17 @@
 # Ticket
 
-Create a well-structured ticket for the following request.
-Include a clear title, detailed description, and acceptance criteria.
+Create one implementation ticket for the following request.
+
+If the request contains or references a Compound Engineering plan, treat the plan as the source of truth:
+
+- If the request does not identify which plan item to use, first inspect or infer the existing tickets relative to the plan. Pick a plan item / implementation unit that does not already have a ticket. Say which existing tickets you considered and which uncovered unit you selected in the description.
+- Pick the single requisite plan item / implementation unit for this ticket.
+- Preserve that plan item's content as close to wholesale as the output schema allows. Do not summarize away requirements, constraints, file lists, validation commands, risks, or acceptance examples.
+- Use the plan item's heading as the ticket title unless the request explicitly asks for a different title.
+- Put the copied plan item body in `description`, keeping useful structure with headings or bullets.
+- Put every explicit requirement, acceptance example, validation command, and "done when" condition from that plan item into `acceptanceCriteria`.
+
+If the request is not plan-derived, create a normal implementation ticket with a clear title, detailed description, and concrete acceptance criteria.
 
 REQUEST:
 {props.prompt}

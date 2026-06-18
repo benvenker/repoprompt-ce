@@ -1,0 +1,23 @@
+# Check Mission Kanban Ticket Alignment
+
+Verify the drafted tickets cover the approved source plan. Be strict and concrete.
+
+Coverage gates:
+
+- Every major implementation unit is covered by at least one ticket.
+- Every explicit requirement is covered by at least one ticket.
+- Every validation command or scenario is assigned to at least one ticket.
+- Every acceptance example is represented in ticket acceptance criteria or final review coverage.
+
+If coverage is incomplete, set `passes` to false and provide regeneration instructions specific enough for the next draft to fix the omissions.
+
+Maximum allowed tickets: {props.maxTickets}
+
+Plan summary:
+{JSON.stringify(props.planSummary, null, 2)}
+
+Ticket draft:
+{JSON.stringify(props.ticketDraft, null, 2)}
+
+REQUIRED OUTPUT:
+{props.schema}

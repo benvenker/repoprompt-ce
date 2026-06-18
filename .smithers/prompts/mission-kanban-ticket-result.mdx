@@ -1,0 +1,26 @@
+# Synthesize Ticket Result
+
+Summarize the final per-ticket loop outcome for downstream integration.
+
+Classify status as:
+
+- `completed` when implementation is present, validation passed, and review approved.
+- `partial` when useful work exists but validation or review has unresolved issues.
+- `failed` when no usable implementation exists or the branch should not be integrated.
+
+Ticket:
+{JSON.stringify(props.ticket, null, 2)}
+
+Branch: {props.branch}
+
+Implementation:
+{JSON.stringify(props.implementation, null, 2)}
+
+Validation:
+{JSON.stringify(props.validation, null, 2)}
+
+Review:
+{JSON.stringify(props.review, null, 2)}
+
+REQUIRED OUTPUT:
+{props.schema}

@@ -1,0 +1,17 @@
+# Validate Mission Kanban Ticket
+
+Run the validation commands from the ticket and the smallest relevant RepoPrompt CE checks that prove the change. Follow `AGENTS.md` validation guidance.
+
+Report each command with pass, fail, or skipped status. If a command cannot run because of a host-tool gap, mark it failed or skipped with precise reason and list the residual risk.
+
+Ticket:
+{JSON.stringify(props.ticket, null, 2)}
+
+Implementation result:
+{JSON.stringify(props.implementation, null, 2)}
+
+Plan summary:
+{JSON.stringify(props.planSummary, null, 2)}
+
+REQUIRED OUTPUT:
+{props.schema}

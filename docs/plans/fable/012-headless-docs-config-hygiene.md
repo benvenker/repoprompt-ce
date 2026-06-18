@@ -31,8 +31,8 @@ neither the agent vars nor the five documented `RPCE_CONTEXT_BUILDER_*`
 vars. The example `agents.json` runs Claude with
 `--permission-mode bypassPermissions` with no warning about what that means
 on a VPS. And the plan index has gone stale: the agent-MCP increment shipped
-with no plan row, and plans 005/006 still describe the Linux gate as blocked
-even though the index marks plan 004 DONE. An agent (or operator) cannot use
+with no plan row, and plans 005/006 still describe the `rpce-headless` Linux
+gate as blocked even though the index marks plan 004 DONE. An agent (or operator) cannot use
 what it cannot discover; this plan makes the docs match reality.
 
 ## Current state
@@ -214,11 +214,13 @@ references `Examples/agents.json` by name next to the warning.
   without a plan row; validated by `HeadlessAgentToolSchemaTests` and
   `mcp_agent_smoke.py`. Hardening tracked in plans 008/010/011."
 - `005-headless-oracle-openrouter.md:252-253`: rewrite the unchecked item to
-  "- [ ] Mock test prints `ORACLE OK` in the Linux container — unblocked by
-  plan 004 (DONE) since 2026-06-12; container run still pending."
+  "- [ ] Mock test prints `ORACLE OK` in the `rpce-headless` Linux container
+  — unblocked by plan 004 (DONE) since 2026-06-12; container run still
+  pending."
 - `006-headless-context-builder.md:20`: replace the "remains blocked by plan
-  004" sentence with "Linux gate opened when plan 004 completed; Linux
-  container validation of the context builder is still pending."
+  004" sentence with "The `rpce-headless` Linux gate opened when plan 004
+  completed; Linux container validation of the context builder is still
+  pending."
 
 **Verify**: `grep -n "Shipped outside plans" docs/plans/fable/README.md` → 1 match; `grep -rn "blocked by plan 004" docs/plans/fable/006-headless-context-builder.md` → no matches.
 

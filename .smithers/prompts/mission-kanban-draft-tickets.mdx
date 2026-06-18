@@ -1,0 +1,23 @@
+# Draft Mission Kanban Tickets
+
+Generate deterministic implementation ticket specs directly from the source plan summary. Preserve the plan's U-style unit structure where present and add one final holistic integration or review ticket when room allows.
+
+Rules:
+
+- Produce no more than {props.runConfig?.maxTickets ?? 7} tickets.
+- Every ticket must have stable `id`, `slug`, `title`, `summary`, `sourceUnits`, `requirements`, `files`, `validationCommands`, `acceptanceCriteria`, `dependencies`, and `risks`.
+- Slugs must be lowercase kebab-case and suitable for branch names under `{props.runConfig?.ticketBranchPrefix ?? "mission"}/`.
+- Do not invent scope beyond the source plan. Put ambiguous or risky scope in `risks`.
+- If a previous alignment check exists, revise the ticket set to address its missing coverage exactly.
+
+Operator note:
+{props.operatorPrompt || "(none)"}
+
+Previous alignment:
+{JSON.stringify(props.previousAlignment ?? null, null, 2)}
+
+Plan summary:
+{JSON.stringify(props.planSummary, null, 2)}
+
+REQUIRED OUTPUT:
+{props.schema}

@@ -36,10 +36,11 @@
 Today the only MCP server is the macOS app: the `repoprompt-mcp` binary is a
 pure stdio↔unix-socket proxy that forwards every frame to the running app
 and implements zero tools itself (its mode dispatch is shown below). The goal
-of this fork is to run RepoPrompt's context tools on a Linux VPS with no app.
-This plan creates a new executable, `rpce-headless`, that serves MCP directly
-over stdio using the engine library from plan 002, with a single-workspace
-model replacing the app's window/tab routing. After this plan, any MCP host
+of this headless-server track is to run RepoPrompt's context tools on a Linux
+VPS with no app. This plan creates a new Swift executable, `rpce-headless`,
+that serves MCP directly over stdio using the engine library from plan 002,
+with a single-workspace model replacing the app's window/tab routing. After
+this plan, any MCP host
 (Claude Code, Codex, a script) can use the seven deterministic tools against
 a repo on disk with no GUI anywhere.
 

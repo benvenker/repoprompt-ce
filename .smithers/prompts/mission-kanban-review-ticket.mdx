@@ -1,0 +1,38 @@
+# Review Mission Kanban Ticket
+
+Review the current ticket branch by invoking the Compound Engineering code-review skill:
+
+`/home/ben/.agents/skills/ce-code-review/SKILL.md`
+
+Treat this as the skill invocation, constructing the `base:` and `plan:` arguments from the Run config below:
+
+`ce-code-review mode:agent base:<runConfig.baseBranch> plan:<runConfig.planPath>`
+
+Do not invent an additional project-specific review discipline. The reviewer should receive the ticket branch diff against the base branch, the explicit source plan path, and the ticket context below. Let `ce-code-review` select reviewers, inspect the diff, run its confidence-gated pipeline, and return its JSON report. This task is only an adapter around that review.
+
+After the skill returns, map its JSON into the required Smithers ticket-review output. This review is a loop gate:
+
+- `approved`: true only when `ce-code-review` returns `status:"complete"` and there are no P0/P1 findings, no actionable P2 findings, no P0/P1/actionable-P2 requirements-completeness gaps, and no other actionable findings that must be fixed before integration.
+- `approved`: false for any P0/P1 finding, any actionable P2 finding, any actionable finding in `actionable_findings`, any explicit-plan requirement or implementation-unit gap marked actionable by CE review, any degraded/failed review status, or any validation result that should have run but failed.
+- `findings`: concise strings summarizing all primary review findings from the skill JSON.
+- `requiredFixes`: concise strings from all P0/P1 findings, actionable P2 findings, all `actionable_findings`, and any explicit-plan requirement or implementation-unit gaps marked actionable by CE review. These are the items the next implementation iteration must address.
+- `risks`: non-actionable/advisory P2 findings, P3/advisory findings, residual risks, testing gaps, degraded coverage, review infrastructure failures, or consciously deferred non-blockers.
+- `summary`: one sentence naming the CE review verdict and artifact path, when present.
+
+Ticket:
+{JSON.stringify(props.ticket, null, 2)}
+
+Implementation:
+{JSON.stringify(props.implementation, null, 2)}
+
+Validation:
+{JSON.stringify(props.validation, null, 2)}
+
+Plan summary:
+{JSON.stringify(props.planSummary, null, 2)}
+
+Run config:
+{JSON.stringify(props.runConfig, null, 2)}
+
+REQUIRED OUTPUT:
+{props.schema}

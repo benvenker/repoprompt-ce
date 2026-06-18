@@ -1,0 +1,24 @@
+# Materialize Mission Kanban Tickets
+
+Write the generated tickets under `{props.runConfig?.ticketsDir ?? ".smithers/tickets"}` as markdown files. Use deterministic generated-file markers and required sections.
+
+Required file behavior:
+
+- File names must be `{ticket.slug}.md`.
+- Each file must begin with `<!-- smithers-generated: mission-kanban -->`.
+- Include sections for Summary, Source Plan Coverage, Scope, Acceptance Criteria, Validation, Dependencies, Risks, and Worker Notes.
+- Use the branch `{props.runConfig?.ticketBranchPrefix ?? "mission"}/{ticket.slug}` in the Worker Notes section.
+- If a file already exists and `overwriteTickets` is false, do not overwrite it. Report it in `skippedFiles`.
+- If a file already exists and `overwriteTickets` is true, archive or replace safely and report what happened in `archivedFiles` or `writtenFiles`.
+
+Alignment check:
+{JSON.stringify(props.alignmentCheck, null, 2)}
+
+Ticket draft:
+{JSON.stringify(props.ticketDraft, null, 2)}
+
+Run configuration:
+{JSON.stringify(props.runConfig, null, 2)}
+
+REQUIRED OUTPUT:
+{props.schema}

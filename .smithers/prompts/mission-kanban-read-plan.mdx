@@ -1,0 +1,22 @@
+# Read Mission Kanban Source Plan
+
+Read the approved RepoPrompt CE source plan exactly as an immutable decision artifact. Extract implementation units, requirements, target files, validation commands, acceptance examples, dependencies, and plan-specific risks.
+
+Preserve U-style unit identifiers and quote identifiers exactly when they appear. Do not mark work complete and do not edit the plan.
+
+Operator note:
+{props.operatorPrompt || "(none)"}
+
+Run configuration:
+{JSON.stringify(props.runConfig, null, 2)}
+
+Plan path: {props.plan.path}
+Plan title: {props.plan.title}
+
+Plan content:
+{props.plan.content}
+
+Return compact structured extraction suitable for deterministic ticket generation.
+
+REQUIRED OUTPUT:
+{props.schema}

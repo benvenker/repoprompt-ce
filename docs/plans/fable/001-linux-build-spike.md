@@ -23,14 +23,15 @@
 
 ## Why this matters
 
-The whole headless-Linux extraction (plans 002–006) rests on one unproven
+This `rpce-headless` Swift extraction track (plans 002–006) rests on one unproven
 assumption: that the repo's parsing stack — `SwiftTreeSitter` 0.8.0, the
 pinned tree-sitter grammar packages, and the vendored `CSwiftPCRE2` C target —
 compiles and runs under Swift on Linux. Everything else we scanned is plain
 Foundation. If this assumption is false we need to know **before** any
 Package.swift surgery, because the fix (vendoring different bindings, or
 regenerating the PCRE2 `config.h` for Linux) changes plan 002's shape. This
-spike costs an hour and produces a yes/no answer plus exact error output.
+spike costs an hour and produces a yes/no answer plus exact error output. It is
+not broader product/runtime Linux validation.
 
 This spike makes **zero changes to the repository**. All work happens in
 `/tmp/rpce-linux-spike` and inside a Docker container.
