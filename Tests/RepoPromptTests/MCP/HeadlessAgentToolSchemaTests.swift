@@ -49,7 +49,7 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
         XCTAssertTrue(capabilities.recommendedWorkflow[1].contains("fuller contract"))
         XCTAssertTrue(capabilities.architectureOnboarding.steps.contains { $0.contains("context_builder") })
         XCTAssertEqual(capabilities.nativeWorkflows.source, "RepoPrompt CE native product workflow prompts, not Smithers workflows.")
-        XCTAssertTrue(capabilities.nativeWorkflows.roles.contains { $0.name == "explore" && $0.bounds.contains("read-only") })
+        XCTAssertTrue(capabilities.nativeWorkflows.roles.contains { $0.name == "explore" && $0.purpose.contains("read-only") })
         XCTAssertTrue(capabilities.nativeWorkflows.roles.contains { $0.name == "pair" })
         XCTAssertTrue(capabilities.nativeWorkflows.roles.contains { $0.name == "design" })
         XCTAssertTrue(capabilities.nativeWorkflows.workflows.contains { $0.name == "investigate" })
@@ -82,17 +82,17 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
             try XCTUnwrap(toolNames.firstIndex(of: "read_file"))
         )
 
-        let contextBuilder = try tool(named: "context_builder")
-        XCTAssertTrue(contextBuilder.description.contains("Preferred repo-onboarding"))
-        XCTAssertTrue(contextBuilder.description.contains("instead of manually"))
+        let contextBuilder = try XCTUnwrap(tool(named: "context_builder").description)
+        XCTAssertTrue(contextBuilder.contains("Preferred repo-onboarding"))
+        XCTAssertTrue(contextBuilder.contains("instead of manually"))
 
-        let agentManage = try tool(named: "agent_manage")
-        XCTAssertTrue(agentManage.description.contains("server's subagent pool"))
-        XCTAssertTrue(agentManage.description.contains("instead of client-local"))
+        let agentManage = try XCTUnwrap(tool(named: "agent_manage").description)
+        XCTAssertTrue(agentManage.contains("server's subagent pool"))
+        XCTAssertTrue(agentManage.contains("instead of client-local"))
 
-        let agentRun = try tool(named: "agent_run")
-        XCTAssertTrue(agentRun.description.contains("server-managed subagent lifecycle"))
-        XCTAssertTrue(agentRun.description.contains("Do not treat this as generic client-local agent spawning"))
+        let agentRun = try XCTUnwrap(tool(named: "agent_run").description)
+        XCTAssertTrue(agentRun.contains("server-managed subagent lifecycle"))
+        XCTAssertTrue(agentRun.contains("Do not treat this as generic client-local agent spawning"))
     }
 
     func testHeadlessStatusSummarizesWorkspaceAndNextCalls() {
@@ -137,7 +137,7 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
         XCTAssertTrue(status.suggestedFirstToolCalls.contains { $0.contains("workspace_context") })
     }
 
-    func testRobotDocsGuideNamesPreferredAgentWorkflow() {
+    func testRobotDocsGuideNamesPreferredAgentWorkflow() throws {
         let guide = HeadlessCapabilities.robotDocsGuide(loadedRoots: ["/repo"])
         XCTAssertTrue(guide.contains("robot-docs status --json"))
         XCTAssertTrue(guide.contains("headless_status"))
@@ -204,19 +204,19 @@ final class HeadlessAgentToolSchemaTests: XCTestCase {
     }
 
     func testContextBuilderSchemaDescriptionsTeachAsyncLifecycle() throws {
-        let toolDescription = try tool(named: "context_builder").description
+        let toolDescription = try XCTUnwrap(tool(named: "context_builder").description)
         XCTAssertTrue(toolDescription.contains("prefer op=start"))
         XCTAssertTrue(toolDescription.contains("context_id:\"active\""))
         XCTAssertTrue(toolDescription.contains("compatibility mode"))
         XCTAssertTrue(toolDescription.contains("original result shape"))
         XCTAssertTrue(toolDescription.contains("running lifecycle snapshot"))
         XCTAssertTrue(toolDescription.contains("op=start"))
-        XCTAssertTrue(toolDescription.contains("timeout_seconds"))
+        XCTAssertTrue(toolDescription.contains("poll/wait/get_result/cleanup"))
 
         let timeoutSeconds = try propertySchema(named: "timeout_seconds", forToolNamed: "context_builder")
         XCTAssertTrue((timeoutSeconds["description"] as? String)?.contains("op=wait alias") == true)
         let waitTimeout = try propertySchema(named: "timeout", forToolNamed: "context_builder")
-        XCTAssertTrue((waitTimeout["description"] as? String)?.contains("progress-friendly") == true)
+        XCTAssertTrue((waitTimeout["description"] as? String)?.contains("Progress-friendly") == true)
     }
 
     func testContextBuilderCapabilitiesDescribeCompatibilityUnionShape() {
