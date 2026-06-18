@@ -325,14 +325,7 @@ actor HeadlessContextBuilderService {
         defer { activeRunID = nil }
 
         let prepared = try Self.prepareLaunch(request: request)
-        let listener = HeadlessUnixSocketListener(path: prepared.socketPath)
-        try listener.start { [host] fd in
-            do {
-                try await HeadlessMCPServer(host: host).runSocketConnection(fd: fd)
-            } catch {
-                fputs("rpce-headless socket connection: \(error.localizedDescription)\n", stderr)
-            }
-        }
+        let listener = try startHeadlessSocketListener(path: prepared.socketPath, host: host)
         defer {
             listener.stop()
             try? FileManager.default.removeItem(at: prepared.tempDirectory)
@@ -377,14 +370,7 @@ actor HeadlessContextBuilderService {
         let runID = UUID().uuidString
         let prepared = try Self.prepareLaunch(request: request)
         let discoveryHost = try await makeDiscoveryHost()
-        let listener = HeadlessUnixSocketListener(path: prepared.socketPath)
-        try listener.start { [discoveryHost] fd in
-            do {
-                try await HeadlessMCPServer(host: discoveryHost).runSocketConnection(fd: fd)
-            } catch {
-                fputs("rpce-headless socket connection: \(error.localizedDescription)\n", stderr)
-            }
-        }
+        let listener = try startHeadlessSocketListener(path: prepared.socketPath, host: discoveryHost)
 
         let stdout = Pipe()
         let stderrPipe = Pipe()
@@ -576,7 +562,7 @@ actor HeadlessContextBuilderService {
             configPath: request.agentConfigPath,
             prompt: prompt,
             socketPath: socketPath,
-            executablePath: currentExecutablePath(),
+            executablePath: currentHeadlessExecutablePath(),
             tempDirectory: tempDirectory
         )
         return (launch, socketPath, tempDirectory)
@@ -631,19 +617,19 @@ actor HeadlessContextBuilderService {
         }
 
         let tokenBudget = arguments["token_budget"]?.intCoerced()
-            ?? environment.trimmedInt("RPCE_CONTEXT_BUILDER_TOKEN_BUDGET")
+            ?? environment.headlessTrimmedInt("RPCE_CONTEXT_BUILDER_TOKEN_BUDGET")
             ?? (responseType == .selection ? 160_000 : 120_000)
         let timeoutSeconds = arguments["timeout_seconds"]?.intCoerced()
-            ?? environment.trimmedInt("RPCE_CONTEXT_BUILDER_TIMEOUT_SECONDS")
+            ?? environment.headlessTrimmedInt("RPCE_CONTEXT_BUILDER_TIMEOUT_SECONDS")
             ?? 900
-        let agentName = environment.trimmed("RPCE_CONTEXT_BUILDER_AGENT")
-            ?? (environment.trimmed("FAKE_AGENT_SCRIPT") == nil ? "claude" : "fake")
+        let agentName = environment.headlessTrimmed("RPCE_CONTEXT_BUILDER_AGENT")
+            ?? (environment.headlessTrimmed("FAKE_AGENT_SCRIPT") == nil ? "claude" : "fake")
 
         return HeadlessContextBuilderRequest(
             instructions: instructions,
             agentName: agentName,
-            agentConfigPath: environment.trimmed("RPCE_CONTEXT_BUILDER_AGENT_CONFIG"),
-            socketPath: environment.trimmed("RPCE_CONTEXT_BUILDER_SOCKET_PATH"),
+            agentConfigPath: environment.headlessTrimmed("RPCE_CONTEXT_BUILDER_AGENT_CONFIG"),
+            socketPath: environment.headlessTrimmed("RPCE_CONTEXT_BUILDER_SOCKET_PATH"),
             tokenBudget: tokenBudget,
             responseType: responseType,
             responseTypeName: rawResponseType,
@@ -952,14 +938,6 @@ actor HeadlessContextBuilderService {
         kill(processID, SIGKILL)
     }
 
-    private func jsonTextResult(_ value: some Codable) throws -> CallTool.Result {
-        try CallTool.Result(
-            content: [.text(text: HeadlessJSON.string(value), annotations: nil, _meta: nil)],
-            structuredContent: value,
-            isError: false
-        )
-    }
-
     private static func outputCaptureLimitBytesFromEnvironment(
         _ environment: [String: String] = ProcessInfo.processInfo.environment
     ) -> Int {
@@ -1216,38 +1194,8 @@ actor HeadlessContextBuilderService {
             fputs("\(label) \(line)\n", stderr)
         }
     }
-
-    private static func currentExecutablePath() throws -> String {
-        let arg0 = CommandLine.arguments[0]
-        if arg0.contains("/") {
-            let expanded = (arg0 as NSString).expandingTildeInPath
-            if expanded.hasPrefix("/") { return (expanded as NSString).standardizingPath }
-            return URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-                .appendingPathComponent(expanded)
-                .standardizedFileURL
-                .path
-        }
-        if let path = ProcessInfo.processInfo.environment["PATH"] {
-            for dir in path.split(separator: ":") {
-                let candidate = URL(fileURLWithPath: String(dir)).appendingPathComponent(arg0).path
-                if FileManager.default.isExecutableFile(atPath: candidate) { return candidate }
-            }
-        }
-        throw HeadlessCLI.ExitError(code: 69, message: "Unable to resolve current executable path")
-    }
 }
 
 private func defaultContextBuilderSocketPath() -> String {
     "/tmp/rpce-headless-context-\(getpid())-\(UUID().uuidString).sock"
-}
-
-private extension [String: String] {
-    func trimmed(_ key: String) -> String? {
-        guard let value = self[key]?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
-        return value
-    }
-
-    func trimmedInt(_ key: String) -> Int? {
-        trimmed(key).flatMap(Int.init)
-    }
 }

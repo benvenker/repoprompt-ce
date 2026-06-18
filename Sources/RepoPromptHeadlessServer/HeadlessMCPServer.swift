@@ -207,14 +207,6 @@ struct HeadlessMCPServer {
         CallTool.Result(content: [.text(text: text, annotations: nil, _meta: nil)], isError: false)
     }
 
-    private func jsonTextResult(_ value: some Codable) throws -> CallTool.Result {
-        try CallTool.Result(
-            content: [.text(text: HeadlessJSON.string(value), annotations: nil, _meta: nil)],
-            structuredContent: value,
-            isError: false
-        )
-    }
-
     private enum SocketAuthLine {
         case line([UInt8])
         case malformed

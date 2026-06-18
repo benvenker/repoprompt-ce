@@ -120,9 +120,3 @@ struct OracleChatSession: Codable, Equatable {
     var model: String
     var messages: [ChatMessage]
 }
-
-private extension String {
-    var nilIfEmpty: String? {
-        isEmpty ? nil : self
-    }
-}

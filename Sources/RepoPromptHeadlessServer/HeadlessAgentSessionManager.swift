@@ -452,14 +452,7 @@ actor HeadlessAgentSessionManager {
         } else {
             "/tmp/rpce-ha-\(getpid())-\(UUID().uuidString.prefix(8)).sock"
         }
-        let newListener = HeadlessUnixSocketListener(path: path)
-        try newListener.start { [host] fd in
-            do {
-                try await HeadlessMCPServer(host: host).runSocketConnection(fd: fd)
-            } catch {
-                fputs("rpce-headless agent socket connection: \(error.localizedDescription)\n", stderr)
-            }
-        }
+        let newListener = try startHeadlessSocketListener(path: path, host: host, label: "agent socket connection")
         listener = newListener
         socketPath = path
         if configuration.socketDirectory == nil {
@@ -583,14 +576,6 @@ actor HeadlessAgentSessionManager {
             .replacingOccurrences(of: ">", with: "&gt;")
     }
 
-    private func jsonTextResult(_ value: some Codable) throws -> CallTool.Result {
-        try CallTool.Result(
-            content: [.text(text: HeadlessJSON.string(value), annotations: nil, _meta: nil)],
-            structuredContent: value,
-            isError: false
-        )
-    }
-
     private func terminate(record: SessionRecord) {
         #if canImport(Darwin) || canImport(Glibc)
             guard record.escalationTask == nil else { return }
@@ -611,30 +596,5 @@ actor HeadlessAgentSessionManager {
             kill(-processID, SIGKILL)
             kill(processID, SIGKILL)
         #endif
-    }
-}
-
-private func currentHeadlessExecutablePath() throws -> String {
-    let arg0 = CommandLine.arguments[0]
-    if arg0.contains("/") {
-        let expanded = (arg0 as NSString).expandingTildeInPath
-        if expanded.hasPrefix("/") { return (expanded as NSString).standardizingPath }
-        return URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-            .appendingPathComponent(expanded)
-            .standardizedFileURL
-            .path
-    }
-    if let path = ProcessInfo.processInfo.environment["PATH"] {
-        for dir in path.split(separator: ":") {
-            let candidate = URL(fileURLWithPath: String(dir)).appendingPathComponent(arg0).path
-            if FileManager.default.isExecutableFile(atPath: candidate) { return candidate }
-        }
-    }
-    throw HeadlessCLI.ExitError(code: 69, message: "Unable to resolve current executable path")
-}
-
-private extension String {
-    var nilIfEmpty: String? {
-        isEmpty ? nil : self
     }
 }

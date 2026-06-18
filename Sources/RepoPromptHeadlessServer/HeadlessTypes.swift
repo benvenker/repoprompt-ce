@@ -383,6 +383,12 @@ extension MCP.Value {
     }
 }
 
+extension String {
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
+    }
+}
+
 extension [String] {
     func nonEmptyTrimmed() -> [String] {
         compactMap { value in
@@ -390,4 +396,47 @@ extension [String] {
             return trimmed.isEmpty ? nil : trimmed
         }
     }
+}
+
+func jsonTextResult(_ value: some Codable) throws -> CallTool.Result {
+    try CallTool.Result(
+        content: [.text(text: HeadlessJSON.string(value), annotations: nil, _meta: nil)],
+        structuredContent: value,
+        isError: false
+    )
+}
+
+func startHeadlessSocketListener(
+    path: String,
+    host: HeadlessWorkspaceHost,
+    label: String = "socket connection"
+) throws -> HeadlessUnixSocketListener {
+    let listener = HeadlessUnixSocketListener(path: path)
+    try listener.start { [host] fd in
+        do {
+            try await HeadlessMCPServer(host: host).runSocketConnection(fd: fd)
+        } catch {
+            fputs("rpce-headless \(label): \(error.localizedDescription)\n", stderr)
+        }
+    }
+    return listener
+}
+
+func currentHeadlessExecutablePath() throws -> String {
+    let arg0 = CommandLine.arguments[0]
+    if arg0.contains("/") {
+        let expanded = (arg0 as NSString).expandingTildeInPath
+        if expanded.hasPrefix("/") { return (expanded as NSString).standardizingPath }
+        return URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent(expanded)
+            .standardizedFileURL
+            .path
+    }
+    if let path = ProcessInfo.processInfo.environment["PATH"] {
+        for dir in path.split(separator: ":") {
+            let candidate = URL(fileURLWithPath: String(dir)).appendingPathComponent(arg0).path
+            if FileManager.default.isExecutableFile(atPath: candidate) { return candidate }
+        }
+    }
+    throw HeadlessCLI.ExitError(code: 69, message: "Unable to resolve current executable path")
 }

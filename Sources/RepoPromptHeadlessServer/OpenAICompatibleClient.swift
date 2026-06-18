@@ -9,14 +9,14 @@ struct OracleConfig {
     let defaultModel: String
 
     static func fromEnvironment(_ environment: [String: String] = ProcessInfo.processInfo.environment) throws -> OracleConfig {
-        let baseURL = environment.trimmed("RPCE_ORACLE_BASE_URL") ?? "https://openrouter.ai/api/v1"
-        guard let apiKey = environment.trimmed("RPCE_ORACLE_API_KEY") ?? environment.trimmed("OPENROUTER_API_KEY") else {
+        let baseURL = environment.headlessTrimmed("RPCE_ORACLE_BASE_URL") ?? "https://openrouter.ai/api/v1"
+        guard let apiKey = environment.headlessTrimmed("RPCE_ORACLE_API_KEY") ?? environment.headlessTrimmed("OPENROUTER_API_KEY") else {
             throw OracleClientError.missingAPIKey
         }
         return OracleConfig(
             baseURL: baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/")),
             apiKey: apiKey,
-            defaultModel: environment.trimmed("RPCE_ORACLE_MODEL") ?? "openrouter/auto"
+            defaultModel: environment.headlessTrimmed("RPCE_ORACLE_MODEL") ?? "openrouter/auto"
         )
     }
 }
@@ -138,11 +138,4 @@ private struct ChatCompletionChunk: Decodable {
     }
 
     let choices: [Choice]
-}
-
-private extension [String: String] {
-    func trimmed(_ key: String) -> String? {
-        guard let value = self[key]?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
-        return value
-    }
 }
