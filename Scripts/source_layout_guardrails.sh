@@ -308,7 +308,6 @@ allowed_tracked_docs=(
   "docs/plans/2026-06-16-001-fix-headless-closeout-review-findings-plan.md"
   "docs/plans/2026-06-17-001-fix-headless-context-builder-contract-plan.md"
   "docs/plans/2026-06-17-002-fix-headless-status-first-onboarding-plan.md"
-  "docs/plans/2026-06-18-001-fix-headless-agent-run-lifecycle-parity-plan.md"
   "docs/plans/fable/001-linux-build-spike.md"
   "docs/plans/fable/002-carve-out-contextcore.md"
   "docs/plans/fable/003-headless-mcp-server.md"
