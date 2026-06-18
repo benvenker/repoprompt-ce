@@ -23,7 +23,7 @@ import FinalSynthesisPrompt from "../prompts/mission-kanban-final-synthesis.mdx"
 import WriteReportPrompt from "../prompts/mission-kanban-write-report.mdx";
 
 const inputSchema = z.object({
-  planPath: z.string().default("/data/projects/repoprompt-ce/docs/plans/2026-06-18-001-fix-headless-agent-run-lifecycle-parity-plan.md"),
+  planPath: z.string().min(1, "planPath is required"),
   prompt: z.string().optional().nullable().default(null),
   maxTickets: z.number().int().min(7).default(7),
   maxConcurrency: z.number().int().min(1).default(3),
@@ -223,6 +223,33 @@ function normalizePlanPath(planPath: string): string {
   return repoRelative(absolute);
 }
 
+function validateExecutablePlan(planPath: string, content: string): void {
+  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  const frontmatter = frontmatterMatch?.[1] ?? "";
+  const blockedFields = frontmatter
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => /^(status|superseded_reason)\s*:/.test(line));
+
+  if (blockedFields.length > 0) {
+    throw new Error(
+      `Plan file is not an executable source plan: ${planPath} declares lifecycle metadata (${blockedFields.join(", ")}).`,
+    );
+  }
+
+  const blockingPhrases = [
+    /do not execute as written/i,
+    /must not drive automation/i,
+    /not approved for execution/i,
+  ];
+  const matchedPhrase = blockingPhrases.find((pattern) => pattern.test(content));
+  if (matchedPhrase) {
+    throw new Error(
+      `Plan file is not an executable source plan: ${planPath} contains execution-blocking language (${matchedPhrase.source}).`,
+    );
+  }
+}
+
 function titleFromPlan(planPath: string, content: string): string {
   const heading = content.match(/^#\s+(.+)$/m)?.[1]?.trim();
   return heading || basename(planPath);
@@ -278,6 +305,8 @@ export default smithers((ctx) => {
         <Task id="resolveRunConfig" output={outputs.runConfig}>
           {() => {
             const planPath = normalizePlanPath(ctx.input.planPath);
+            const planContent = readFileSync(resolve(process.cwd(), planPath), "utf8");
+            validateExecutablePlan(planPath, planContent);
             const baseBranch = ctx.input.baseBranch?.trim() || currentBranch();
             const maxTickets = Math.max(7, ctx.input.maxTickets ?? 7);
             const maxConcurrency = Math.max(1, ctx.input.maxConcurrency ?? 3);

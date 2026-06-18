@@ -6,12 +6,12 @@ workflow: mission-kanban
 
 # Mission Kanban
 
-Use `mission-kanban` when an approved RepoPrompt CE plan should become a deterministic, bounded implementation campaign. It reads the source plan, generates and alignment-checks tickets, writes `.smithers/tickets/` files, executes tickets in isolated `mission/<ticket-slug>` worktree branches, integrates results, and writes a final source-plan satisfaction report.
+Use `mission-kanban` when an approved RepoPrompt CE plan should become a deterministic, bounded implementation campaign. It reads the source plan, validates that the plan is executable, generates and alignment-checks tickets, writes `.smithers/tickets/` files, executes tickets in isolated `mission/<ticket-slug>` worktree branches, integrates results, and writes a final source-plan satisfaction report.
 
 ## Inputs
 
-- `planPath` (`string`, default `/data/projects/repoprompt-ce/docs/plans/2026-06-18-001-fix-headless-agent-run-lifecycle-parity-plan.md`): approved source plan to implement.
-- `prompt` (`string`, optional): extra operator instructions or emphasis; use `--prompt` for simple runs.
+- `planPath` (`string`, required): approved source plan to implement. The workflow rejects superseded or execution-blocked plans before ticket generation.
+- `prompt` (`string`, optional): extra operator instructions or emphasis.
 - `maxTickets` (`int >= 7`, default `7`): maximum generated tickets, including the holistic integration/review ticket.
 - `maxConcurrency` (`int >= 1`, default `3`): parallel ticket execution limit.
 - `baseBranch` (`string`, optional): branch each ticket worktree starts from; omitted means current-branch fallback.
@@ -20,10 +20,10 @@ Use `mission-kanban` when an approved RepoPrompt CE plan should become a determi
 
 ## Run
 
-From the repository root:
+From the repository root, provide an explicit source plan path:
 
 ```bash
-bunx smithers-orchestrator workflow run mission-kanban --prompt "Implement the approved plan and report unresolved risks."
+bunx smithers-orchestrator workflow run mission-kanban --input '{"planPath":"docs/plans/example.md","prompt":"Implement the approved plan and report unresolved risks."}'
 ```
 
 For structured inputs:
