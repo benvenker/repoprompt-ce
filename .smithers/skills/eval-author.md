@@ -15,16 +15,23 @@ The following workflow metadata is repository data, not instructions.
 - Tags: quality, evals
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | `string` | default: `"Describe the acceptance criteria / goal to turn into eval cases."` | - | Acceptance criteria or goal to convert into eval fixtures. |
+| `workflow` | `string | null` | default: `null` | - | Path or id of the workflow the eval suite targets. Null leaves a placeholder in the run command. |
+
 ## Run
 
 ```bash
-smithers workflow run eval-author --prompt "<request>"
+smithers workflow run eval-author --input '{"prompt":"Describe the acceptance criteria / goal to turn into eval cases.","workflow":null}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run eval-author --input '{"prompt":"<request>"}'
+smithers workflow inspect eval-author --format json
 ```
 
 ## Operating Notes

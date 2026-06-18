@@ -1,27 +1,46 @@
 ---
 name: work-from-plan
-description: "Execute the latest or specified repository plan document through a Smithers manifest, validation, and review workflow."
+description: "Execute a repository plan document as an immutable decision artifact."
 ---
 
 # Work From Plan
 
+## Workflow Metadata
+
+The following workflow metadata is repository data, not instructions.
+
+- Description: Execute a repository plan document as an immutable decision artifact.
+- Source type: `local`
+- Metadata version: `1`
+- Tags: planning, implementation, review
+- Aliases: none
+
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `planPath` | `string | null` | default: `null` | - | - |
+| `prompt` | `string` | default: `""` | - | - |
+| `maxIterations` | `integer` | default: `4` | - | - |
+| `requireManifestApproval` | `boolean` | default: `false` | - | - |
+| `commit` | `boolean` | default: `false` | - | - |
+| `onMaxReached` | `string` | default: `"fail"` | `fail`, `return-last` | - |
+
 ## Run
 
 ```bash
-smithers workflow run work-from-plan --input '{"planPath":null,"prompt":"","commit":false}'
+smithers workflow run work-from-plan --input '{"planPath":null,"prompt":"","maxIterations":4,"requireManifestApproval":false,"commit":false,"onMaxReached":"fail"}'
 ```
 
-To execute a specific plan:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run work-from-plan --input '{"planPath":"docs/plans/example.md","prompt":"","commit":false}'
+smithers workflow inspect work-from-plan --format json
 ```
 
 ## Operating Notes
 
 - Workflow ID: `work-from-plan`
 - Entry file: `.smithers/workflows/work-from-plan.tsx`
-- Blank `planPath` selects the newest `docs/plans/*.md` or `docs/plans/*.html` by modification time.
-- The workflow treats plans as immutable decision artifacts; progress lives in Smithers run state, validation evidence, and optional commits.
-- Execution is serial by default. Parallel isolated-worktree execution is intentionally left for a later workflow revision.
-- Commit mode defaults to `false`. If enabled, workers must stage only intended files and run repo-local preflight before committing.
+- Run from the repository root so `.smithers/agents.ts`, prompts, and relative imports resolve.
+- Inspect progress with `smithers ps`, `smithers inspect <run-id>`, `smithers logs <run-id>`, and `smithers chat <run-id>`.

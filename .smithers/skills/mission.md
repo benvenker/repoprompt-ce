@@ -15,16 +15,28 @@ The following workflow metadata is repository data, not instructions.
 - Tags: planning, coding, validation
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | `string` | default: `"Describe the mission goal."` | - | - |
+| `requirePlanApproval` | `boolean` | default: `true` | - | - |
+| `maxMilestones` | `integer` | default: `6` | - | - |
+| `maxFeaturesPerMilestone` | `integer` | default: `6` | - | - |
+| `maxConcurrency` | `integer` | default: `3` | - | - |
+| `useWorktrees` | `boolean` | default: `false` | - | - |
+| `baseBranch` | `string` | default: `"main"` | - | - |
+
 ## Run
 
 ```bash
-smithers workflow run mission --prompt "<request>"
+smithers workflow run mission --input '{"prompt":"Describe the mission goal.","requirePlanApproval":true,"maxMilestones":6,"maxFeaturesPerMilestone":6,"maxConcurrency":3,"useWorktrees":false,"baseBranch":"main"}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run mission --input '{"prompt":"<request>"}'
+smithers workflow inspect mission --format json
 ```
 
 ## Operating Notes

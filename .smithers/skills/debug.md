@@ -15,16 +15,22 @@ The following workflow metadata is repository data, not instructions.
 - Tags: debugging, testing
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | `string` | default: `"Reproduce and fix the reported bug."` | - | - |
+
 ## Run
 
 ```bash
-smithers workflow run debug --prompt "<request>"
+smithers workflow run debug --input '{"prompt":"Reproduce and fix the reported bug."}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run debug --input '{"prompt":"<request>"}'
+smithers workflow inspect debug --format json
 ```
 
 ## Operating Notes

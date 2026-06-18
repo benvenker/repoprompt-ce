@@ -15,16 +15,22 @@ The following workflow metadata is repository data, not instructions.
 - Tags: research
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | `string` | default: `"Research the given topic."` | - | - |
+
 ## Run
 
 ```bash
-smithers workflow run research --prompt "<request>"
+smithers workflow run research --input '{"prompt":"Research the given topic."}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run research --input '{"prompt":"<request>"}'
+smithers workflow inspect research --format json
 ```
 
 ## Operating Notes

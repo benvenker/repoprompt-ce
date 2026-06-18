@@ -15,16 +15,25 @@ The following workflow metadata is repository data, not instructions.
 - Tags: audit, inventory
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `refineIterations` | `integer` | default: `1` | - | - |
+| `existingFeatures` | `object | null` | default: `null` | - | - |
+| `lastCommitHash` | `string | null` | default: `null` | - | - |
+| `additionalContext` | `string` | default: `""` | - | - |
+
 ## Run
 
 ```bash
-smithers workflow run feature-enum --prompt "<request>"
+smithers workflow run feature-enum --input '{"refineIterations":1,"existingFeatures":null,"lastCommitHash":null,"additionalContext":""}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run feature-enum --input '{"prompt":"<request>"}'
+smithers workflow inspect feature-enum --format json
 ```
 
 ## Operating Notes

@@ -15,16 +15,25 @@ The following workflow metadata is repository data, not instructions.
 - Tags: audit, quality
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `features` | `object` | default: `{}` | - | - |
+| `focus` | `string` | default: `"code review"` | - | - |
+| `additionalContext` | `string | null` | default: `null` | - | - |
+| `maxConcurrency` | `integer` | default: `5` | - | - |
+
 ## Run
 
 ```bash
-smithers workflow run audit --prompt "<request>"
+smithers workflow run audit --input '{"features":{},"focus":"code review","additionalContext":null,"maxConcurrency":5}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run audit --input '{"prompt":"<request>"}'
+smithers workflow inspect audit --format json
 ```
 
 ## Operating Notes

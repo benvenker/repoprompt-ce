@@ -15,16 +15,22 @@ The following workflow metadata is repository data, not instructions.
 - Tags: quality, backpressure
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | `string` | default: `"Describe the goal and its acceptance criteria in plain English."` | - | The goal / acceptance criteria to turn into a backpressure gate matrix. |
+
 ## Run
 
 ```bash
-smithers workflow run backpressure-plan --prompt "<request>"
+smithers workflow run backpressure-plan --input '{"prompt":"Describe the goal and its acceptance criteria in plain English."}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run backpressure-plan --input '{"prompt":"<request>"}'
+smithers workflow inspect backpressure-plan --format json
 ```
 
 ## Operating Notes

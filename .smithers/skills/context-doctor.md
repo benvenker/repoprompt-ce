@@ -15,16 +15,22 @@ The following workflow metadata is repository data, not instructions.
 - Tags: quality, context-engineering
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `contract` | `string` | default: `"{}"` | - | JSON string of a context contract to diagnose. |
+
 ## Run
 
 ```bash
-smithers workflow run context-doctor --prompt "<request>"
+smithers workflow run context-doctor --input '{"contract":"{}"}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run context-doctor --input '{"prompt":"<request>"}'
+smithers workflow inspect context-doctor --format json
 ```
 
 ## Operating Notes

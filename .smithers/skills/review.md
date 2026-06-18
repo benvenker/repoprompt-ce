@@ -15,16 +15,22 @@ The following workflow metadata is repository data, not instructions.
 - Tags: review, quality
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | `string` | default: `"Review the current repository changes."` | - | - |
+
 ## Run
 
 ```bash
-smithers workflow run review --prompt "<request>"
+smithers workflow run review --input '{"prompt":"Review the current repository changes."}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run review --input '{"prompt":"<request>"}'
+smithers workflow inspect review --format json
 ```
 
 ## Operating Notes

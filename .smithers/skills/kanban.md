@@ -15,16 +15,22 @@ The following workflow metadata is repository data, not instructions.
 - Tags: tickets, ui, worktrees
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `maxConcurrency` | `integer` | default: `3` | - | - |
+
 ## Run
 
 ```bash
-smithers workflow run kanban --prompt "<request>"
+smithers workflow run kanban --input '{"maxConcurrency":3}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run kanban --input '{"prompt":"<request>"}'
+smithers workflow inspect kanban --format json
 ```
 
 ## Operating Notes

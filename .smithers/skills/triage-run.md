@@ -15,16 +15,22 @@ The following workflow metadata is repository data, not instructions.
 - Tags: ops, debugging
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `runId` | `string` | required | - | The id of the failed or stuck Smithers run to triage. |
+
 ## Run
 
 ```bash
-smithers workflow run triage-run --prompt "<request>"
+smithers workflow run triage-run --input '{"runId":"<string>"}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run triage-run --input '{"prompt":"<request>"}'
+smithers workflow inspect triage-run --format json
 ```
 
 ## Operating Notes

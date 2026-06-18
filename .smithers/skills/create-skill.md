@@ -15,16 +15,24 @@ The following workflow metadata is repository data, not instructions.
 - Tags: authoring, skills
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | `string` | default: `"Describe the agent skill you want to create, in plain English."` | - | Plain-English description of the agent skill you want Smithers to author. |
+| `name` | `string | null` | default: `null` | - | Desired kebab-case skill id. Null lets the clarify/design steps choose one. |
+| `review` | `boolean` | default: `true` | - | Pause for human approval of the design before any files are written. |
+
 ## Run
 
 ```bash
-smithers workflow run create-skill --prompt "<request>"
+smithers workflow run create-skill --input '{"prompt":"Describe the agent skill you want to create, in plain English.","name":null,"review":true}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run create-skill --input '{"prompt":"<request>"}'
+smithers workflow inspect create-skill --format json
 ```
 
 ## Operating Notes

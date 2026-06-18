@@ -15,16 +15,22 @@ The following workflow metadata is repository data, not instructions.
 - Tags: maintenance, loop
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | `string` | default: `"Continue working on the current task."` | - | - |
+
 ## Run
 
 ```bash
-smithers workflow run ralph --prompt "<request>"
+smithers workflow run ralph --input '{"prompt":"Continue working on the current task."}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run ralph --input '{"prompt":"<request>"}'
+smithers workflow inspect ralph --format json
 ```
 
 ## Operating Notes

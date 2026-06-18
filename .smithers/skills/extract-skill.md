@@ -15,16 +15,23 @@ The following workflow metadata is repository data, not instructions.
 - Tags: reuse, skills, memory
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `runId` | `string | null` | default: `null` | - | Run to harvest from. Null analyses the prompt/context alone, with no run state. |
+| `prompt` | `string` | default: `"Describe the pattern or run you want to harvest into a reusable skill, workflow, or memory."` | - | What to harvest, plus any context the analysis should ground itself in. |
+
 ## Run
 
 ```bash
-smithers workflow run extract-skill --prompt "<request>"
+smithers workflow run extract-skill --input '{"runId":null,"prompt":"Describe the pattern or run you want to harvest into a reusable skill, workflow, or memory."}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run extract-skill --input '{"prompt":"<request>"}'
+smithers workflow inspect extract-skill --format json
 ```
 
 ## Operating Notes

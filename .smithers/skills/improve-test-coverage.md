@@ -15,16 +15,22 @@ The following workflow metadata is repository data, not instructions.
 - Tags: testing, quality
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | `string` | default: `"Improve the test coverage for the current repository."` | - | - |
+
 ## Run
 
 ```bash
-smithers workflow run improve-test-coverage --prompt "<request>"
+smithers workflow run improve-test-coverage --input '{"prompt":"Improve the test coverage for the current repository."}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run improve-test-coverage --input '{"prompt":"<request>"}'
+smithers workflow inspect improve-test-coverage --format json
 ```
 
 ## Operating Notes

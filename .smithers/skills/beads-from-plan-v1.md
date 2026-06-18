@@ -15,16 +15,27 @@ The following workflow metadata is repository data, not instructions.
 - Tags: beads, planning, authoring, evals
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `planPath` | `string` | default: `"docs/plans/fable/008-agent-process-lifecycle.md"` | - | - |
+| `laneLabel` | `string` | default: `"fable-008"` | - | - |
+| `userContext` | `string` | default: `"Create Beads from this plan so beads-polish-v3 can polish them next."` | - | - |
+| `rounds` | `integer` | default: `4` | - | - |
+| `strict` | `boolean` | default: `true` | - | - |
+| `judgeThresholdPercent` | `integer` | default: `86` | - | - |
+
 ## Run
 
 ```bash
-smithers workflow run beads-from-plan-v1 --prompt "<request>"
+smithers workflow run beads-from-plan-v1 --input '{"planPath":"docs/plans/fable/008-agent-process-lifecycle.md","laneLabel":"fable-008","userContext":"Create Beads from this plan so beads-polish-v3 can polish them next.","rounds":4,"strict":true,"judgeThresholdPercent":86}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run beads-from-plan-v1 --input '{"prompt":"<request>"}'
+smithers workflow inspect beads-from-plan-v1 --format json
 ```
 
 ## Operating Notes

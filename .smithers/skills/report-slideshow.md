@@ -15,16 +15,23 @@ The following workflow metadata is repository data, not instructions.
 - Tags: ops, reporting
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `runId` | `string` | required | - | The Smithers run id to build a slideshow report from. |
+| `title` | `string | null` | default: `null` | - | Optional report title. Null lets the render step derive one from the run. |
+
 ## Run
 
 ```bash
-smithers workflow run report-slideshow --prompt "<request>"
+smithers workflow run report-slideshow --input '{"runId":"<string>","title":null}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run report-slideshow --input '{"prompt":"<request>"}'
+smithers workflow inspect report-slideshow --format json
 ```
 
 ## Operating Notes

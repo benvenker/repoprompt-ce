@@ -15,16 +15,23 @@ The following workflow metadata is repository data, not instructions.
 - Tags: requirements, planning
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | `string` | default: `"Describe what you want to get grilled on."` | - | - |
+| `maxIterations` | `integer` | default: `30` | - | - |
+
 ## Run
 
 ```bash
-smithers workflow run grill-me --prompt "<request>"
+smithers workflow run grill-me --input '{"prompt":"Describe what you want to get grilled on.","maxIterations":30}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run grill-me --input '{"prompt":"<request>"}'
+smithers workflow inspect grill-me --format json
 ```
 
 ## Operating Notes

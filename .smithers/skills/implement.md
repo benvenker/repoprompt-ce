@@ -15,16 +15,24 @@ The following workflow metadata is repository data, not instructions.
 - Tags: coding, implementation, review
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | `string` | default: `"Implement the requested change."` | - | - |
+| `maxIterations` | `integer` | default: `4` | - | - |
+| `onMaxReached` | `string` | default: `"fail"` | `fail`, `return-last` | - |
+
 ## Run
 
 ```bash
-smithers workflow run implement --prompt "<request>"
+smithers workflow run implement --input '{"prompt":"Implement the requested change.","maxIterations":4,"onMaxReached":"fail"}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run implement --input '{"prompt":"<request>"}'
+smithers workflow inspect implement --format json
 ```
 
 ## Operating Notes

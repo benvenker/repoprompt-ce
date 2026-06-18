@@ -15,16 +15,23 @@ The following workflow metadata is repository data, not instructions.
 - Tags: workflow
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `action` | `string` | default: `"status"` | `status`, `log`, `commit`, `rebase-plan` | - |
+| `vcs` | `string` | default: `"git"` | `git`, `jj` | - |
+
 ## Run
 
 ```bash
-smithers workflow run vcs --prompt "<request>"
+smithers workflow run vcs --input '{"action":"status","vcs":"git"}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run vcs --input '{"prompt":"<request>"}'
+smithers workflow inspect vcs --format json
 ```
 
 ## Operating Notes

@@ -15,16 +15,22 @@ The following workflow metadata is repository data, not instructions.
 - Tags: planning
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | `string` | default: `"Create an implementation plan."` | - | - |
+
 ## Run
 
 ```bash
-smithers workflow run plan --prompt "<request>"
+smithers workflow run plan --input '{"prompt":"Create an implementation plan."}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run plan --input '{"prompt":"<request>"}'
+smithers workflow inspect plan --format json
 ```
 
 ## Operating Notes

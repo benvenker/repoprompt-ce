@@ -15,16 +15,27 @@ The following workflow metadata is repository data, not instructions.
 - Tags: review, implementation, headless
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | `string` | default: `""` | - | - |
+| `maxIterations` | `integer` | default: `3` | - | - |
+| `closeoutPlanPath` | `string` | default: `"docs/plans/2026-06-15-002-fix-headless-timeout-observability-closeout-plan.md"` | - | - |
+| `sourcePlanPaths` | `array` | default: `["docs/plans/2026-06-15-001-fix-context-builder-async-results-plan.md","docs/plans/2026-06-15-001-fix-headless-timeout-observability-plan.md"]` | - | - |
+| `blockingSeverities` | `array` | default: `["P0","P1","P2"]` | - | - |
+| `validationProfile` | `string` | default: `"headless-linux-docker-bounded"` | - | - |
+
 ## Run
 
 ```bash
-smithers workflow run headless-closeout-grinder --prompt "<request>"
+smithers workflow run headless-closeout-grinder --input '{"prompt":"","maxIterations":3,"closeoutPlanPath":"docs/plans/2026-06-15-002-fix-headless-timeout-observability-closeout-plan.md","sourcePlanPaths":["docs/plans/2026-06-15-001-fix-context-builder-async-results-plan.md","docs/plans/2026-06-15-001-fix-headless-timeout-observability-plan.md"],"blockingSeverities":["P0","P1","P2"],"validationProfile":"headless-linux-docker-bounded"}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run headless-closeout-grinder --input '{"prompt":"<request>"}'
+smithers workflow inspect headless-closeout-grinder --format json
 ```
 
 ## Operating Notes

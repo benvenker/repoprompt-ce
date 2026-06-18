@@ -15,16 +15,23 @@ The following workflow metadata is repository data, not instructions.
 - Tags: concierge, context-engineering, planning
 - Aliases: none
 
+## Input Schema
+
+| Field | Type | Required / Default | Enum | Description |
+| --- | --- | --- | --- | --- |
+| `prompt` | `string` | default: `"Describe what you want Smithers to do, in plain English."` | - | The vague user script the concierge turns into a context contract and then executes. |
+| `review` | `boolean` | default: `true` | - | Pause for human approval of the context contract before any work is executed. |
+
 ## Run
 
 ```bash
-smithers workflow run context-engineer --prompt "<request>"
+smithers workflow run context-engineer --input '{"prompt":"Describe what you want Smithers to do, in plain English.","review":true}'
 ```
 
-For structured inputs, pass JSON explicitly:
+If the workflow defines a `prompt` field, `--prompt` is shorthand for `--input '{"prompt":"..."}'`.
 
 ```bash
-smithers workflow run context-engineer --input '{"prompt":"<request>"}'
+smithers workflow inspect context-engineer --format json
 ```
 
 ## Operating Notes
